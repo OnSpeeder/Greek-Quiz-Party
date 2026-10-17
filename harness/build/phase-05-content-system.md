@@ -32,7 +32,7 @@ Do not bulk-fill final 1,000-question library yet.
 
 ## Acceptance criteria
 
-Validator catches required schema errors; game loads reviewed pack; CI runs validator.
+Validator catches required schema errors; game loads reviewed pack; local verification runs validator.
 
 ## Completion report
 

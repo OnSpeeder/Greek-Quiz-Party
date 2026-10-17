@@ -70,7 +70,7 @@ The first full release is complete when it provides:
 - Settings, audio, accessibility basics and localization infrastructure.
 - Automated core tests, Godot integration tests and network tests.
 - Windows packaging and Android APK/AAB release builds.
-- CI that blocks release when validation or tests fail.
+- Local build, test and content-validation gates that block release on failure.
 
 ## Non-goals for v1
 

@@ -37,7 +37,7 @@ handshake/action/ack, duplicate safety, incompatible-version rejection and an
 unreachable-host timeout.
 Its scripts use bounded waits and fail on engine errors or absent evidence.
 These checks do not substitute for the physical Android/manual-IP acceptance test.
-The same regression is included in GitHub Actions.
+Run this regression locally; GitHub CI is disabled by project decision.
 
 The contract and compatibility boundary are documented in NETWORK_PROTOCOL.md.
 Observed hardware results and any setup limitations belong in the Phase 01 context

@@ -44,6 +44,10 @@ Core defines interfaces when inversion is useful. Infrastructure/Godot provide i
 
 Pure C# domain logic.
 
+Phase 02 implements the basic host session, state machine, question presentation,
+base scoring and submission validation. See [Core domain](docs/CORE_DOMAIN.md) for
+the implemented API, transition table, timing boundaries and later-phase work.
+
 Suggested namespaces:
 
 ```text

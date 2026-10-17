@@ -108,7 +108,7 @@ Example:
 
 Create `tools/QuizParty.QuestionValidator`.
 
-It must fail CI on production packs for:
+It must fail local validation and block release packaging of production packs for:
 
 - duplicate IDs,
 - invalid JSON/schema,

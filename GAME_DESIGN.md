@@ -77,6 +77,11 @@ Example formula:
 
 Then apply confidence and effects.
 
+Phase 02 implements base scoring with these defaults and configurable parameters.
+The time bonus uses host receipt time, decimal tick ratios and midpoint rounding
+away from zero. Wrong/unanswered Safe x1 answers award zero. Strategic confidence
+and effects remain Phase 08 work; x2/x3 submissions are currently rejected.
+
 ## 7. Confidence mechanic
 
 Before or while answering, a player chooses one of:

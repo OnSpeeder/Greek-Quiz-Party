@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create the repository skeleton, .NET solution/projects, empty Godot .NET project, baseline scripts/docs and CI foundation.
+Create the repository skeleton, .NET solution/projects, empty Godot .NET project and baseline local verification scripts/docs.
 
 ## Read before implementation
 

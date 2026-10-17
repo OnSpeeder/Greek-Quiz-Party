@@ -81,6 +81,9 @@ Do not load every document for unrelated trivial edits.
 
 ## Tests
 
+GitHub CI is disabled by user decision. Use local verification and record evidence;
+do not require remote CI success or re-enable workflows unless the user asks.
+
 For meaningful code changes, run the smallest relevant set plus required gates.
 
 Typical commands after repository exists:

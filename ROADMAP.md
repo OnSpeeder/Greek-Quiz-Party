@@ -7,7 +7,7 @@ Deliver:
 - Git repository.
 - solution/project skeleton.
 - docs and agent harness.
-- CI baseline.
+- Local verification scripts.
 - `.gitignore`.
 - build commands verified.
 

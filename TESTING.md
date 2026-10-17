@@ -73,7 +73,7 @@ Use at least one physical Android device and preferably multiple hardware profil
 - Tests must not depend on wall-clock sleeps when a fake clock can be injected.
 - Deterministic RNG in unit tests.
 - Network tests use explicit timeouts and useful failure logs.
-- A failing test must not be disabled just to make CI green.
+- A failing test must not be disabled just to make verification pass.
 
 ## 4. Core required test cases
 
@@ -113,9 +113,9 @@ Each card gets:
 - effect result,
 - stacking/cap behavior.
 
-## 5. Content validation in CI
+## 5. Local content validation
 
-Release pipeline must run QuestionValidator. Any release-pack error blocks packaging.
+Run QuestionValidator locally before release packaging. Any release-pack error blocks packaging.
 
 ## 6. Godot smoke test
 

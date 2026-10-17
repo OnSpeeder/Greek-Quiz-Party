@@ -74,8 +74,8 @@ raw logs are in ignored `artifacts/`.
 - Reload the Codex client/chat to load the replacement MCP tool catalog. The
   configured stdio server starts with Codex; open this Godot project so its addon
   can connect. Never run the optional HTTP diagnostic server at the same time.
-- CI workflow is checked in under `.github/workflows/ci.yml`; its equivalent
-  commands were run locally. No remote CI execution was claimed or requested.
+- GitHub CI is disabled by user decision. Run build, tests, smoke and relevant
+  network/content checks locally and record observed evidence in the build log.
 - Godot 4.7.2 prints `EditorSettings not instantiated yet` for
   `export/android/shutdown_adb_on_exit` during editor/export teardown. This exact
   engine diagnostic is retained in logs and excluded from the export script's

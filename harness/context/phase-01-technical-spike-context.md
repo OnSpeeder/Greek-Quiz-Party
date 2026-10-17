@@ -66,4 +66,7 @@ Phase 02 requires separate approval; the Phase 01 action counter is not a score.
   Import still uses the synchronous console command. Detailed adapter output is
   enabled so future startup failures identify the failing subprocess/stage.
 - No tests or timeouts were removed, skipped or relaxed; remote re-verification
-  is required before reporting CI green. This changes tooling only, not the APK.
+  was required before reporting CI green. This changes tooling only, not the APK.
+- Superseded by user decision to stop GitHub CI: remote workflow disabled and
+  local workflow removed. Remote CI success is no longer a phase gate; recorded
+  local tests and physical-device evidence remain valid.

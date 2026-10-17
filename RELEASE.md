@@ -40,7 +40,7 @@ Never commit release signing keys or passwords.
 
 ## 4. Pre-release checklist
 
-- All CI checks green.
+- All required local build and test checks green, with evidence recorded.
 - Content validator green.
 - No draft/unreviewed question in release pack.
 - Windows host + Android client full match verified.

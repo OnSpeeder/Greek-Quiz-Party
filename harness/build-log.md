@@ -2,6 +2,33 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-17 — Phase 02 — Core domain and state machine complete
+- Working tree: prior user-approved CI removal preserved; no commit/push performed.
+- Implemented pure C# host session/state machine, distinct identities, immutable
+  public snapshots, shuffled question instances, host-time answer validation,
+  duplicate/replay guards and configurable base/time scoring awarded once on reveal.
+  Added monotonic clock/seeded randomness boundaries and deterministic fixtures.
+- `./scripts/build.ps1`: restore and six-project build passed, zero warnings/errors.
+- `./scripts/test.ps1`: 189 Core + 5 integration passed, zero failed/skipped.
+- Explicit detailed lifecycle test passed and logged Boot-to-GameOver plus rematch,
+  scores 1000/0/0 and single score award. This is observed in-memory Core execution.
+- `git diff --check` passed; new Core/test source whitespace scan found no matches.
+- No scene/protocol/content changes; no Godot/device gameplay claimed or required
+  for this isolated phase. Existing Godot/LAN spike remains unchanged. Confidence
+  x2/x3, streaks/cards/missions, tie-breakers and automatic scheduling remain later.
+- Decisions/API details: docs/CORE_DOMAIN.md and Phase 02 context. Stop at Phase 02;
+  separate user approval required before Phase 03 lobby/network work.
+
+## 2026-10-17 — GitHub CI disabled by user request
+- Disabled the remote Foundation checks workflow using GitHub CLI; API confirmed
+  state `disabled_manually`. Removed `.github/workflows/ci.yml` locally.
+- Updated project/testing/release/content requirements and agent instructions to
+  use local verification. Prior CI entries below remain historical evidence;
+  the pending Phase 01 remote recheck is no longer required.
+- Local build/test/smoke/network scripts and all tests are unchanged. No game
+  code changed; automated/runtime tests were not rerun for this documentation
+  and workflow change. No commit or push performed.
+
 ## 2026-10-17 — Phase 01 CI startup follow-up
 - Phase 01 b40e251 was pushed. Remote run 39066341871 passed restore/build and
   all xUnit tests but aborted at the existing 120-second Godot test-session limit.

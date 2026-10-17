@@ -83,3 +83,16 @@ MATCH_ERROR_InvalidAnswerIndex,Μη έγκυρη επιλογή,Invalid answer c
 MATCH_ERROR_InvalidConfidence,Μη έγκυρη επιλογή εμπιστοσύνης,Invalid confidence choice
 MATCH_ERROR_MalformedRequest,Μη έγκυρο αίτημα,Invalid request
 MATCH_ERROR_UnknownPlayer,Ο παίκτης δεν συμμετέχει στον γύρο,Player is not in this round
+MATCH_PROGRESS,Γύρος {0} · Ερώτηση {1}/{2},Round {0} · Question {1}/{2}
+MATCH_TIE,Ισοβαθμία — ξαφνικός θάνατος,Tie-breaker — sudden death
+MATCH_CONTINUE,Συνέχεια,Continue
+MATCH_ROUND_END,Τέλος γύρου — βαθμολογία,Round complete — score recap
+MATCH_PREVIEW,Προεπισκόπηση μίας ερώτησης,One-question preview
+MATCH_LENGTH,{0} ερωτήσεις,{0} questions
+MATCH_DURATION,{0} δευτερόλεπτα ανά ερώτηση,{0} seconds per question
+MATCH_TEST_CATEGORY,Συνθετικές δοκιμές,Synthetic test fixtures
+MATCH_CAPACITY,Διαθέσιμες ελεγμένες ερωτήσεις: {0},Available reviewed questions: {0}
+LOBBY_STATUS_InsufficientContent,Δεν υπάρχουν αρκετές μοναδικές ελεγμένες ερωτήσεις για αυτή τη διάρκεια,Not enough unique reviewed questions for this length
+MATCH_WINNER,Νικητής: {0},Winner: {0}
+MATCH_SHARED,Κοινή πρώτη θέση: {0} — εξαντλήθηκαν οι ερωτήσεις,Shared first place: {0} — question pack exhausted
+MATCH_STATS,{0}: σωστές {1} · λάθος {2} · χωρίς απάντηση {3} · ακρίβεια {4:F0}% · μέσος χρόνος {5:F2}s · καλύτερο σερί {6},{0}: correct {1} · wrong {2} · unanswered {3} · accuracy {4:F0}% · average {5:F2}s · best streak {6}

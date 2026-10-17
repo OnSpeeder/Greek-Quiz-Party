@@ -73,7 +73,14 @@ raw logs are in ignored `artifacts/`.
   lobby/question/answer/reveal/score/results on a packaged Windows host + physical
   Android client, including wrong/unanswered outcomes. This was automated device
   runtime verification, not human touch play. See [match evidence](MATCH_EVIDENCE.md).
-  Full gameplay/content/discovery and broader device coverage remain later work.
+  Phase 06 adds four-round 10/20/30-question scheduling, selection and final
+  statistics. Long-loop verification uses explicitly synthetic debug fixtures;
+  the reviewed production pack still contains one question. Discovery and
+  broader device coverage remain later work.
+  Phase 06 physical Android also completed 20 distinct questions/all four rounds
+  with matching final scores/winner/stats after user unlock. New APK export,
+  signature verification, installation and launch succeeded. Evidence is under
+  artifacts/phase06-android-20/; the earlier asleep-device attempt is retained.
 - Reload the Codex client/chat to load the replacement MCP tool catalog. The
   configured stdio server starts with Codex; open this Godot project so its addon
   can connect. Never run the optional HTTP diagnostic server at the same time.

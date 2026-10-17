@@ -16,8 +16,10 @@ public sealed class LobbyHost
     private readonly LobbySession _lobby;
     private readonly IGameClock _clock;
     private readonly Dictionary<long, PeerRequests> _peers = new();
-    private OneQuestionMatch? _match;
-    private readonly QuestionDefinition? _question;
+    private FullMatch? _match;
+    private readonly IReadOnlyList<QuestionDefinition> _questions;
+    private MatchSettings _settings = new(1);
+    private string[]? _categories;
     public Guid SessionId { get; } = Guid.NewGuid();
     public string RoomName { get; }
 
@@ -28,8 +30,24 @@ public sealed class LobbyHost
         ArgumentNullException.ThrowIfNull(clock);
         RoomName = roomName;
         _clock = clock;
-        _question = question;
+        _questions = question is null ? [] : [question];
         _lobby = new(new(new(Guid.NewGuid()), hostName, LobbySession.HostConnection, new(0)));
+    }
+
+    public LobbyHost(string roomName, string hostName, IGameClock clock, IReadOnlyList<QuestionDefinition> questions,
+        MatchSettings settings) : this(roomName, hostName, clock)
+    {
+        _questions = Array.AsReadOnly(questions.ToArray());
+        _settings = settings;
+    }
+
+    public bool ConfigureMatch(MatchSettings settings, IReadOnlyCollection<string>? categories = null)
+    {
+        if (_match is not null || _lobby.GetSnapshot().Phase != GamePhase.Lobby ||
+            _questions.Count(q => categories is null || categories.Contains(q.CategoryId)) < settings.QuestionCount) return false;
+        _settings = settings;
+        _categories = categories?.ToArray();
+        return true;
     }
 
     public LobbySnapshotDto Snapshot()
@@ -43,9 +61,8 @@ public sealed class LobbyHost
     public LobbyError Start() => _lobby.Start(LobbySession.HostConnection);
     public bool BeginMatch()
     {
-        if (_match is not null || _question is null || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
-        _match = new(GetPlayers(), _clock, new SeededRandomSource(Random.Shared.Next()), _question,
-            new(Guid.NewGuid()), TimeSpan.FromSeconds(20));
+        if (_match is not null || _questions.Count < _settings.QuestionCount || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
+        _match = new(GetPlayers(), _clock, new SeededRandomSource(Random.Shared.Next()), _questions, _settings, _categories);
         return true;
     }
 
@@ -60,7 +77,12 @@ public sealed class LobbyHost
             game.Scores.Select(score => new MatchScoreDto(score.PlayerId.Value, score.DisplayName, score.Total)).ToArray(),
             game.Reveal is null ? null : new(game.Reveal.CorrectAnswerIndex, game.Reveal.Explanation,
                 game.Reveal.Players.Select(player => new MatchPlayerResultDto(player.PlayerId.Value,
-                    player.AnswerIndex, player.IsCorrect, player.Points)).ToArray()));
+                    player.AnswerIndex, player.IsCorrect, player.Points)).ToArray()),
+            _match.QuestionNumber, _match.TotalQuestions, _match.RoundNumber, _match.IsTieBreaker,
+            _match.Eligible.Select(id => id.Value).ToArray(), _match.Winners.Select(id => id.Value).ToArray(),
+            _match.ContentExhausted, game.Phase == GamePhase.GameOver ? _match.Statistics.Select(s =>
+                new MatchStatisticsDto(s.PlayerId.Value, s.Correct, s.Wrong, s.Unanswered, s.BestStreak,
+                    s.ResponseTicks, s.Responses)).ToArray() : []);
     }
 
     public IReadOnlyList<LobbyOutbound> BroadcastMatch() => _match is null ? [] : _lobby.GetSnapshot().Players

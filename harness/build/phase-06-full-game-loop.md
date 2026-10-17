@@ -1,5 +1,16 @@
 # Phase 06 — Full Basic Game Loop
 
+## Current status — 2026-10-18
+
+Complete locally. 275 tests pass; source
+20-question and packaged/rendered 30-question matches completed all four rounds
+with matching host/client results and clean runtime logs. Android debug export,
+signature, install and launch succeeded. After the user unlocked the phone,
+physical Android completed 20 distinct questions over LAN with matching scores,
+winner and final statistics. Screenshots inspected and debug arguments cleaned up.
+Phase 06 remains uncommitted. Do not start Phase 07 automatically.
+See phase context and build log for evidence and the one-reviewed-question limit.
+
 ## Goal
 
 Implement multi-question rounds, game-length configuration, timers, no-repeat selection, scoreboards, final stats and tie-breaker baseline.

@@ -23,6 +23,8 @@ public sealed class GameSession
     private readonly HashSet<QuestionInstanceId> _usedInstances = new();
     private QuestionInstance? _question;
     private QuestionResult? _reveal;
+    private HashSet<PlayerId>? _eligible;
+    private bool _awardPoints = true;
 
     public GameSession(GameAuthority authority, IEnumerable<Player> players, IGameClock clock,
         IRandomSource random, ScoringRules? scoringRules = null)
@@ -60,12 +62,15 @@ public sealed class GameSession
 
     public GameError BeginRound() => _machine.TryTransition(GameTrigger.BeginRound);
 
-    public GameError StartQuestion(QuestionDefinition definition, QuestionInstanceId instanceId, TimeSpan duration)
+    public GameError StartQuestion(QuestionDefinition definition, QuestionInstanceId instanceId, TimeSpan duration,
+        IReadOnlyCollection<PlayerId>? eligible = null, bool awardPoints = true)
     {
         if (_authority != GameAuthority.Host) return GameError.NotAuthoritative;
         if (Phase is not (GamePhase.RoundIntro or GamePhase.Scoreboard)) return GameError.InvalidTransition;
         if (instanceId.Value == Guid.Empty || _usedInstances.Contains(instanceId)) return GameError.InvalidQuestionInstance;
         ArgumentNullException.ThrowIfNull(definition);
+        if (eligible is not null && (eligible.Count == 0 || eligible.Any(id => !_scores.ContainsKey(id)) ||
+            eligible.Distinct().Count() != eligible.Count)) throw new ArgumentException("Invalid eligible players.", nameof(eligible));
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(duration.Ticks);
         var now = _clock.Now;
         if (now < TimeSpan.Zero || duration > TimeSpan.MaxValue - now)
@@ -76,6 +81,8 @@ public sealed class GameSession
         _question = question;
         _reveal = null;
         _answers.Clear();
+        _eligible = eligible?.ToHashSet();
+        _awardPoints = awardPoints;
         _usedInstances.Add(instanceId);
         return GameError.None;
     }
@@ -88,10 +95,11 @@ public sealed class GameSession
         if (_authority != GameAuthority.Host) return SubmissionError.NotAuthoritative;
         ArgumentNullException.ThrowIfNull(submission);
         var error = SubmissionValidator.Validate(submission, Phase, _question?.Presentation,
-            _scores.ContainsKey(submission.PlayerId), _answers.ContainsKey(submission.PlayerId), hostReceivedAt, _clock.Now);
+            _scores.ContainsKey(submission.PlayerId) && (_eligible?.Contains(submission.PlayerId) ?? true),
+            _answers.ContainsKey(submission.PlayerId), hostReceivedAt, _clock.Now);
         if (error != SubmissionError.None) return error;
         _answers.Add(submission.PlayerId, new(submission.AnswerIndex, hostReceivedAt));
-        if (_answers.Count == _players.Length) _machine.TryTransition(GameTrigger.LockQuestion);
+        if (_answers.Count == (_eligible?.Count ?? _players.Length)) _machine.TryTransition(GameTrigger.LockQuestion);
         return SubmissionError.None;
     }
 
@@ -100,7 +108,7 @@ public sealed class GameSession
         if (_authority != GameAuthority.Host) return GameError.NotAuthoritative;
         if (Phase != GamePhase.QuestionActive) return GameError.InvalidTransition;
         // Exact-deadline receipts are legal. Close only after that instant, or all answers.
-        if (_answers.Count < _players.Length && _clock.Now <= _question!.Presentation.Deadline)
+        if (_answers.Count < (_eligible?.Count ?? _players.Length) && _clock.Now <= _question!.Presentation.Deadline)
             return GameError.QuestionNotReady;
         return _machine.TryTransition(GameTrigger.LockQuestion);
     }
@@ -127,7 +135,7 @@ public sealed class GameSession
         var correct = answer.AnswerIndex == question.CorrectAnswerIndex;
         var view = question.Presentation;
         var points = _scoring.Calculate(correct, answer.ReceivedAt - view.StartedAt, view.Deadline - view.StartedAt);
-        return new(playerId, answer.AnswerIndex, correct, points);
+        return new(playerId, answer.AnswerIndex, correct, _awardPoints ? points : 0, answer.ReceivedAt - view.StartedAt);
     }
 
     public GameError ShowScoreboard() => _machine.TryTransition(GameTrigger.ShowScoreboard);

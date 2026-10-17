@@ -175,6 +175,16 @@ Before beta:
 - connect/disconnect repeated cycle.
 - 8 simulated/logical players where possible.
 
+Phase 06 deterministic tests cover 10/20/30-question completion, seeded filtered
+selection, no-repeat/exhaustion, four rounds, cumulative statistics, host-clock
+boundaries, stale input, sudden-death eligibility/correctness/host timing and full
+replay with injected IDs. Wire tests cover 20/30 questions, input reset, old
+receipts, snapshot rollback/version bounds and eight-player final packet size.
+`test-network-match.ps1 -QuestionCount 20` and `-Packaged -QuestionCount 30`
+use explicitly synthetic debug-only fixtures. No production questions are
+generated or approved by these tests. `test-android-match.ps1 -HostAddress <IP>
+-QuestionCount 20` checks distinct questions and final stats on actual hardware.
+
 ## 10. Release gate
 
 Do not tag a release unless:

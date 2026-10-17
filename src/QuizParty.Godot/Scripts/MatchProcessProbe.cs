@@ -14,7 +14,7 @@ public partial class MatchProcessProbe : Node
     private string[] _args = [];
     private bool _auto;
     private bool _ready;
-    private bool _answered;
+    private Guid _answered;
     private int _players = 2;
     private bool Live => GodotObject.IsInstanceValid(this) && IsInsideTree();
 
@@ -53,6 +53,7 @@ public partial class MatchProcessProbe : Node
             !int.TryParse(Argument("--match-players=") ?? "2", out _players) || _players is < 2 or > 8)
         { GetTree().Quit(2); return; }
         _transport.PlayMatch = true;
+        if (int.TryParse(Argument("--match-fixture="), out var count)) _transport.UseSyntheticQuestions(count);
         _transport.SnapshotChanged += snapshot =>
         {
             if (!_auto || snapshot.Phase != "Lobby") return;
@@ -64,29 +65,33 @@ public partial class MatchProcessProbe : Node
             ? _transport.Host("QuizParty", Argument("--match-name=") ?? "Host", port)
             : _transport.Join(Argument("--match-join=") ?? "127.0.0.1", Argument("--match-name=") ?? "Phone", port);
         if (error != Error.Ok) { GD.Print($"MATCH START_ERROR {error}"); GetTree().Quit(2); }
-        if (_auto) GetTree().CreateTimer(90).Timeout += () => { if (Live && _transport.MatchSnapshot?.Phase != "GameOver") GetTree().Quit(3); };
+        if (_auto) GetTree().CreateTimer(600).Timeout += () => { if (Live && _transport.MatchSnapshot?.Phase != "GameOver") GetTree().Quit(3); };
     }
 
     private void OnMatch(MatchSnapshotDto snapshot)
     {
         if (!_auto) return;
-        if (snapshot.Phase == "QuestionActive" && !_answered && !_args.Contains("--match-unanswered"))
+        if (snapshot.Phase == "QuestionActive" && _answered != snapshot.Question.InstanceId &&
+            snapshot.EligiblePlayers.Contains(_transport.LocalPlayerId ?? Guid.Empty) && !_args.Contains("--match-unanswered"))
         {
-            _answered = true;
+            _answered = snapshot.Question.InstanceId;
             // Bots know this tiny fixture, not the shuffled index. This is never used by the UI.
             var correct = Array.IndexOf(snapshot.Question.Answers, "Αθήνα");
+            if (correct < 0) correct = Array.IndexOf(snapshot.Question.Answers, "Σωστό");
+            if (correct < 0) { GD.PushError("Bot does not recognize fixture."); GetTree().Quit(4); return; }
             var index = _args.Contains("--match-wrong") ? (correct + 1) % 4 : correct;
             var delay = double.TryParse(Argument("--match-delay="), System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var seconds) ? seconds : 0.25;
             GetTree().CreateTimer(Math.Clamp(delay, 0.05, 30)).Timeout += () =>
             {
-                if (!Live) return;
+                if (!Live || _transport.MatchSnapshot?.Question.InstanceId != snapshot.Question.InstanceId) return;
                 _transport.SubmitAnswer(index);
                 if (!_transport.IsHost) _transport.SubmitAnswer(index, repeatLastRequest: true);
             };
         }
-        if (_transport.IsHost && snapshot.Phase is "AnswerReveal" or "Scoreboard")
-            GetTree().CreateTimer(1).Timeout += () => { if (Live) _transport.AdvanceMatch(); };
+        if (_transport.IsHost && snapshot.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd")
+            GetTree().CreateTimer(_args.Contains("--match-fast") ? 0.05 : 1).Timeout += () =>
+            { if (Live && _transport.MatchSnapshot?.Revision == snapshot.Revision) _transport.AdvanceMatch(); };
         if (snapshot.Phase == "GameOver")
         {
             GD.Print($"MATCH AUTO_PASS question={snapshot.Question.InstanceId} players={snapshot.Scores.Length}");
@@ -95,7 +100,9 @@ public partial class MatchProcessProbe : Node
                 var name = snapshot.Scores.Single(score => score.PlayerId == result.PlayerId).DisplayName;
                 GD.Print($"MATCH RESULT player={name} answer={result.AnswerIndex?.ToString() ?? "none"} points={result.Points}");
             }
-            if (!_args.Contains("--match-keep-open")) GetTree().CreateTimer(2).Timeout += () => { if (Live) GetTree().Quit(); };
+            // Leave the host alive while clients leave together: exercises batched
+            // disconnect handling instead of hiding shutdown races behind host exit.
+            if (!_args.Contains("--match-keep-open")) GetTree().CreateTimer(_transport.IsHost ? 4 : 2).Timeout += () => { if (Live) GetTree().Quit(); };
         }
         var capture = Argument("--match-capture=");
         if (capture is not null && snapshot.Phase == (Argument("--match-capture-phase=") ?? "GameOver")) Capture(capture);

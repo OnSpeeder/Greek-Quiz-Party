@@ -20,6 +20,24 @@ public partial class LobbyTransport : Node
     private string? _lastAnswerRequest;
     private long _lastMatchRevision;
     private int? _hostAnswerIndex;
+    private Guid _presentedQuestion;
+    private bool? _previousRelay;
+    private IReadOnlyList<Core.Questions.QuestionDefinition>? _debugQuestions;
+    public int QuestionCount { get; set; } = 1;
+    public int QuestionSeconds { get; set; } = 20;
+    public int AvailableQuestions { get; private set; }
+    public IReadOnlyList<Core.Questions.QuestionCategory> QuestionCategories { get; private set; } = [];
+    public HashSet<string>? EnabledCategories { get; set; }
+
+    public void UseSyntheticQuestions(int count)
+    {
+        if (!OS.IsDebugBuild() || count is not (10 or 20 or 30)) throw new InvalidOperationException("Debug fixture only.");
+        _debugQuestions = Enumerable.Range(1, count + 5).Select(i => new Core.Questions.QuestionDefinition(
+            $"fixture_{i}", $"ΔΟΚΙΜΗ {i} — επιλέξτε «Σωστό»", ["Σωστό", "Λάθος Α", "Λάθος Β", "Λάθος Γ"],
+            0, "fixture", i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.")).ToArray();
+        QuestionCount = count;
+        GD.Print($"MATCH SYNTHETIC_FIXTURE count={count} debug-only; no reviewed content added");
+    }
     public bool PlayMatch { get; set; } = true;
     public event Action<MatchSnapshotDto>? MatchChanged;
     public event Action<string>? MatchInputChanged;
@@ -35,6 +53,13 @@ public partial class LobbyTransport : Node
 
     public override void _Ready()
     {
+        if (Multiplayer is SceneMultiplayer sceneMultiplayer)
+        {
+            _previousRelay = sceneMultiplayer.ServerRelay;
+            // All game traffic goes through the host. Peer-to-peer relay also
+            // sends native disconnect notices into concurrently closing channels.
+            sceneMultiplayer.ServerRelay = false;
+        }
         Multiplayer.ConnectedToServer += OnConnected;
         Multiplayer.ConnectionFailed += OnConnectionFailed;
         Multiplayer.ServerDisconnected += OnServerDisconnected;
@@ -58,7 +83,11 @@ public partial class LobbyTransport : Node
         // Reserve a few bounded handshake slots so a full room can send RoomFull.
         var error = peer.CreateServer(port, LobbyHost.MaxTransportConnections);
         if (error != Error.Ok) { peer.Dispose(); return error; }
-        _host = new(roomName, playerName, new MonotonicGameClock(), pack.Questions[0]);
+        var questions = _debugQuestions ?? pack.Questions;
+        AvailableQuestions = questions.Count;
+        EnabledCategories = null;
+        QuestionCategories = _debugQuestions is null ? pack.Categories : [new("fixture", "MATCH_TEST_CATEGORY")];
+        _host = new(roomName, playerName, new MonotonicGameClock(), questions, new(1));
         _peer = peer;
         Multiplayer.MultiplayerPeer = peer;
         Emit("HostListening");
@@ -104,6 +133,7 @@ public partial class LobbyTransport : Node
     public void StartGame()
     {
         if (_host is null) { Emit("NotHost"); return; }
+        if (PlayMatch && !_host.ConfigureMatch(new(QuestionCount, QuestionSeconds), EnabledCategories)) { Emit("InsufficientContent"); return; }
         var result = _host.Start();
         Emit(result.ToString());
         Broadcast();
@@ -159,6 +189,7 @@ public partial class LobbyTransport : Node
         _lastAnswerRequest = null;
         _lastMatchRevision = 0;
         _hostAnswerIndex = null;
+        _presentedQuestion = Guid.Empty;
         if (_peer is not null)
         {
             Multiplayer.MultiplayerPeer = new OfflineMultiplayerPeer();
@@ -176,6 +207,7 @@ public partial class LobbyTransport : Node
         Multiplayer.PeerConnected -= OnPeerConnected;
         Multiplayer.PeerDisconnected -= OnPeerDisconnected;
         Stop();
+        if (_previousRelay is { } relay && Multiplayer is SceneMultiplayer sceneMultiplayer) sceneMultiplayer.ServerRelay = relay;
     }
 
     private void OnConnected()
@@ -221,23 +253,42 @@ public partial class LobbyTransport : Node
     private void Broadcast()
     {
         if (_host is null) return;
-        foreach (var message in _host.Broadcast()) RpcId(message.ConnectionId, MethodName.ServerMessage, message.Json);
+        foreach (var message in _host.Broadcast()) SendToConnectedPeer(message);
         Publish();
+    }
+
+    private void SendToConnectedPeer(LobbyOutbound message)
+    {
+        // During a batch of disconnect events the lobby can still contain a peer
+        // whose ENet channel has already closed. Never RPC into that channel.
+        if (_peer is null || !Multiplayer.GetPeers().Contains((int)message.ConnectionId)) return;
+        var peer = _peer.GetPeer((int)message.ConnectionId);
+        if (peer.GetState() == ENetPacketPeer.PeerState.Connected && peer.GetChannels() > 0)
+            RpcId(message.ConnectionId, MethodName.ServerMessage, message.Json);
     }
 
     private void PublishMatch()
     {
         var snapshot = MatchSnapshot;
         if (snapshot is null || snapshot.Revision <= _lastMatchRevision) return;
+        if (_presentedQuestion != snapshot.Question.InstanceId)
+        {
+            _presentedQuestion = snapshot.Question.InstanceId;
+            _hostAnswerIndex = null;
+            _lastAnswerRequest = null;
+        }
         _lastMatchRevision = snapshot.Revision;
         GD.Print($"MATCH SNAPSHOT revision={snapshot.Revision} phase={snapshot.Phase} question={snapshot.Question.InstanceId} scores={string.Join('|', snapshot.Scores.OrderBy(score => score.DisplayName, StringComparer.Ordinal).Select(score => $"{score.DisplayName}:{score.Total}"))}");
+        GD.Print($"MATCH PROGRESS number={snapshot.QuestionNumber} total={snapshot.TotalQuestions} round={snapshot.RoundNumber} tie={snapshot.IsTieBreaker}");
+        if (snapshot.Phase == "GameOver") GD.Print($"MATCH FINAL winners={string.Join('|', snapshot.Winners.Order())} stats={string.Join('|',
+            snapshot.Statistics.OrderBy(s => s.PlayerId).Select(s => $"{s.PlayerId}:{s.Correct}/{s.Wrong}/{s.Unanswered}/{s.BestStreak}/{s.ResponseTicks}/{s.Responses}"))}");
         MatchChanged?.Invoke(snapshot);
     }
 
     private void BroadcastMatch()
     {
         if (_host is null) return;
-        foreach (var message in _host.BroadcastMatch()) RpcId(message.ConnectionId, MethodName.ServerMessage, message.Json);
+        foreach (var message in _host.BroadcastMatch()) SendToConnectedPeer(message);
         PublishMatch();
     }
 
@@ -254,7 +305,7 @@ public partial class LobbyTransport : Node
         var sender = Multiplayer.GetRemoteSenderId();
         if (_closing.Contains(sender)) return;
         var dispatch = _host.Handle(sender, json);
-        foreach (var message in dispatch.Messages) RpcId(message.ConnectionId, MethodName.ServerMessage, message.Json);
+        foreach (var message in dispatch.Messages) SendToConnectedPeer(message);
         if (_host.GetPlayers().Any(player => player.ConnectionId?.Value == sender)) _handshaken.Add(sender);
         Publish();
         PublishMatch();

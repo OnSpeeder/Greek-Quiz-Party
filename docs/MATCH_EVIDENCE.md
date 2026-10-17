@@ -1,4 +1,35 @@
-# Phase 04 observed match evidence
+# Observed match evidence
+
+## Phase 06 — full loop, 2026-10-18
+
+275 automated tests passed (208 Core, 62 Infrastructure, 5 Godot). Source
+20-question and packaged/rendered 30-question host/two-client runs completed all
+four rounds with distinct questions and identical final scores, winner and stats.
+Packaged timeout/lobby regressions also passed; runtime errors were clean after
+fixing simultaneous-disconnect sends. Windows/Android exports and APK signature
+verification passed. No new dependencies; protocol is now 3.
+
+After the user woke/unlocked the phone, this command passed over actual LAN:
+
+```powershell
+./scripts/test-android-match.ps1 -HostAddress 192.168.68.105 -QuestionCount 20
+```
+
+The physical phone observed 20 distinct questions and rounds 1–4. Host and phone
+agreed on revision 104, instance 3f4bd7d8-2c69-4bc6-85b8-b94ed8d2339d,
+Host 19941 / Phone 19685, winner Host, and all final aggregates. Each player had
+20 correct, zero wrong/unanswered, best streak 20; host average 0.11s and phone
+0.63s as rendered. Final screenshot inspected: readable scores/stats and large
+buttons. No app runtime errors. Debug argument removal and normal startup restored.
+Evidence: artifacts/phase06-android-20/. Earlier asleep-phone failure remains
+under phase06-android-20-asleep; no device lock was bypassed.
+
+These are automated physical runtime observations, not human touch-play claims.
+Long matches use explicitly labeled synthetic debug fixtures; production still
+has one reviewed question and requires more reviewed content for long matches.
+Phase 06 remains local/uncommitted; Phase 07 has not started.
+
+## Phase 04 — historical observed match evidence
 
 2026-10-18, Europe/Athens. Windows packaged host; physical Android 15 phone
 (model 23013PC75G). Host Ethernet 192.168.68.105, phone Wi-Fi 192.168.68.106.

@@ -16,6 +16,10 @@ public partial class LobbyScreen : Control
     private Button _start = null!;
     private Label _roster = null!;
     private Label _status = null!;
+    private VBoxContainer _settings = null!;
+    private Label _capacity = null!;
+    private OptionButton _length = null!;
+    private VBoxContainer _categories = null!;
 
     public override void _Ready()
     {
@@ -31,6 +35,24 @@ public partial class LobbyScreen : Control
         _start = GetNode<Button>(path + "Start");
         _roster = GetNode<Label>(path + "Roster");
         _status = GetNode<Label>(path + "Status");
+        _settings = new VBoxContainer { Name = "MatchSettings" };
+        GetNode<VBoxContainer>(path.TrimEnd('/')).AddChild(_settings);
+        GetNode<VBoxContainer>(path.TrimEnd('/')).MoveChild(_settings, _start.GetIndex());
+        _capacity = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        _settings.AddChild(_capacity);
+        var length = new OptionButton { Name = "Length", CustomMinimumSize = new Vector2(0, 64) };
+        _length = length;
+        length.AddItem(Tr("MATCH_PREVIEW"), 1);
+        foreach (var count in new[] { 10, 20, 30 }) length.AddItem(string.Format(Tr("MATCH_LENGTH"), count), count);
+        length.ItemSelected += index => _transport.QuestionCount = length.GetItemId((int)index);
+        _settings.AddChild(length);
+        var timer = new OptionButton { Name = "Duration", CustomMinimumSize = new Vector2(0, 64) };
+        foreach (var seconds in new[] { 10, 20, 30 }) timer.AddItem(string.Format(Tr("MATCH_DURATION"), seconds), seconds);
+        timer.Select(1);
+        timer.ItemSelected += index => _transport.QuestionSeconds = timer.GetItemId((int)index);
+        _settings.AddChild(timer);
+        _categories = new VBoxContainer { Name = "Categories" };
+        _settings.AddChild(_categories);
         _host.Pressed += () => ShowError(_transport.Host(_room.Text.Trim(), _name.Text.Trim()));
         _join.Pressed += () => ShowError(_transport.Join(_address.Text.Trim(), _name.Text.Trim()));
         _ready.Pressed += () =>
@@ -51,6 +73,7 @@ public partial class LobbyScreen : Control
         GetNode<MatchPanel>(path + "MatchPanel").Bind(_transport);
         _transport.MatchChanged += _ =>
         {
+            _settings.Visible = false;
             foreach (var name in new[] { "Title", "Addresses", "Roster", "Ready", "Start", "Status" })
                 GetNode<Control>(path + name).Visible = false;
         };
@@ -66,6 +89,8 @@ public partial class LobbyScreen : Control
         _ready.Disabled = true;
         _start.Disabled = true;
         _start.Visible = false;
+        _settings.Visible = false;
+        foreach (var child in _categories.GetChildren()) { _categories.RemoveChild(child); child.QueueFree(); }
         _name.Editable = true;
         _room.Editable = true;
         _address.Editable = true;
@@ -83,6 +108,7 @@ public partial class LobbyScreen : Control
 
     private void Render(LobbySnapshotDto snapshot)
     {
+        if (_transport.MatchSnapshot is not null) return;
         ShowSetup(false);
         _host.Disabled = true;
         _join.Disabled = true;
@@ -91,6 +117,23 @@ public partial class LobbyScreen : Control
         _address.Editable = false;
         _ready.Disabled = snapshot.Phase != "Lobby";
         _start.Visible = _transport.IsHost;
+        _settings.Visible = _transport.IsHost && snapshot.Phase == "Lobby";
+        _capacity.Text = string.Format(Tr("MATCH_CAPACITY"), _transport.AvailableQuestions);
+        _length.Select(_length.GetItemIndex(_transport.QuestionCount));
+        if (_transport.IsHost && _categories.GetChildCount() == 0)
+        {
+            _transport.EnabledCategories = _transport.QuestionCategories.Select(c => c.Id).ToHashSet();
+            foreach (var category in _transport.QuestionCategories)
+            {
+                var toggle = new CheckButton { Text = Tr(category.NameKey), ButtonPressed = true, CustomMinimumSize = new Vector2(0, 64) };
+                toggle.Toggled += enabled =>
+                {
+                    if (enabled) _transport.EnabledCategories?.Add(category.Id);
+                    else _transport.EnabledCategories?.Remove(category.Id);
+                };
+                _categories.AddChild(toggle);
+            }
+        }
         _start.Disabled = snapshot.Phase != "Lobby" || snapshot.Players.Length < 2 || snapshot.Players.Any(player => !player.Ready);
         _roster.Text = snapshot.RoomName + "\n" + string.Join("\n", snapshot.Players.Select(player =>
             $"{player.DisplayName}{(player.IsHost ? " — " + Tr("LOBBY_HOST_MARK") : "")} — {Tr(player.Ready ? "LOBBY_READY_YES" : "LOBBY_READY_NO")}"));

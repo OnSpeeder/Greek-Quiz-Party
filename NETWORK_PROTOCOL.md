@@ -55,12 +55,14 @@ Client input is a request, never truth.
 
 ## 4. Protocol version
 
-Current production version (Phase 04):
+Current production version (Phase 06):
 
-`ProtocolVersion = 2`
+`ProtocolVersion = 3`
 
-Phase 03 used version 1. Match messages are not understood by that client, so
-Phase 04 deliberately rejects it at hello. The disposable probe stays version 1.
+Phase 03 used version 1; Phases 04–05 used version 2. Version 3 adds progress,
+eligibility, winners and final statistics. Strict unknown-field handling makes
+this intentionally incompatible; versions 1/2 are rejected at hello. The
+disposable probe stays version 1.
 
 Version is included in hello/discovery and preferably packet envelope.
 
@@ -302,7 +304,44 @@ Required before release:
 - Wrong protocol version.
 - Discovery unavailable + manual IP succeeds.
 
-## Phase 04 implemented one-question match (production v2)
+## Phase 06 full-match additions (production v3)
+
+All Phase 04 request types, receipt/ownership/deadline rules and RPC signatures
+below are retained. MatchSnapshot additionally requires `QuestionNumber`,
+`TotalQuestions`, `RoundNumber`, `IsTieBreaker`, `EligiblePlayers`, `Winners`,
+`ContentExhausted`, `Statistics`. Array IDs refer to the fixed match roster.
+Stats contain PlayerId, Correct, Wrong, Unanswered, BestStreak, ResponseTicks,
+Responses. They are empty until GameOver. Accuracy/average formatting uses these
+host aggregates; clients never calculate authoritative scoring or outcomes.
+SceneMultiplayer peer relay is disabled while the lobby scene owns networking:
+clients communicate only with the host, and the host sends explicit roster data.
+This avoids native relay notices racing simultaneous ENet disconnects. The
+adapter also verifies connected state/allocated channels before sending an RPC.
+
+Questions advance with a new instance and increasing ordinal; normal totals carry
+over while Reveal resets to null. Clients reject ordinal/phase rollback, reused
+instances, roster replacement, decreasing scores and malformed/bounded progress.
+Private pending/accepted input clears at the new question. An old receipt cannot
+confirm a new answer, even if its exact request is replayed from the host cache.
+Question deadlines span at most 60 seconds; configuration supports 10/20/30
+questions (one-question preview) and category filtering. Capacity is checked
+before leaving the lobby; host settings are local intents, not client commands.
+
+Local AdvanceMatch supports Scoreboard -> next QuestionActive or RoundEnd,
+RoundEnd -> next QuestionActive, and final GameOver. Four normal rounds divide
+the configured question count nearly evenly. Round four uses base scoring in
+this baseline; no final multiplier is specified yet. Sudden death uses only tied
+leaders, new questions, unchanged regular totals and fastest correct host receipt.
+Exact fastest ties continue among those players; all-wrong/unanswered continues
+with the existing eligible set. Finite content exhaustion reports shared winners
+and ContentExhausted instead of repeating content. No new protocol message is
+needed. Safe x1 remains the only accepted confidence level.
+
+The 16KiB envelope bound remains. Validator encoded-content budget is now 10KB
+(was 12KB), reserving room for eight-player results and final statistics. The
+eight-player Greek-name/near-budget content regression covers the final packet.
+
+## Phase 04 one-question match (historical production v2)
 
 Lobby fields and bounds below are retained, with envelope version 2 and app
 version 0.2.0. Normal host Start now creates a Core OneQuestionMatch from the

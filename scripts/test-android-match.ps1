@@ -1,8 +1,10 @@
-param([Parameter(Mandatory = $true)][string]$HostAddress, [int]$Port = 17783, [switch]$Wrong, [switch]$Unanswered)
+param([Parameter(Mandatory = $true)][string]$HostAddress, [int]$Port = 17783, [switch]$Wrong, [switch]$Unanswered,
+    [ValidateSet(1,20,30)][int]$QuestionCount = 1)
 . "$PSScriptRoot/common.ps1"
 if ($HostAddress -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw 'Supply the actual Windows LAN IPv4 address.' }
 $adb = Resolve-Tool 'adb' @("$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe")
 $output = Join-Path $RepoRoot $(if ($Unanswered) { 'artifacts/phase04-android-timeout' } elseif ($Wrong) { 'artifacts/phase04-android-wrong' } else { 'artifacts/phase04-android' })
+if ($QuestionCount -gt 1) { $output = Join-Path $RepoRoot "artifacts/phase06-android-$QuestionCount" }
 New-Item -ItemType Directory -Force $output | Out-Null
 $binary = Join-Path $RepoRoot 'artifacts/exports/Windows/QuizParty.exe'
 $hostProcess = $null
@@ -12,13 +14,22 @@ try {
     $deviceArgs = @("--match-join=$HostAddress", "--match-port=$Port", '--match-name=Phone', '--match-auto', '--match-delay=6', '--match-keep-open')
     if ($Wrong) { $deviceArgs += '--match-wrong' }
     if ($Unanswered) { $deviceArgs += '--match-unanswered' }
+    $fixtureFlags = ''
+    $hostDelay = '5'
+    if ($QuestionCount -gt 1) {
+        $deviceArgs = @("--match-join=$HostAddress", "--match-port=$Port", '--match-name=Phone', '--match-auto', '--match-delay=0.6', '--match-keep-open')
+        if ($Wrong) { $deviceArgs += '--match-wrong' }
+        if ($Unanswered) { $deviceArgs += '--match-unanswered' }
+        $fixtureFlags = "--match-fixture=$QuestionCount --match-fast --match-delay=0.1"
+        $hostDelay = '0.1'
+    }
     $json = ConvertTo-Json -InputObject $deviceArgs -Compress
     $json | & $adb shell run-as org.quizparty.game tee $deviceFixture | Out-Null
     Assert-Exit 'Write app-private debug test fixture'
     $hostProcess = Start-Process $binary -WindowStyle Hidden -PassThru `
-        -ArgumentList "--resolution 1152x720 --language el_GR -- --match-host --match-port=$Port --match-name=Host --match-auto --match-players=2 --match-delay=5 --match-keep-open --match-capture=$output/host-final.png" `
+        -ArgumentList "--resolution 1152x720 --language el_GR -- --match-host --match-port=$Port --match-name=Host --match-auto --match-players=2 --match-delay=$hostDelay --match-keep-open --match-capture=$output/host-final.png $fixtureFlags" `
         -RedirectStandardOutput "$output/host.log" -RedirectStandardError "$output/host-errors.log"
-    $deadline = [DateTime]::UtcNow.AddSeconds(45)
+    $deadline = [DateTime]::UtcNow.AddSeconds(45 + $QuestionCount * $(if ($Unanswered) { 21 } else { 2 }))
     while (!(Select-String "$output/host.log" -Pattern HostListening -Quiet)) {
         if ($hostProcess.HasExited -or [DateTime]::UtcNow -gt $deadline) { throw 'Packaged LAN host did not start.' }
         Start-Sleep -Milliseconds 100
@@ -45,6 +56,13 @@ try {
     $hostFinal = [regex]::Match((Get-Content "$output/host.log" -Raw), 'MATCH SNAPSHOT[^\r\n]*phase=GameOver[^\r\n]*').Value
     $phoneFinal = [regex]::Match($phoneLog, 'MATCH SNAPSHOT[^\r\n]*phase=GameOver[^\r\n]*').Value
     if (!$hostFinal -or $hostFinal -ne $phoneFinal) { throw 'Physical phone final snapshot disagrees with Windows host.' }
+    if ($QuestionCount -gt 1) {
+        $questions = @([regex]::Matches($phoneLog, 'phase=QuestionActive question=([^ ]+)') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
+        if ($questions.Count -ne $QuestionCount) { throw "Physical phone did not observe $QuestionCount unique questions." }
+        $hostStats = [regex]::Match((Get-Content "$output/host.log" -Raw), 'MATCH FINAL[^\r\n]*').Value
+        $phoneStats = [regex]::Match($phoneLog, 'MATCH FINAL[^\r\n]*').Value
+        if (!$hostStats -or $hostStats -ne $phoneStats) { throw 'Physical final statistics disagree.' }
+    }
     if ($Unanswered -and $phoneLog -notmatch 'RESULT player=Phone answer=none points=0') { throw 'Physical timeout result was not observed.' }
     if ($Wrong -and $phoneLog -notmatch 'RESULT player=Phone answer=[0-3] points=0') { throw 'Physical wrong-answer result was not observed.' }
     if (!$Wrong -and !$Unanswered -and $hostFinal -notmatch 'scores=Host:[1-9]\d*\|Phone:[1-9]\d*') { throw 'Physical correct answer did not score.' }

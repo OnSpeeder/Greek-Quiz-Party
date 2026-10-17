@@ -9,6 +9,26 @@ public class FoundationSceneTests
 {
     [TestCase]
     [RequireGodotRuntime]
+    public void LobbyInitializesTouchSettingsAndRestoresRelayAfterSceneExit()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        var multiplayer = (SceneMultiplayer)tree.Root.Multiplayer;
+        var previousRelay = multiplayer.ServerRelay;
+        using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<Control>();
+        tree.Root.AddChild(root);
+        AssertThat(multiplayer.ServerRelay).IsFalse();
+        const string path = "Margin/Scroll/Content/MatchSettings/";
+        var length = root.GetNode<OptionButton>(path + "Length");
+        AssertThat(length.ItemCount).IsEqual(4);
+        AssertThat(length.GetSelectedId()).IsEqual(1);
+        AssertThat(length.CustomMinimumSize.Y >= 64).IsTrue();
+        AssertThat(root.GetNode<OptionButton>(path + "Duration").GetSelectedId()).IsEqual(20);
+        root.Free();
+        AssertThat(multiplayer.ServerRelay).IsEqual(previousRelay);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
     public void MatchPanelComposesWithLobbyAndKeepsAnswersTouchSized()
     {
         var scene = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn");

@@ -2,6 +2,55 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-18 — Phase 06 — full game loop and selection complete
+- Prior Phase 05 committed/pushed as 4b3d310 on origin/main. Phase 06 remains an
+  ordinary uncommitted diff. GitHub CI remains disabled; no dependencies added.
+- FullMatch/MatchSettings/QuestionDeck implement 10/20/30 questions, four rounds,
+  category/difficulty mixing without repeats, per-question host deadlines,
+  cumulative scoring, basic final stats and correctness/host-time sudden death.
+  UI adds host settings, progress/recaps/stats. Protocol 3 intentionally rejects
+  old clients and resets private input per question; correctness stays reveal-only.
+- Final automated evidence: 208 Core + 62 Infrastructure + 5 Godot = 275 passed,
+  zero failed/skipped. Full test script plus added final wire tie test passed.
+  logs: artifacts/phase06-tests-final.log, phase06-integration-final.log. Build
+  zero warnings/errors; strict canonical validator and CLI failure exit checks pass.
+- Source 20-question host/two-client run: revision 124, Host 19941 / Anna 19879 /
+  Maria 0. Packaged rendered 30-question run: revision 184, Host 29914 / Anna
+  29793 / Maria 0, instance c8485e8e-4f5f-4285-9120-4fd4f5a78411. Each peer
+  observed all four rounds and distinct questions; final winners/statistics equal.
+  Packaged timeout also passed (Host 995 / Anna 993 / Maria 0, unanswered).
+- Long-run shutdown exposed simultaneous-disconnect errors. Fixed application
+  sends plus disabled unused SceneMultiplayer peer relay. Regression now keeps
+  host alive through both client departures and requires clean error logs. Final
+  source/packaged runs passed; source and packaged lobby regressions passed.
+- Eight-player near-limit Greek content revealed a 17,197-byte final packet under
+  the old allowance. Tightened shared content budget to 10KB, retaining 16KiB
+  envelopes; regression rejects the old content and verifies a valid near-limit
+  question fits eight-player final results. No failing checks removed or bypassed.
+- Final Windows/Android exports pass. APK signature verification and ADB install
+  Success observed; public launcher returned Status: ok. Physical long-match
+  attempt could not initialize while phone was Dozing/locked; preserved logs in
+  artifacts/phase06-android-20-asleep. After user wake/unlock, the physical run
+  completed 20 distinct questions and all four rounds: revision 104, Host 19941 /
+  Phone 19685, instance 3f4bd7d8-2c69-4bc6-85b8-b94ed8d2339d. Winner and all
+  final statistics matched exactly; runtime error scans clean. Phone results
+  screenshot inspected (readable score/stat rows and large controls). Logs and
+  captures: artifacts/phase06-android-20/. Automated real-device play, not human
+  touch verification. Earlier active capture caught reveal during the fast loop.
+  Debug argument fixture was removed and normal launcher restored. No device
+  lock bypass, touch injection, settings change or network tunnel used.
+- Windows final screenshot inspected: readable Greek scores, winner and all
+  three stat rows, touch-sized buttons, no clipping at 1152x720. Screenshot in
+  artifacts/phase06-network-30-packaged/host-final.png. Smoke passed. Known Godot
+  editor/export shutdown_adb_on_exit teardown diagnostic remains logged; final
+  game runtime scans are clean.
+- Production content remains one explicitly human-reviewed question. Long runs
+  use labeled opt-in debug fixtures; normal 10/20/30 starts require more reviewed
+  content and reject insufficient category capacity before lobby start.
+- git diff --check passed; generated lock churn restored. Phase acceptance met
+  with Windows and physical Android long-match evidence. Stop here; Phase 07
+  discovery/PIN/reconnect needs the user's next explicit go-ahead.
+
 ## 2026-10-18 — Phase 05 — JSON question packs and validation complete
 - Committed/pushed prior Phase 04 as ae46e15 at user request. New work local only.
 - Shared strict manifest/question validator, CLI, immutable reviewed repository,

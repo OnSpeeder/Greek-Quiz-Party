@@ -18,10 +18,10 @@ public sealed record LobbyDispatch(IReadOnlyList<LobbyOutbound> Messages, bool D
 
 public static class LobbyProtocol
 {
-    public const int Version = 2;
+    public const int Version = 3;
     public const int MaxPacketBytes = 16384;
     public const int MaxNameLength = 32;
-    public const string AppVersion = "0.2.0";
+    public const string AppVersion = "0.3.0";
     private static readonly JsonSerializerOptions Options = new()
     {
         MaxDepth = 8,

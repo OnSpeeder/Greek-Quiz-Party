@@ -54,11 +54,18 @@ Godot `LobbyTransport`/`LobbyScreen` adapter/view. The lobby state stops at
 GameStarting; the Phase 04 bridge below continues gameplay outside the view.
 See [Lobby guide](docs/LOBBY.md) and the implemented contract in NETWORK_PROTOCOL.md.
 
-Phase 04 bridges to Core `OneQuestionMatch`, reusing `GameSession` scoring and
+Phase 06 bridges to Core `FullMatch`, reusing `GameSession` scoring and
 validation. `LobbyHost` maps the fixed roster and match DTOs; `MatchClientState`
 only validates/renders received state. The composable `MatchPanel` keeps ENet
 alive in the Lobby scene and sends intents through `LobbyTransport`. Godot's poll
 timer requests Core progress; it never calculates authoritative time/points.
+
+`QuestionDeck` filters categories and interleaves shuffled category/difficulty
+buckets without replacement. `FullMatch` owns settings, four-round scheduling,
+statistics and tie-break eligibility/winners. Only eligible participants count
+toward question completion. Sudden death keeps normal totals and compares host
+receipt durations. `OneQuestionMatch` remains a tested legacy Phase 04 API;
+production uses `FullMatch`. No Godot reference was added to Core.
 
 Suggested namespaces:
 

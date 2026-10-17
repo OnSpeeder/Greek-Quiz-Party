@@ -16,6 +16,7 @@ public static class QuestionPackLoader
 {
     public const int MaxFileBytes = 4 * 1024 * 1024;
     public const int MaxFiles = 64;
+    public const int MaxEncodedQuestionBytes = 10000;
     private static readonly string[] ManifestFields = ["schemaVersion", "locale", "packVersion", "categories"];
     private static readonly string[] QuestionFields = ["id", "text", "answers", "correctAnswerIndex", "categoryId", "difficulty", "explanation", "source", "locale", "tags", "status", "verifiedAt", "expiresAfter"];
 
@@ -97,7 +98,7 @@ public static class QuestionPackLoader
                 }
                 if (text.Length > 300 || answers.Any(answer => answer.Length > 150)) Issue(file, id, "long-text", "Long question or answer; check layout.", true);
                 if (text.Length > 2048 || explanation.Length > 4096 || answers.Any(answer => answer.Length > 512)) Issue(file, id, "wire-limit", "Text exceeds current game DTO bounds.");
-                if (JsonSerializer.SerializeToUtf8Bytes(new { text, answers, explanation }).Length > 12000) Issue(file, id, "wire-limit", "Encoded content exceeds reserved match packet budget.");
+                if (JsonSerializer.SerializeToUtf8Bytes(new { text, answers, explanation }).Length > MaxEncodedQuestionBytes) Issue(file, id, "wire-limit", "Encoded content exceeds reserved match packet budget.");
                 var source = Text(value, "source");
                 if (value.TryGetProperty("source", out var sourceValue) && sourceValue.ValueKind != JsonValueKind.String) Issue(file, id, "source", "source must be a string URL.");
                 if (string.IsNullOrWhiteSpace(source)) Issue(file, id, "source", "Factual source is missing.", true);

@@ -56,3 +56,14 @@ One physical Android phone was available. Two Android clients and varied routers
 devices remain future coverage, not claimed verified. No production lobby,
 discovery/PIN/reconnect, content, questions, score, cards, teams or missions exist.
 Phase 02 requires separate approval; the Phase 01 action counter is not a score.
+
+## CI follow-up
+- The first Phase 01 remote run passed build/xUnit tests but hit the unchanged
+  120-second test-session limit during Godot startup. No individual failed-test
+  result was emitted. A fresh local source-only copy passed all eight tests.
+- Test script now gives GdUnit the actual engine executable, avoiding the extra
+  Windows console wrapper already avoided in export/network process helpers.
+  Import still uses the synchronous console command. Detailed adapter output is
+  enabled so future startup failures identify the failing subprocess/stage.
+- No tests or timeouts were removed, skipped or relaxed; remote re-verification
+  is required before reporting CI green. This changes tooling only, not the APK.

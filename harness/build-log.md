@@ -2,6 +2,16 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-17 — Phase 01 CI startup follow-up
+- Phase 01 b40e251 was pushed. Remote run 39066341871 passed restore/build and
+  all xUnit tests but aborted at the existing 120-second Godot test-session limit.
+  Individual test results were unavailable; no failing test was disabled.
+- Fresh source-only local rebuild and all eight tests passed. Changed GdUnit
+  process launch to use the actual Windows engine executable rather than its
+  console wrapper, consistent with the export/network helpers; enabled detailed
+  adapter logging for diagnosis. No application code or packaged assets changed.
+- Kept every test and the same timeout. CI must be checked again after this fix.
+
 ## 2026-10-17 — Phase 01 — Windows/Android LAN technical spike complete
 - User authorized pre-spike and post-spike commit/push. Baseline c710604 was pushed
   to origin/main before implementation; GitHub Actions 39065537445 passed.

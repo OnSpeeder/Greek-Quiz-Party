@@ -56,3 +56,28 @@ LOBBY_STATUS_InvalidPlayer,Μη έγκυρος παίκτης,Invalid player
 LOBBY_STATUS_ConnectionTimeout,Η σύνδεση έληξε — έλεγξε IP και δίκτυο,Connection timed out — check IP and network
 LOBBY_STATUS_ConnectionFailed,Αποτυχία σύνδεσης — έλεγξε IP και δίκτυο,Connection failed — check IP and network
 LOBBY_STATUS_ServerDisconnected,Ο οικοδεσπότης αποσυνδέθηκε,Host disconnected
+MATCH_TITLE,Δοκιμαστικός γύρος,Practice round
+MATCH_FINAL,Τελικά αποτελέσματα,Final results
+MATCH_TIME,Χρόνος: {0} δευτ.,Time: {0} sec.
+MATCH_CORRECT,Σωστή απάντηση: {0},Correct answer: {0}
+MATCH_SCORES,Βαθμολογία,Scoreboard
+MATCH_PLAYER_SCORE,{0}: {1} πόντοι,{0}: {1} points
+MATCH_SHOW_SCORES,Προβολή βαθμολογίας,Show scoreboard
+MATCH_SHOW_FINAL,Τελικά αποτελέσματα,Final results
+MATCH_CHOOSE,Διάλεξε μία απάντηση,Choose one answer
+MATCH_PENDING,Αναμονή επιβεβαίωσης…,Waiting for confirmation…
+MATCH_ACCEPTED,Η απάντησή σου καταγράφηκε — περιμένουμε τους υπόλοιπους,Answer recorded — waiting for everyone
+MATCH_LOCKED,Οι απαντήσεις έκλεισαν,Answers are locked
+MATCH_REVEALED,Η σωστή απάντηση αποκαλύφθηκε,Correct answer revealed
+MATCH_SCORE_STATUS,Ο οικοδεσπότης επιβεβαίωσε τη βαθμολογία,Host confirmed the scores
+MATCH_FINISHED,Ο γύρος ολοκληρώθηκε — επέστρεψε στο μενού για νέα αίθουσα,Round complete — return to the menu for a new room
+MATCH_ERROR_Late,Η απάντηση έφτασε μετά τη λήξη,Answer arrived after the deadline
+MATCH_ERROR_AlreadyAnswered,Έχεις ήδη απαντήσει,You already answered
+MATCH_ERROR_InvalidState,Δεν δεχόμαστε πλέον απαντήσεις,Answers are no longer accepted
+MATCH_ERROR_StaleQuestion,Η ερώτηση άλλαξε,Question changed
+MATCH_ERROR_NotHost,Μόνο ο οικοδεσπότης προχωρά τον γύρο,Only the host advances the round
+MATCH_ERROR_InvalidTransition,Δεν μπορούμε ακόμη να προχωρήσουμε,Cannot advance yet
+MATCH_ERROR_InvalidAnswerIndex,Μη έγκυρη επιλογή,Invalid answer choice
+MATCH_ERROR_InvalidConfidence,Μη έγκυρη επιλογή εμπιστοσύνης,Invalid confidence choice
+MATCH_ERROR_MalformedRequest,Μη έγκυρο αίτημα,Invalid request
+MATCH_ERROR_UnknownPlayer,Ο παίκτης δεν συμμετέχει στον γύρο,Player is not in this round

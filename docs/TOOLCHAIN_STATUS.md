@@ -69,10 +69,11 @@ raw logs are in ignored `artifacts/`.
 ## Remaining human/runtime gates
 
 - Phase 01 manual-IP Windows-to-phone ENet action/ack is now observed on real
-  hardware. See [LAN spike evidence](LAN_SPIKE_EVIDENCE.md). The Phase 03 production
-  lobby now passes Windows multi-process checks and exports for Android; actual
-  Android lobby interaction, production gameplay, discovery and broader device
-  coverage remain later verification. See [Lobby guide](LOBBY.md).
+  hardware. See [LAN spike evidence](LAN_SPIKE_EVIDENCE.md). Phase 04 now completes
+  lobby/question/answer/reveal/score/results on a packaged Windows host + physical
+  Android client, including wrong/unanswered outcomes. This was automated device
+  runtime verification, not human touch play. See [match evidence](MATCH_EVIDENCE.md).
+  Full gameplay/content/discovery and broader device coverage remain later work.
 - Reload the Codex client/chat to load the replacement MCP tool catalog. The
   configured stdio server starts with Codex; open this Godot project so its addon
   can connect. Never run the optional HTTP diagnostic server at the same time.

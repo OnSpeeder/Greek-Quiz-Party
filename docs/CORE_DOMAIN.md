@@ -1,9 +1,9 @@
 # Core domain — Phase 02
 
 `QuizParty.Core` targets .NET 8 and has no Godot or external package dependency.
-This is an executable in-memory domain foundation; the Godot app still displays
-the foundation/LAN spike screens. Gameplay UI and production networking are later
-phases. No production question pack or wire format changed.
+This is the domain foundation used by Phase 04's `OneQuestionMatch` coordinator
+and playable network slice. See [Match guide](MATCH.md) for the current Godot UI
+and protocol bridge. No production question pack is implemented yet.
 
 ## Ownership and commands
 

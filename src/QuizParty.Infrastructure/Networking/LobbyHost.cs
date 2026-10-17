@@ -2,6 +2,8 @@ using QuizParty.Core.Game;
 using QuizParty.Core.Lobby;
 using QuizParty.Core.Players;
 using QuizParty.Core.Time;
+using QuizParty.Core.Randomness;
+using QuizParty.Core.Questions;
 
 namespace QuizParty.Infrastructure.Networking;
 
@@ -14,6 +16,7 @@ public sealed class LobbyHost
     private readonly LobbySession _lobby;
     private readonly IGameClock _clock;
     private readonly Dictionary<long, PeerRequests> _peers = new();
+    private OneQuestionMatch? _match;
     public Guid SessionId { get; } = Guid.NewGuid();
     public string RoomName { get; }
 
@@ -36,6 +39,44 @@ public sealed class LobbyHost
 
     public LobbyError SetHostReady(bool ready) => _lobby.SetReady(LobbySession.HostConnection, ready);
     public LobbyError Start() => _lobby.Start(LobbySession.HostConnection);
+    public bool BeginMatch()
+    {
+        if (_match is not null || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
+        _match = new(GetPlayers(), _clock, new SeededRandomSource(Random.Shared.Next()), VerticalSliceFixture.Question,
+            new(Guid.NewGuid()), TimeSpan.FromSeconds(20));
+        return true;
+    }
+
+    public MatchSnapshotDto? MatchSnapshot()
+    {
+        if (_match is null) return null;
+        var game = _match.Snapshot;
+        var question = game.Question!;
+        return new(SessionId, _match.Revision, game.Phase.ToString(), _clock.Now.Ticks,
+            new(question.InstanceId.Value, question.Text, question.Answers.ToArray(), question.CategoryId,
+                question.Difficulty, question.StartedAt.Ticks, question.Deadline.Ticks), game.AcceptedAnswerCount,
+            game.Scores.Select(score => new MatchScoreDto(score.PlayerId.Value, score.DisplayName, score.Total)).ToArray(),
+            game.Reveal is null ? null : new(game.Reveal.CorrectAnswerIndex, game.Reveal.Explanation,
+                game.Reveal.Players.Select(player => new MatchPlayerResultDto(player.PlayerId.Value,
+                    player.AnswerIndex, player.IsCorrect, player.Points)).ToArray()));
+    }
+
+    public IReadOnlyList<LobbyOutbound> BroadcastMatch() => _match is null ? [] : _lobby.GetSnapshot().Players
+        .Where(player => !player.IsHost).Select(player => new LobbyOutbound(player.Player.ConnectionId!.Value.Value,
+            LobbyProtocol.Encode("MatchSnapshot", SessionId, MatchSnapshot()!))).ToArray();
+
+    public bool PollMatch() => _match?.Poll() ?? false;
+    public GameError AdvanceMatch() => _match?.Advance() ?? GameError.InvalidTransition;
+    public SubmissionError SubmitHostAnswer(int index) => SubmitAnswer(1,
+        new(_match?.Snapshot.Question?.InstanceId.Value ?? Guid.Empty, index, 1), _clock.Now);
+
+    private SubmissionError SubmitAnswer(long connection, AnswerRequestDto answer, TimeSpan receivedAt)
+    {
+        if (_lobby.FindPlayer(new(connection)) is not { } playerId) return SubmissionError.UnknownPlayer;
+        if (_match is null) return SubmissionError.InvalidState;
+        return _match.Submit(new(playerId, new(answer.QuestionInstanceId), answer.AnswerIndex,
+            (ConfidenceLevel)answer.Confidence), receivedAt);
+    }
     public IReadOnlyList<Player> GetPlayers() => Array.AsReadOnly(_lobby.GetSnapshot().Players.Select(player => player.Player).ToArray());
 
     public IReadOnlyList<LobbyOutbound> Broadcast() => _lobby.GetSnapshot().Players
@@ -51,6 +92,7 @@ public sealed class LobbyHost
 
     public LobbyDispatch Handle(long connection, string json)
     {
+        var receivedAt = _clock.Now;
         if (connection <= 1) return new([], true);
         if (!_peers.TryGetValue(connection, out var peer))
         {
@@ -74,6 +116,7 @@ public sealed class LobbyHost
         if (packet.ProtocolVersion != LobbyProtocol.Version) return Reply(connection, packet, "IncompatibleVersion", disconnect: true);
         if (packet.CorrelationId is not null) return Reply(connection, packet, "MalformedRequest", disconnect: ++peer.Violations >= 3);
         var before = Snapshot().Revision;
+        var matchBefore = _match?.Revision;
         string reply;
         if (packet.MessageType == "ClientHello")
         {
@@ -83,12 +126,19 @@ public sealed class LobbyHost
         }
         else
         {
-            var reason = ValidateRequest(connection, packet);
-            reply = LobbyProtocol.Encode("RequestResult", SessionId, new RequestResultDto(reason == "None", reason), packet.MessageId);
+            var reason = ValidateRequest(connection, packet, receivedAt);
+            if (packet.MessageType == "SubmitAnswer")
+            {
+                LobbyProtocol.TryPayload<AnswerRequestDto>(packet, out var answer);
+                reply = LobbyProtocol.Encode("AnswerAccepted", SessionId,
+                    new AnswerReceiptDto(reason == "None", reason, answer?.QuestionInstanceId ?? Guid.Empty), packet.MessageId);
+            }
+            else reply = LobbyProtocol.Encode("RequestResult", SessionId, new RequestResultDto(reason == "None", reason), packet.MessageId);
         }
         peer.Processed.Add(packet.MessageId, new(json, reply));
         var messages = new List<LobbyOutbound> { new(connection, reply) };
         if (before != Snapshot().Revision) messages.AddRange(Broadcast());
+        if (matchBefore != _match?.Revision) messages.AddRange(BroadcastMatch());
         return new(messages, false);
     }
 
@@ -105,11 +155,16 @@ public sealed class LobbyHost
         return error.ToString();
     }
 
-    private string ValidateRequest(long connection, LobbyEnvelope packet)
+    private string ValidateRequest(long connection, LobbyEnvelope packet, TimeSpan receivedAt)
     {
         if (_lobby.FindPlayer(new(connection)) is null) return "HandshakeRequired";
         if (packet.SessionId != SessionId) return "WrongSession";
-        if (packet.MessageType == "StartGame") return "NotHost";
+        if (packet.MessageType is "StartGame" or "AdvanceMatch") return "NotHost";
+        if (packet.MessageType == "SubmitAnswer")
+        {
+            if (!LobbyProtocol.TryPayload<AnswerRequestDto>(packet, out var answer) || answer is null) return "MalformedRequest";
+            return SubmitAnswer(connection, answer, receivedAt).ToString();
+        }
         if (packet.MessageType != "SetReady" || !LobbyProtocol.TryPayload<ReadyRequestDto>(packet, out var ready) || ready is null)
             return "MalformedRequest";
         return _lobby.SetReady(new(connection), ready.Ready).ToString();

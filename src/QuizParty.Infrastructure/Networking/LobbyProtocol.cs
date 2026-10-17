@@ -18,10 +18,10 @@ public sealed record LobbyDispatch(IReadOnlyList<LobbyOutbound> Messages, bool D
 
 public static class LobbyProtocol
 {
-    public const int Version = 1;
+    public const int Version = 2;
     public const int MaxPacketBytes = 16384;
     public const int MaxNameLength = 32;
-    public const string AppVersion = "0.1.0";
+    public const string AppVersion = "0.2.0";
     private static readonly JsonSerializerOptions Options = new()
     {
         MaxDepth = 8,
@@ -40,7 +40,8 @@ public static class LobbyProtocol
         {
             var decoded = JsonSerializer.Deserialize<LobbyEnvelope>(json, Options);
             if (decoded is null || decoded.MessageId == Guid.Empty || decoded.MessageType is not
-                ("ClientHello" or "SetReady" or "StartGame" or "ServerHello" or "RequestResult" or "LobbySnapshot") ||
+                ("ClientHello" or "SetReady" or "StartGame" or "ServerHello" or "RequestResult" or "LobbySnapshot" or
+                 "SubmitAnswer" or "AdvanceMatch" or "MatchSnapshot" or "AnswerAccepted") ||
                 decoded.Payload.ValueKind != JsonValueKind.Object) return false;
             packet = decoded;
             return true;

@@ -1,0 +1,61 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/MatchPanel.cs" id="1_panel"]
+
+[node name="MatchPanel" type="VBoxContainer"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+script = ExtResource("1_panel")
+
+[node name="Heading" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "MATCH_TITLE"
+autowrap_mode = 2
+
+[node name="Question" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+autowrap_mode = 2
+
+[node name="Countdown" type="Label" parent="."]
+layout_mode = 2
+
+[node name="Answer0" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+autowrap_mode = 2
+
+[node name="Answer1" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+autowrap_mode = 2
+
+[node name="Answer2" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+autowrap_mode = 2
+
+[node name="Answer3" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+autowrap_mode = 2
+
+[node name="Status" type="Label" parent="."]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="Reveal" type="Label" parent="."]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="Scores" type="Label" parent="."]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="Continue" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+visible = false

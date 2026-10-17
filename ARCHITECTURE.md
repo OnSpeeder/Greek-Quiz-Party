@@ -50,9 +50,15 @@ the implemented API, transition table, timing boundaries and later-phase work.
 
 Phase 03 adds Core `LobbySession` for host roster/readiness/start rules,
 Infrastructure `LobbyHost`/`LobbyClientState` with separate protocol DTOs, and a
-Godot `LobbyTransport`/`LobbyScreen` adapter/view. The lobby stops at GameStarting;
-Phase 04 must bridge to the gameplay session rather than put rules in the view.
+Godot `LobbyTransport`/`LobbyScreen` adapter/view. The lobby state stops at
+GameStarting; the Phase 04 bridge below continues gameplay outside the view.
 See [Lobby guide](docs/LOBBY.md) and the implemented contract in NETWORK_PROTOCOL.md.
+
+Phase 04 bridges to Core `OneQuestionMatch`, reusing `GameSession` scoring and
+validation. `LobbyHost` maps the fixed roster and match DTOs; `MatchClientState`
+only validates/renders received state. The composable `MatchPanel` keeps ENet
+alive in the Lobby scene and sends intents through `LobbyTransport`. Godot's poll
+timer requests Core progress; it never calculates authoritative time/points.
 
 Suggested namespaces:
 

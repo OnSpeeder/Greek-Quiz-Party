@@ -55,6 +55,12 @@ The implemented lobby regression is `./scripts/test-network-lobby.ps1` (host + t
 clients). After Windows export, also run with `-Packaged` to check normal packaged
 startup. `./scripts/test-network-spike.ps1` preserves the earlier disposable probe.
 
+Phase 04 adds `./scripts/test-network-match.ps1` (also `-Packaged` and `-TimeoutCase`)
+and the real-device helper `./scripts/test-android-match.ps1 -HostAddress <LAN-IP>`.
+Verify full phase/score agreement, duplicate answers, wrong/unanswered outcomes,
+and no correctness/score leakage before reveal. See docs/MATCH.md for hardware
+automation setup and cleanup; automated phone play is not human touch verification.
+
 Verify:
 
 - handshake,

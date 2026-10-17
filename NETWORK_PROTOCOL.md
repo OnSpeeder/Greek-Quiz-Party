@@ -55,9 +55,12 @@ Client input is a request, never truth.
 
 ## 4. Protocol version
 
-Start with:
+Current production version (Phase 04):
 
-`ProtocolVersion = 1`
+`ProtocolVersion = 2`
+
+Phase 03 used version 1. Match messages are not understood by that client, so
+Phase 04 deliberately rejects it at hello. The disposable probe stays version 1.
 
 Version is included in hello/discovery and preferably packet envelope.
 
@@ -299,9 +302,62 @@ Required before release:
 - Wrong protocol version.
 - Discovery unavailable + manual IP succeeds.
 
-## Phase 03 implemented production lobby v1
+## Phase 04 implemented one-question match (production v2)
 
-This is the first production v1 implementation. The Phase 01 probe below is a
+Lobby fields and bounds below are retained, with envelope version 2 and app
+version 0.2.0. Normal host Start now creates a Core OneQuestionMatch from the
+server-owned lobby roster. It uses the permitted tiny Greek fixture, host-shuffled
+answers and a 20-second monotonic host deadline. Lobby snapshots remain
+GameStarting while separate match snapshots render the match. Keep the same ENet
+peer and /root/Lobby/Transport RPC path throughout panel changes.
+
+Additional message types:
+
+- `SubmitAnswer`: required `QuestionInstanceId`, `AnswerIndex`, `Confidence`.
+  No player ID, score or client timestamp. Only Safe 1 is accepted in this phase.
+  Host captures receipt at entry to Handle before parsing and resolves player
+  ownership from the actual connection. Host local input uses the same Core rule.
+- `AnswerAccepted`: private correlated `Accepted`, `Reason`, `QuestionInstanceId`.
+  Includes neither correctness nor points. Same exact request ID/JSON returns
+  the original receipt without replacing the answer, timestamp or score.
+- `MatchSnapshot`: `SessionId`, increasing `Revision`, `Phase`, `HostNowTicks`,
+  `Question`, `AcceptedAnswerCount`, `Scores`, nullable `Reveal`. Domain objects
+  are mapped to dedicated DTOs. Match revisions are independent of lobby revisions.
+- Question: instance ID, text, four shuffled answers, category, difficulty,
+  `StartedAtTicks`, `DeadlineTicks` (monotonic TimeSpan ticks, not wall-clock time).
+  The client estimates a visual countdown from receipt; it never decides deadlines.
+- Scores: player ID/name/host-calculated total, zero before reveal. Reveal is null
+  during QuestionActive/QuestionLocked; no correct index/explanation/result flags
+  appear in those packets. AnswerReveal and later include correct displayed index,
+  explanation and each player's selected index (null = unanswered), correctness,
+  and awarded points. No authoritative score calculation occurs on clients.
+- `AdvanceMatch`: remote requests always reject NotHost. Local host advances
+  AnswerReveal -> Scoreboard -> GameOver. No rematch, winner/tie-breaker logic or
+  multiple-question scheduling is implemented by this slice.
+
+All submitted answers or host time strictly past deadline locks the question.
+A subsequent host poll reveals and scores once. Godot polls every 50ms after
+normal network processing, but Core monotonic time and host receipts own validity
+and score; no frame count/delta determines either. The existing exact-deadline
+`<=` acceptance remains. A disconnected player's initial match slot remains and
+expires unanswered; connected lobby membership is separate. Host exit terminates
+clients visibly. Session/instance checks and initial roster prevent new/foreign
+connections answering for someone else.
+
+Clients reject wrong-session, stale/reordered/rollback match snapshots, malformed
+question/rosters and premature reveal. A pending answer locks its local controls;
+the correlated host receipt confirms submission without revealing correctness.
+Snapshots return copies of arrays. The host remains the authority even if client
+UI code is modified.
+
+Tests: source and packaged host/two-client full/timeout matches; deterministic
+Core/router privacy, invalid/stale/late/duplicate/ownership/version tests; physical
+Android client against packaged Windows host over actual LAN. See docs/MATCH.md
+and docs/MATCH_EVIDENCE.md for exact observed results and automation limitations.
+
+## Phase 03 baseline production lobby v1 (historical contract)
+
+This records the first production v1 implementation, now superseded by v2 above. The Phase 01 probe below is a
 separate contract and remains accessible. No gameplay answer/card/discovery wire
 messages are implemented yet; later additions require compatibility review.
 

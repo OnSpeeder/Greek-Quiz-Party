@@ -34,6 +34,13 @@ Question may be hardcoded fixture. No large content pack or advanced mechanics.
 
 Windows host + Android client complete slice without desync; answer correctness and score are host-authoritative.
 
+## Status
+
+Complete locally on 2026-10-18. 230 automated tests passed; source/packaged
+multi-process matches passed. A physical Android client and packaged Windows
+host completed correct/wrong/unanswered matches over real LAN with matching final
+scores. See docs/MATCH_EVIDENCE.md and phase context. Phase 05 has not started.
+
 ## Completion report
 
 Report files changed, tests/commands actually run, observed runtime evidence, known limitations and the explicit approval required to begin the next phase.

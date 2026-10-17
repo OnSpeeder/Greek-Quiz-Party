@@ -2,6 +2,37 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-18 — Phase 04 — One-question playable match complete
+- User-requested baseline commit/push: d23468b (Phase 03) on origin/main. New
+  Phase 04 work remains local; no final commit/push performed. GitHub CI stays off.
+- Implemented host Core one-question coordinator, dedicated match DTOs/client
+  view state and responsive question/reveal/score/results panel. Reused existing
+  lobby/ENet and Core scoring/validation; no new dependencies/production content.
+- Production protocol 2 rejects old v1 clients. Host-derived player/receive time,
+  instance/range/confidence/deadline/duplicate validation; no correctness/points
+  before reveal or in private ack. Host alone advances scoreboard/final results.
+- scripts/build.ps1: zero warnings/errors. scripts/test.ps1 -IncludeGodot: 195
+  Core + 31 integration + 4 Godot scene tests passed; zero failed/skipped. Initial
+  compile/test-fixture mistakes fixed; no tests removed, skipped or weakened.
+- Source and packaged test-network-match.ps1 normal and timeout cases passed:
+  all phases and identical final instance/revision/scores on host/two clients,
+  repeated answers safe; wrong answer and unanswered result explicitly checked.
+- Existing lobby and spike regressions passed. Startup smoke emitted C# marker.
+  Final Windows/Android debug exports passed, APK signature verified.
+- Real Android APK installed/launched; test-android-match.ps1 correct/wrong/
+  unanswered cases passed over actual 192.168.68.x LAN to packaged Windows host.
+  Same final scores on both peers: 876/849, 876/0, 876/0, final revision 6. Exact
+  IDs/excerpts in docs/MATCH_EVIDENCE.md; screenshots inspected on phone/Windows.
+- Physical play was automated through debug-only app-private test arguments,
+  without ADB network tunnel/input injection/settings changes. Fixture removal
+  verified and normal phone startup restored. Human touch play not claimed.
+- No game/network runtime error observed; known editor/export-only teardown
+  diagnostic remains visible/documented. Content JSON/schema unchanged.
+- git diff --check passed; new source/test/script whitespace scan clean. Only
+  generated lock-file churn reverted; no dependency changes.
+- Docs/protocol updated; stop at Phase 04. Phase 05 content system requires
+  separate approval. No broader Android/router matrix or full-game claim.
+
 ## 2026-10-18 — Phase 03 — Lobby and network protocol complete
 - User-requested pre-phase commit/push: a2354ed on origin/main, containing Phase 02
   and CI removal. New Phase 03 work remains local; no final commit/push performed.

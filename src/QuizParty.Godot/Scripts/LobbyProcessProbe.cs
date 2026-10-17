@@ -27,6 +27,7 @@ public partial class LobbyProcessProbe : Node
     {
         _transport = GetParent().GetNode<LobbyTransport>("Transport");
         _auto = _arguments.Contains("--lobby-auto");
+        if (_auto) _transport.PlayMatch = false;
         _transport.SnapshotChanged += OnSnapshot;
         _transport.StatusChanged += reason =>
         {
@@ -40,7 +41,7 @@ public partial class LobbyProcessProbe : Node
             }
         };
         if (!int.TryParse(Argument("--lobby-port=") ?? "7777", out var port) ||
-            !int.TryParse(Argument("--lobby-protocol=") ?? "1", out var protocol)) { GetTree().Quit(2); return; }
+            !int.TryParse(Argument("--lobby-protocol=") ?? LobbyProtocol.Version.ToString(), out var protocol)) { GetTree().Quit(2); return; }
         _transport.ClientProtocol = protocol;
         var error = _arguments.Contains("--lobby-host")
             ? _transport.Host("QuizParty", Argument("--lobby-name=") ?? "Host", port)

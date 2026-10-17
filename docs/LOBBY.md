@@ -7,8 +7,8 @@ From the main menu choose **Παιχνίδι στο τοπικό δίκτυο / 
    The host shows local addresses; select the actual LAN interface, not a VPN.
 3. Remote players choose ready. The host can also change their ready state.
 4. With at least two players and everyone ready, only the host can start.
-5. All peers show start confirmed. This phase ends at GameStarting; no trivia
-   question/gameplay screen is implemented yet.
+5. Phase 04 now continues into the one-question match. See [Match guide](MATCH.md).
+   The retained lobby-only regression explicitly stops at GameStarting.
 
 Disconnect closes the current session on that device. Back returns to the main
 menu and closes its peer. A host exit disconnects everyone. A departing client

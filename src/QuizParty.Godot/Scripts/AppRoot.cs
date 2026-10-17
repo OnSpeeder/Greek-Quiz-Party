@@ -8,6 +8,9 @@ public partial class AppRoot : Control
     public override void _Ready()
     {
         AddChild(new ResponsiveCanvas());
+        if (MatchProcessProbe.LaunchArguments().Any(argument => argument == "--match-host" ||
+            argument.StartsWith("--match-join=", StringComparison.Ordinal)))
+            Callable.From(() => GetTree().ChangeSceneToFile("res://Scenes/Lobby.tscn")).CallDeferred();
         GD.Print("QuizParty: C# startup ready.");
         GetNode<Button>("Center/Content/LanSpike").Pressed += () =>
             GetTree().ChangeSceneToFile("res://Scenes/LanSpike.tscn");

@@ -48,6 +48,12 @@ public partial class LobbyScreen : Control
             if (reason == "Connecting") { _host.Disabled = true; _join.Disabled = true; }
             _status.Text = Tr("LOBBY_STATUS_" + reason);
         };
+        GetNode<MatchPanel>(path + "MatchPanel").Bind(_transport);
+        _transport.MatchChanged += _ =>
+        {
+            foreach (var name in new[] { "Title", "Addresses", "Roster", "Ready", "Start", "Status" })
+                GetNode<Control>(path + name).Visible = false;
+        };
         GetNode<Label>(path + "Addresses").Text = string.Format(Tr("SPIKE_ADDRESSES"), string.Join(", ",
             IP.GetLocalAddresses().Where(ip => ip.StartsWith("192.168.", StringComparison.Ordinal) || ip.StartsWith("10.", StringComparison.Ordinal))));
         Reset();
@@ -66,6 +72,8 @@ public partial class LobbyScreen : Control
         ShowSetup(true);
         _roster.Text = "";
         _status.Text = Tr("LOBBY_STATUS_Idle");
+        GetNode<MatchPanel>("Margin/Scroll/Content/MatchPanel").Visible = false;
+        foreach (var name in new[] { "Title", "Roster", "Ready", "Status" }) GetNode<Control>("Margin/Scroll/Content/" + name).Visible = true;
     }
 
     private void ShowError(Error error)

@@ -2,7 +2,7 @@ using QuizParty.Core.Lobby;
 
 namespace QuizParty.Infrastructure.Networking;
 
-public enum LobbyClientUpdate { Ignored, Rejected, Joined, Snapshot, RequestResult }
+public enum LobbyClientUpdate { Ignored, Rejected, Joined, Snapshot, RequestResult, MatchSnapshot, AnswerReceipt }
 
 public sealed class LobbyClientState
 {
@@ -11,6 +11,7 @@ public sealed class LobbyClientState
     private readonly HashSet<Guid> _pending = new();
     public Guid? PlayerId { get; private set; }
     public string LastReason { get; private set; } = "None";
+    public MatchClientState Match { get; private set; } = new();
     public LobbySnapshotDto? Snapshot => _snapshot is null ? null : _snapshot with { Players = _snapshot.Players.ToArray() };
 
     public string BeginHello(string name, string platform)
@@ -19,6 +20,7 @@ public sealed class LobbyClientState
         _snapshot = null;
         PlayerId = null;
         _pending.Clear();
+        Match = new();
         LastReason = "None";
         return LobbyProtocol.Encode("ClientHello", Guid.Empty,
             new ClientHelloDto(LobbyProtocol.AppVersion, name, platform), messageId: _helloId);
@@ -57,6 +59,9 @@ public sealed class LobbyClientState
             return LobbyClientUpdate.Joined;
         }
         if (_snapshot is null || packet.SessionId != _snapshot.SessionId) return LobbyClientUpdate.Ignored;
+        if (packet.MessageType == "MatchSnapshot" && PlayerId is { } playerId && Match.ApplySnapshot(packet, _snapshot.SessionId, playerId))
+            return LobbyClientUpdate.MatchSnapshot;
+        if (packet.MessageType == "AnswerAccepted" && Match.ApplyReceipt(packet, _snapshot.SessionId)) return LobbyClientUpdate.AnswerReceipt;
         if (packet.MessageType == "LobbySnapshot" && LobbyProtocol.TryPayload<LobbySnapshotDto>(packet, out var next) &&
             ValidSnapshot(next) && next!.SessionId == _snapshot.SessionId && next.Revision > _snapshot.Revision &&
             next.Players.Any(player => player.PlayerId == PlayerId) && !(_snapshot.Phase == "GameStarting" && next.Phase != "GameStarting"))

@@ -105,7 +105,7 @@ public class LobbyProtocolTests
     public void IncompatibleVersionIsRejectedBeforeAdmission()
     {
         var host = Host();
-        var request = Hello().Replace("\"ProtocolVersion\":1", "\"ProtocolVersion\":99", StringComparison.Ordinal);
+        var request = Hello().Replace($"\"ProtocolVersion\":{LobbyProtocol.Version}", "\"ProtocolVersion\":99", StringComparison.Ordinal);
         var rejected = host.Handle(2, request);
         Assert.Equal("IncompatibleVersion", Reason(rejected));
         Assert.True(rejected.DisconnectSender);

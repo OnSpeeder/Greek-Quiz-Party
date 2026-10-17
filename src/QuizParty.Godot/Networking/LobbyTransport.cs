@@ -17,6 +17,15 @@ public partial class LobbyTransport : Node
     private readonly HashSet<long> _handshaken = new();
     private readonly HashSet<long> _closing = new();
     private string? _lastReadyRequest;
+    private string? _lastAnswerRequest;
+    private long _lastMatchRevision;
+    private int? _hostAnswerIndex;
+    public bool PlayMatch { get; set; } = true;
+    public event Action<MatchSnapshotDto>? MatchChanged;
+    public event Action<string>? MatchInputChanged;
+    public MatchSnapshotDto? MatchSnapshot => _host?.MatchSnapshot() ?? _client.Match.Snapshot;
+    public bool AnswerPending => !IsHost && _client.Match.Pending;
+    public int? OwnAnswerIndex => IsHost ? _hostAnswerIndex : _client.Match.OwnAnswerIndex;
     public event Action<LobbySnapshotDto>? SnapshotChanged;
     public event Action<string>? StatusChanged;
     public bool IsHost => _host is not null;
@@ -31,6 +40,9 @@ public partial class LobbyTransport : Node
         Multiplayer.ServerDisconnected += OnServerDisconnected;
         Multiplayer.PeerConnected += OnPeerConnected;
         Multiplayer.PeerDisconnected += OnPeerDisconnected;
+        var poll = new global::Godot.Timer { WaitTime = 0.05, Autostart = true };
+        poll.Timeout += () => { if (_host?.PollMatch() == true) BroadcastMatch(); };
+        AddChild(poll);
     }
 
     public Error Host(string roomName, string playerName, int port = DefaultPort)
@@ -88,8 +100,41 @@ public partial class LobbyTransport : Node
     public void StartGame()
     {
         if (_host is null) { Emit("NotHost"); return; }
-        Emit(_host.Start().ToString());
+        var result = _host.Start();
+        Emit(result.ToString());
         Broadcast();
+        if (result == LobbyError.None && PlayMatch && _host.BeginMatch()) BroadcastMatch();
+    }
+
+    public void SubmitAnswer(int index, bool repeatLastRequest = false)
+    {
+        if (_host is not null)
+        {
+            var error = _host.SubmitHostAnswer(index);
+            if (error == Core.Game.SubmissionError.None) _hostAnswerIndex = index;
+            MatchInputChanged?.Invoke(error.ToString());
+            BroadcastMatch();
+            return;
+        }
+        var json = repeatLastRequest ? _lastAnswerRequest : _client.Match.CreateAnswer(index);
+        if (json is null) return;
+        _lastAnswerRequest = json;
+        RpcId(1, MethodName.ClientMessage, json);
+        MatchInputChanged?.Invoke("Pending");
+    }
+
+    public void AdvanceMatch()
+    {
+        if (_host is null) { MatchInputChanged?.Invoke("NotHost"); return; }
+        var result = _host.AdvanceMatch();
+        MatchInputChanged?.Invoke(result.ToString());
+        BroadcastMatch();
+    }
+
+    public void SendAdvanceRequest()
+    {
+        if (_host is null && Snapshot is { } snapshot)
+            RpcId(1, MethodName.ClientMessage, LobbyProtocol.Encode("AdvanceMatch", snapshot.SessionId, new StartRequestDto()));
     }
 
     // Used by regression to verify rejection at the real host RPC boundary.
@@ -107,6 +152,9 @@ public partial class LobbyTransport : Node
         _handshaken.Clear();
         _closing.Clear();
         _lastReadyRequest = null;
+        _lastAnswerRequest = null;
+        _lastMatchRevision = 0;
+        _hostAnswerIndex = null;
         if (_peer is not null)
         {
             Multiplayer.MultiplayerPeer = new OfflineMultiplayerPeer();
@@ -130,7 +178,7 @@ public partial class LobbyTransport : Node
     {
         var json = _client.BeginHello(_clientName, OS.GetName());
         // Explicit incompatible header is only selected by the process test flag.
-        if (ClientProtocol != LobbyProtocol.Version) json = json.Replace("\"ProtocolVersion\":1", $"\"ProtocolVersion\":{ClientProtocol}", StringComparison.Ordinal);
+        if (ClientProtocol != LobbyProtocol.Version) json = json.Replace($"\"ProtocolVersion\":{LobbyProtocol.Version}", $"\"ProtocolVersion\":{ClientProtocol}", StringComparison.Ordinal);
         RpcId(1, MethodName.ClientMessage, json);
     }
 
@@ -173,6 +221,22 @@ public partial class LobbyTransport : Node
         Publish();
     }
 
+    private void PublishMatch()
+    {
+        var snapshot = MatchSnapshot;
+        if (snapshot is null || snapshot.Revision <= _lastMatchRevision) return;
+        _lastMatchRevision = snapshot.Revision;
+        GD.Print($"MATCH SNAPSHOT revision={snapshot.Revision} phase={snapshot.Phase} question={snapshot.Question.InstanceId} scores={string.Join('|', snapshot.Scores.OrderBy(score => score.DisplayName, StringComparer.Ordinal).Select(score => $"{score.DisplayName}:{score.Total}"))}");
+        MatchChanged?.Invoke(snapshot);
+    }
+
+    private void BroadcastMatch()
+    {
+        if (_host is null) return;
+        foreach (var message in _host.BroadcastMatch()) RpcId(message.ConnectionId, MethodName.ServerMessage, message.Json);
+        PublishMatch();
+    }
+
     private void DisconnectPeer(long connection)
     {
         _peer?.DisconnectPeer((int)connection);
@@ -189,6 +253,7 @@ public partial class LobbyTransport : Node
         foreach (var message in dispatch.Messages) RpcId(message.ConnectionId, MethodName.ServerMessage, message.Json);
         if (_host.GetPlayers().Any(player => player.ConnectionId?.Value == sender)) _handshaken.Add(sender);
         Publish();
+        PublishMatch();
         if (dispatch.DisconnectSender)
         {
             _closing.Add(sender);
@@ -210,5 +275,11 @@ public partial class LobbyTransport : Node
         if (update is LobbyClientUpdate.Joined or LobbyClientUpdate.Snapshot) Publish();
         if (update == LobbyClientUpdate.Joined) Emit("Joined");
         if (update == LobbyClientUpdate.RequestResult) Emit(_client.LastReason);
+        if (update == LobbyClientUpdate.MatchSnapshot) PublishMatch();
+        if (update == LobbyClientUpdate.AnswerReceipt)
+        {
+            GD.Print($"MATCH RECEIPT reason={_client.Match.LastReason}");
+            MatchInputChanged?.Invoke(_client.Match.LastReason);
+        }
     }
 }

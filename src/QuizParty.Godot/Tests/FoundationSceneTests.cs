@@ -9,6 +9,20 @@ public class FoundationSceneTests
 {
     [TestCase]
     [RequireGodotRuntime]
+    public void MatchPanelComposesWithLobbyAndKeepsAnswersTouchSized()
+    {
+        var scene = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn");
+        using var root = scene.Instantiate<Control>();
+        var panel = root.GetNode<Presentation.MatchPanel>("Margin/Scroll/Content/MatchPanel");
+        AssertThat(panel.Visible).IsFalse();
+        for (var index = 0; index < 4; index++)
+            AssertThat(panel.GetNode<Button>($"Answer{index}").CustomMinimumSize.Y >= 64).IsTrue();
+        AssertThat(panel.GetNode<Button>("Continue").CustomMinimumSize.Y >= 64).IsTrue();
+        root.Free();
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
     public void LobbySceneSeparatesTransportAndBoundsTouchInputs()
     {
         var scene = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn");

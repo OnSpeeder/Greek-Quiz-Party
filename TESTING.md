@@ -51,6 +51,10 @@ Test:
 
 Launch host and clients as separate processes where practical.
 
+The implemented lobby regression is `./scripts/test-network-lobby.ps1` (host + two
+clients). After Windows export, also run with `-Packaged` to check normal packaged
+startup. `./scripts/test-network-spike.ps1` preserves the earlier disposable probe.
+
 Verify:
 
 - handshake,

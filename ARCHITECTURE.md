@@ -48,6 +48,12 @@ Phase 02 implements the basic host session, state machine, question presentation
 base scoring and submission validation. See [Core domain](docs/CORE_DOMAIN.md) for
 the implemented API, transition table, timing boundaries and later-phase work.
 
+Phase 03 adds Core `LobbySession` for host roster/readiness/start rules,
+Infrastructure `LobbyHost`/`LobbyClientState` with separate protocol DTOs, and a
+Godot `LobbyTransport`/`LobbyScreen` adapter/view. The lobby stops at GameStarting;
+Phase 04 must bridge to the gameplay session rather than put rules in the view.
+See [Lobby guide](docs/LOBBY.md) and the implemented contract in NETWORK_PROTOCOL.md.
+
 Suggested namespaces:
 
 ```text

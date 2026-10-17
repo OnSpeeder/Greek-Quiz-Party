@@ -9,6 +9,24 @@ public class FoundationSceneTests
 {
     [TestCase]
     [RequireGodotRuntime]
+    public void LobbySceneSeparatesTransportAndBoundsTouchInputs()
+    {
+        var scene = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn");
+        using var root = scene.Instantiate<Control>();
+        AssertThat(root.GetNodeOrNull<Networking.LobbyTransport>("Transport")).IsNotNull();
+        AssertThat(root.GetNodeOrNull<ScrollContainer>("Margin/Scroll")).IsNotNull();
+        const string path = "Margin/Scroll/Content/";
+        AssertThat(root.GetNode<LineEdit>(path + "PlayerName").MaxLength).IsEqual(32);
+        AssertThat(root.GetNode<LineEdit>(path + "RoomName").MaxLength).IsEqual(32);
+        AssertThat(root.GetNode<LineEdit>(path + "Address").MaxLength).IsEqual(253);
+        AssertThat(root.GetNode<Button>(path + "Start").Disabled).IsTrue();
+        foreach (var name in new[] { "Host", "Join", "Ready", "Start", "Disconnect", "Back" })
+            AssertThat(root.GetNode<Button>(path + name).CustomMinimumSize.Y >= 64).IsTrue();
+        root.Free();
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
     public void StartupSceneLoadsAndUsesResponsiveContainers()
     {
         var scene = ResourceLoader.Load<PackedScene>("res://Scenes/Main.tscn");

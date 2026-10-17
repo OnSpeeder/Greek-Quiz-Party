@@ -34,8 +34,14 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "SETUP_READY"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="LanSpike" type="Button" parent="Center/Content"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 text = "LAN_SPIKE_OPEN"
+
+[node name="Lobby" type="Button" parent="Center/Content"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+text = "LOBBY_OPEN"

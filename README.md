@@ -7,6 +7,11 @@ The root solution is `QuizParty.sln`; the Godot project is
 `src/QuizParty.Godot/project.godot`. Core/desktop target .NET 8; Android
 targets .NET 9 because Godot requires .NET 9 or later for C# Android export.
 
+Implemented through Phase 03: verified platform/LAN foundation, pure C# game
+rules and a manual-IP multiplayer lobby with ready states and host start.
+See [Lobby guide](docs/LOBBY.md). The next phase is the one-question playable
+vertical slice; current lobby startup stops at GameStarting.
+
 This repository is intended to become a polished Greek-first party trivia game for **Windows and Android**, built with **Godot 4.7.2 .NET / C#**.
 
 The defining product idea is not “another quiz app”. It is a **local-party game** that works offline, supports one-device play and LAN multiplayer, allows mixed local + remote players, and adds strategy through **Confidence Bets, Streaks, Chaos Cards, Secret Missions and team play**.

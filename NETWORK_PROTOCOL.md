@@ -299,6 +299,100 @@ Required before release:
 - Wrong protocol version.
 - Discovery unavailable + manual IP succeeds.
 
+## Phase 03 implemented production lobby v1
+
+This is the first production v1 implementation. The Phase 01 probe below is a
+separate contract and remains accessible. No gameplay answer/card/discovery wire
+messages are implemented yet; later additions require compatibility review.
+
+### Transport and envelope
+
+- Reliable ordered ENet RPCs on the identical `/root/Lobby/Transport` node path:
+  `ClientMessage(string json)` (AnyPeer, host receives only) and
+  `ServerMessage(string json)` (Authority, clients additionally require sender 1).
+- Normal UDP port 7777; process regression 17778. One host participant plus up
+  to seven admitted clients. Twelve total transport slots allow a bounded number
+  of pending handshakes and explicit `RoomFull` rejections instead of silent failure.
+- Exact case-sensitive envelope fields: `ProtocolVersion` (1), `MessageType`,
+  `MessageId` (nonempty UUID), `SessionId` (UUID), `CorrelationId` (nullable UUID),
+  `Payload` (JSON object). UUIDs use System.Text.Json's standard string encoding.
+  Client `MessageId` serves as the logical RequestId. Replies correlate to it.
+- At most 16,384 UTF-8 bytes per JSON packet (checked before parsing), depth 8,
+  fixed DTOs and unknown-field rejection. No polymorphic deserialization.
+- Names/room names: 1–32 UTF-16 code units, nonblank, trimmed, no control characters.
+  AppVersion: 1–32 code units; informational, while ProtocolVersion gates compatibility.
+  Platform: Windows/Android/Linux/macOS. Manual address: 1–253 characters without
+  whitespace. Port: 1024–65535. Raw sender/connection ownership is never a payload.
+
+### Handshake and snapshots
+
+`ClientHello` has empty SessionId and null CorrelationId. Payload fields are
+`AppVersion`, `DisplayName`, `Platform`. The host assigns a fresh PlayerId and
+binds it to the actual ENet sender; the host owns connection 1 and local slot 0.
+No PIN/token fields are accepted in this phase; these remain Phase 07 work.
+
+`ServerHello` payload: `Accepted`, `Reason`, nullable `PlayerId`, nullable `Lobby`.
+Success includes the assigned player and complete snapshot. Rejection includes
+no player/snapshot. A client accepts only the hello correlated to its pending
+request. Peers without a successful hello are disconnected after ten seconds.
+Client join also has a ten-second timeout, canceled by generation on stop/rejoin.
+
+`LobbySnapshot` payload: `SessionId`, increasing `Revision`, `RoomName`, `Phase`
+(Lobby/GameStarting), `Players` (1–8). Each player has `PlayerId`, `DisplayName`,
+`IsHost`, `Ready`. Exactly one host and distinct nonempty player IDs are required.
+The public payload contains no connection IDs or reconnect credentials. Clients
+reject wrong sessions, stale/equal revisions, malformed rosters and phase rollback.
+Snapshots replace local presentation state; clients never calculate roster/start.
+
+### Readiness, start and departure
+
+`SetReady` payload contains required boolean `Ready`. It is a setter, not a
+toggle; the host resolves the sender's own player. Only admitted connections with
+the current SessionId and null CorrelationId may mutate readiness. The host's
+local ready control passes the same domain rule. Host is initially ready; remote
+players join unready. Identical setters do not increment the revision.
+
+`RequestResult` payload: `Accepted`, `Reason`, correlated to the request. Clients
+only consume results for their own bounded pending requests. Expected reasons
+include None, IncompatibleVersion, MalformedRequest, HandshakeRequired,
+WrongSession, RequestConflict, RequestLimit, AlreadyJoined, RoomFull,
+GameStarted, NotHost, NotReady and UnknownConnection.
+
+Start is local host intent. A wire `StartGame` request from a client is rejected
+as NotHost. Start requires 2–8 players with everyone ready and advances the Core
+lobby state once to GameStarting. A revisioned snapshot is the start notification;
+Phase 03 stops there. Questions, round scheduling and the gameplay bridge belong
+to Phase 04 and later. After start, new joins and readiness changes are rejected.
+
+On client departure the host removes its lobby entry and per-connection caches
+and broadcasts the new revision. Host departure closes clients with a visible
+status. No seat reservation/token reclaim is claimed. GameStarting disconnect
+snapshots reflect the connected roster, not future gameplay eligibility policy.
+
+### Bounds and duplicates
+
+Per connection: 256 retained request receipts, 32 inbound messages per monotonic
+one-second window, three malformed-packet/conflicting-ID strikes. Exceeding the
+rate/cache bound or strike limit requests disconnection. Duplicate messages count
+towards rate limits. The same exact request ID and JSON returns the original
+receipt without reapplying a mutation. Reusing an ID with changed JSON is rejected.
+Caches never evict old ready requests and then reapply them; exhausting the bound
+requires a new connection. Protocol mismatch requests disconnect immediately after
+the rejection receipt is queued, with a short flush delay in the ENet adapter.
+Invalid payloads are rejected and bounded by the same rate/cache limits; they do
+not all count as malformed-packet strikes.
+
+### Compatibility verification
+
+`scripts/test-network-lobby.ps1` runs a real ENet host and two Windows clients:
+same roster/readiness/start revision, repeated ready requests, remote-start
+rejection, late join/version rejection, client cleanup, host exit and no-host
+timeout and a freed transport's canceled join timer. Core and Infrastructure tests cover ownership, malformed/bounded JSON,
+session checks, receipt cache/rate limits and client revision validation.
+The host and clients must ship matching v1 RPC signatures and DTOs. Future optional
+fields require deliberate compatibility/version review because unknown fields
+are rejected. No new physical Android lobby test is claimed by these Windows tests.
+
 ## Phase 01 disposable LAN probe
 
 The separate `LanSpike.tscn` scene uses reliable ENet RPCs on UDP 7777 (overridable

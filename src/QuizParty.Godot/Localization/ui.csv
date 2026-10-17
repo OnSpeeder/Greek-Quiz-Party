@@ -22,3 +22,37 @@ SPIKE_FAILED,Αποτυχία σύνδεσης,Connection failed
 SPIKE_SERVER_LEFT,Ο διακομιστής αποσυνδέθηκε,Host disconnected
 SPIKE_REJECTED,Η δοκιμαστική έκδοση δεν είναι συμβατή,Incompatible probe version or platform
 SPIKE_START_ERROR,Αδυναμία εκκίνησης: {0},Could not start: {0}
+LOBBY_OPEN,Παιχνίδι στο τοπικό δίκτυο,LAN party lobby
+LOBBY_TITLE,QuizParty — Αίθουσα παιχνιδιού,QuizParty — Party lobby
+LOBBY_PLAYER_NAME,Το όνομά σου,Your name
+LOBBY_ROOM_NAME,Όνομα αίθουσας (για δημιουργία),Room name (when hosting)
+LOBBY_HOST,Δημιουργία αίθουσας,Create room
+LOBBY_HOST_MARK,οικοδεσπότης,host
+LOBBY_READY_YES,έτοιμος,ready
+LOBBY_READY_NO,περιμένουμε ετοιμότητα,not ready
+LOBBY_READY_TOGGLE,Αλλαγή ετοιμότητας,Toggle ready
+LOBBY_START,Έναρξη παιχνιδιού,Start game
+LOBBY_STATUS_Idle,Δημιούργησε αίθουσα ή συνδέσου με IP,Create a room or join by IP
+LOBBY_STATUS_None,Η ενέργεια επιβεβαιώθηκε,Action confirmed
+LOBBY_STATUS_HostListening,Η αίθουσα είναι ανοιχτή — περιμένουμε παίκτες,Room open — waiting for players
+LOBBY_STATUS_Connecting,Σύνδεση με την αίθουσα…,Connecting to the room…
+LOBBY_STATUS_Joined,Δήλωσε ετοιμότητα για να ξεκινήσουμε,Set ready to begin
+LOBBY_STATUS_GameStarting,Όλοι έτοιμοι — η έναρξη επιβεβαιώθηκε,Everyone ready — start confirmed
+LOBBY_STATUS_PlayerLeft,Ένας παίκτης αποσυνδέθηκε,A player disconnected
+LOBBY_STATUS_InvalidInput,Έλεγξε όνομα και αίθουσα ή διεύθυνση IP,Check your name and room name or IP address
+LOBBY_STATUS_NotReady,Χρειάζονται τουλάχιστον δύο παίκτες και όλοι έτοιμοι,At least two players must all be ready
+LOBBY_STATUS_NotHost,Μόνο ο οικοδεσπότης ξεκινά το παιχνίδι,Only the host can start the game
+LOBBY_STATUS_IncompatibleVersion,Η έκδοση δικτύου δεν είναι συμβατή,Incompatible network protocol version
+LOBBY_STATUS_MalformedRequest,Μη έγκυρο αίτημα δικτύου,Invalid network request
+LOBBY_STATUS_RoomFull,Η αίθουσα είναι γεμάτη,Room is full
+LOBBY_STATUS_GameStarted,Το παιχνίδι έχει ήδη ξεκινήσει,The game has already started
+LOBBY_STATUS_AlreadyJoined,Έχεις ήδη συνδεθεί στην αίθουσα,Already joined this room
+LOBBY_STATUS_HandshakeRequired,Απαιτείται νέα σύνδεση,Please connect again
+LOBBY_STATUS_WrongSession,Η αίθουσα άλλαξε — συνδέσου ξανά,Room changed — connect again
+LOBBY_STATUS_RequestConflict,Το αίτημα έχει ήδη χρησιμοποιηθεί,Request ID was already used
+LOBBY_STATUS_RequestLimit,Πάρα πολλά αιτήματα — συνδέσου ξανά,Too many requests — connect again
+LOBBY_STATUS_UnknownConnection,Η σύνδεση δεν είναι ενεργή,Connection is no longer active
+LOBBY_STATUS_InvalidPlayer,Μη έγκυρος παίκτης,Invalid player
+LOBBY_STATUS_ConnectionTimeout,Η σύνδεση έληξε — έλεγξε IP και δίκτυο,Connection timed out — check IP and network
+LOBBY_STATUS_ConnectionFailed,Αποτυχία σύνδεσης — έλεγξε IP και δίκτυο,Connection failed — check IP and network
+LOBBY_STATUS_ServerDisconnected,Ο οικοδεσπότης αποσυνδέθηκε,Host disconnected

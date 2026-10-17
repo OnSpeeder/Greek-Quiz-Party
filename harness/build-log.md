@@ -2,6 +2,36 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-18 — Phase 03 — Lobby and network protocol complete
+- User-requested pre-phase commit/push: a2354ed on origin/main, containing Phase 02
+  and CI removal. New Phase 03 work remains local; no final commit/push performed.
+- Implemented Core lobby roster/ready/start rules; bounded production v1 DTOs,
+  host router, request/session/ownership validation, duplicate/rate/cache guards
+  and client snapshot validation. Separate ENet adapter and Greek/English lobby
+  view support manual-IP join, ready controls, host-only start and disconnect.
+- `scripts/build.ps1`: six-project build, zero warnings/errors.
+- `scripts/test.ps1 -IncludeGodot`: 193 Core + 22 integration + 3 Godot tests passed,
+  zero failed/skipped; production rebuild clean. Existing tests were preserved.
+- `scripts/test-network-lobby.ps1` and `-Packaged`: both passed a real ENet host
+  plus two clients with identical ready roster/start revision 6, duplicate setters,
+  remote-start/late-join/version rejection, departure cleanup to revision 8,
+  host exit, no-host timeout and freed-transport join timer cancellation.
+- `scripts/test-network-spike.ps1` passed existing handshake/action/ack/duplicate/
+  version/no-host regression. `scripts/smoke.ps1` observed the C# startup marker.
+- Final Windows and Android debug exports passed. No physical Android lobby run
+  claimed. Source and packaged process stderr checks were clean. Existing Godot
+  editor/export teardown diagnostic remains documented, not hidden.
+- Inspected Greek viewport captures at 1152x720 and 390x844. Fixed inherited
+  portrait scaling and wrapped title; setup hides after connection. Final captures
+  had empty stderr; original shader-cache diagnostic and canceled optional MCP
+  debug helper are recorded explicitly in phase context.
+- Documentation: NETWORK_PROTOCOL.md, docs/LOBBY.md, architecture/toolchain/testing
+  guides and phase context. No dependencies/content/permission changes.
+- `git diff --check` passed; new source/script whitespace scan clean. Restored
+  generated lock-file churn only. GitHub CI remains off (API: zero workflows).
+- Phase 03 ends at GameStarting. Stop; separate approval needed for Phase 04
+  one-question Windows/Android playable slice.
+
 ## 2026-10-17 — Phase 02 — Core domain and state machine complete
 - Working tree: prior user-approved CI removal preserved; no commit/push performed.
 - Implemented pure C# host session/state machine, distinct identities, immutable

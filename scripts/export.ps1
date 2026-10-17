@@ -1,5 +1,6 @@
 param([ValidateSet('Windows', 'Android')][string]$Platform = 'Windows')
 . "$PSScriptRoot/common.ps1"
+& "$PSScriptRoot/validate-content.ps1" -Stage
 $destination = Join-Path $RepoRoot "artifacts/exports/$Platform"
 New-Item -ItemType Directory -Force $destination | Out-Null
 $filename = if ($Platform -eq 'Android') { 'QuizParty.apk' } else { 'QuizParty.exe' }

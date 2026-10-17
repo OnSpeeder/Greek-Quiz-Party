@@ -78,7 +78,7 @@ public partial class LobbyScreen : Control
 
     private void ShowError(Error error)
     {
-        if (error != Error.Ok) _status.Text = Tr("LOBBY_STATUS_InvalidInput");
+        if (error != Error.Ok) _status.Text = Tr(error == Error.FileCorrupt ? "LOBBY_STATUS_ContentError" : "LOBBY_STATUS_InvalidInput");
     }
 
     private void Render(LobbySnapshotDto snapshot)

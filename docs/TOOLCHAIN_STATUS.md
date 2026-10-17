@@ -88,7 +88,8 @@ raw logs are in ignored `artifacts/`.
 - Android SDK Manager reports a pre-existing duplicate command-line-tools
   `latest-2` directory. It did not block SDK installation or APK creation; it was
   left untouched to avoid changing unrelated tool installations.
-- The question validator project is an explicit nonzero-exit placeholder for
-  Phase 05. No content validation or future game behavior is claimed complete.
+- Phase 05 implements the question validator and JSON loading. Build/test/smoke/
+  export scripts validate and stage reviewed-only canonical packs. Run
+  scripts/validate-content.ps1; see CONTENT_FORMAT.md for schema and limits.
 
 See `DEPENDENCIES.md` for dependency purpose, versions, licenses and boundaries.

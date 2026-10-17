@@ -127,6 +127,12 @@ Each card gets:
 
 Run QuestionValidator locally before release packaging. Any release-pack error blocks packaging.
 
+scripts/validate-content.ps1 is the strict gate shared by build/test/smoke/export.
+scripts/test-content-cli.ps1 verifies invalid-content/usage exit codes. Content
+tests cover malformed/missing/unknown fields, cross-file duplicates, locales,
+review status, Unicode, file reading and warnings. Human review is recorded in
+content/EDITORIAL.md; tests cannot confer editorial approval.
+
 ## 6. Godot smoke test
 
 At minimum:

@@ -2,6 +2,28 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-18 — Phase 05 — JSON question packs and validation complete
+- Committed/pushed prior Phase 04 as ae46e15 at user request. New work local only.
+- Shared strict manifest/question validator, CLI, immutable reviewed repository,
+  category metadata/editor schemas and Godot PCK reader implemented. Removed
+  hardcoded production fixture; build/test/smoke/export validate and stage JSON.
+- Initial one-question pack has explicit user editorial approval, recorded in
+  content/EDITORIAL.md with official source. No generated bulk library marked reviewed.
+- Build zero warnings/errors. Tests 195 Core + 56 integration + 4 Godot = 255
+  passed, none failed/skipped. Canonical strict validator passed. CLI draft failure
+  exit 1 and invalid usage exit 2 observed. No failing test bypassed/weakened.
+- Source and packaged host/two-client match passed. Final Windows/Android exports
+  passed and include JSON. Physical phone installed/launched; Windows-host match
+  loaded reviewed JSON and matched Host 876 / Phone 849 at final revision 6.
+- Physical Android-host check directly loaded JSON from APK; matched PhoneHost 995 /
+  Windows 992 at revision 6. Logs/screenshots preserved under phase05-android-*.
+  Automated real LAN, no tunnel/input injection; private test arguments cleaned up.
+- Smoke passed. Runtime error scans clean; existing editor/export teardown
+  diagnostic remains documented. Protocol v2 unchanged, no new dependencies.
+- git diff --check and new-source whitespace scan passed; generated lock churn
+  restored. Scope is one reviewed question and working content pipeline, not a
+  completed bulk question library. Stop; Phase 06 full loop needs separate approval.
+
 ## 2026-10-18 — Phase 04 — One-question playable match complete
 - User-requested baseline commit/push: d23468b (Phase 03) on origin/main. New
   Phase 04 work remains local; no final commit/push performed. GitHub CI stays off.

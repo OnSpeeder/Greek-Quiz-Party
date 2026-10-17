@@ -116,6 +116,12 @@ Do not add an interface for every class. Use interfaces at real boundaries.
 
 ## 5. QuizParty.Infrastructure
 
+Phase 05 adds shared Content/QuestionPackLoader validation and immutable Core
+QuestionPack/category models. The CLI uses strict filesystem UTF-8 reading; Godot
+QuestionPackContent uses FileAccess inside res:// and calls the same validator.
+Only a reviewed definition is injected into LobbyHost; production code contains
+no trivia fallback. Canonical content is staged only after local validation.
+
 Responsible for external concerns:
 
 - JSON question loading.

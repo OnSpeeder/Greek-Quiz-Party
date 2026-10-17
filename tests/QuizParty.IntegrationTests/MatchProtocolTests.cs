@@ -17,7 +17,8 @@ public class MatchProtocolTests
         public LobbyClientState Client { get; } = new();
         public Fixture()
         {
-            Host = new("Room", "Host", Clock);
+            Host = new("Room", "Host", Clock, new("test", "Ποια είναι η πρωτεύουσα της Ελλάδας;",
+                ["Αθήνα", "Θεσσαλονίκη", "Πάτρα", "Ηράκλειο"], 0, "greece", 1, "Η Αθήνα είναι η πρωτεύουσα της Ελλάδας."));
             Deliver(Host.Handle(2, Client.BeginHello("Phone", "Android")));
             Deliver(Host.Handle(2, Client.CreateReady(true)!));
             Assert.Equal(LobbyError.None, Host.Start());

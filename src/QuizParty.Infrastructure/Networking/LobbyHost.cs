@@ -17,16 +17,18 @@ public sealed class LobbyHost
     private readonly IGameClock _clock;
     private readonly Dictionary<long, PeerRequests> _peers = new();
     private OneQuestionMatch? _match;
+    private readonly QuestionDefinition? _question;
     public Guid SessionId { get; } = Guid.NewGuid();
     public string RoomName { get; }
 
-    public LobbyHost(string roomName, string hostName, IGameClock clock)
+    public LobbyHost(string roomName, string hostName, IGameClock clock, QuestionDefinition? question = null)
     {
         if (!LobbyProtocol.ValidName(roomName)) throw new ArgumentException("Invalid room name.", nameof(roomName));
         if (!LobbyProtocol.ValidName(hostName)) throw new ArgumentException("Invalid host name.", nameof(hostName));
         ArgumentNullException.ThrowIfNull(clock);
         RoomName = roomName;
         _clock = clock;
+        _question = question;
         _lobby = new(new(new(Guid.NewGuid()), hostName, LobbySession.HostConnection, new(0)));
     }
 
@@ -41,8 +43,8 @@ public sealed class LobbyHost
     public LobbyError Start() => _lobby.Start(LobbySession.HostConnection);
     public bool BeginMatch()
     {
-        if (_match is not null || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
-        _match = new(GetPlayers(), _clock, new SeededRandomSource(Random.Shared.Next()), VerticalSliceFixture.Question,
+        if (_match is not null || _question is null || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
+        _match = new(GetPlayers(), _clock, new SeededRandomSource(Random.Shared.Next()), _question,
             new(Guid.NewGuid()), TimeSpan.FromSeconds(20));
         return true;
     }

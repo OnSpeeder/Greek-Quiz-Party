@@ -5,4 +5,5 @@ try {
     Assert-Exit 'Restore'
     dotnet build QuizParty.sln --no-restore
     Assert-Exit 'Build'
+    & "$PSScriptRoot/validate-content.ps1" -Stage
 } finally { Pop-Location }

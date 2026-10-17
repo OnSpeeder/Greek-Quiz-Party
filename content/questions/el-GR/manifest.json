@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "locale": "el-GR",
+  "packVersion": "0.1.0",
+  "categories": [{ "id": "greece", "nameKey": "CATEGORY_GREECE" }]
+}

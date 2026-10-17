@@ -1,4 +1,6 @@
 keys,el_GR,en
+CATEGORY_GREECE,Ελλάδα,Greece
+LOBBY_STATUS_ContentError,Το πακέτο ερωτήσεων δεν είναι διαθέσιμο,Question pack is unavailable
 APP_TITLE,QuizParty,QuizParty
 SETUP_READY,Το περιβάλλον ανάπτυξης είναι έτοιμο,Development environment ready
 LAN_SPIKE_OPEN,Δοκιμή σύνδεσης LAN,LAN connection test

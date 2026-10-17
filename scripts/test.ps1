@@ -1,5 +1,7 @@
 param([switch]$IncludeGodot)
 . "$PSScriptRoot/common.ps1"
+& "$PSScriptRoot/validate-content.ps1" -Stage
+& "$PSScriptRoot/test-content-cli.ps1"
 Push-Location $RepoRoot
 try {
     dotnet test tests/QuizParty.Core.Tests --settings .runsettings

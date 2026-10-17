@@ -1,0 +1,16 @@
+[
+  {
+    "id": "greece_capital_000001",
+    "text": "Ποια είναι η πρωτεύουσα της Ελλάδας;",
+    "answers": ["Αθήνα", "Θεσσαλονίκη", "Πάτρα", "Ηράκλειο"],
+    "correctAnswerIndex": 0,
+    "categoryId": "greece",
+    "difficulty": 1,
+    "explanation": "Η Αθήνα είναι η πρωτεύουσα της Ελλάδας.",
+    "source": "https://www.visitgreece.gr/en/mainland/central-greece/athens",
+    "locale": "el-GR",
+    "tags": ["capitals"],
+    "status": "reviewed",
+    "verifiedAt": "2026-10-18"
+  }
+]

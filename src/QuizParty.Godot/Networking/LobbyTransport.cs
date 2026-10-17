@@ -49,12 +49,16 @@ public partial class LobbyTransport : Node
     {
         if (!LobbyProtocol.ValidName(roomName) || !LobbyProtocol.ValidName(playerName) || port is < 1024 or > 65535)
             return Error.InvalidParameter;
+        Core.Questions.QuestionPack pack;
+        try { pack = Presentation.QuestionPackContent.Load(); }
+        catch (Exception contentError) when (contentError is IOException or System.Text.DecoderFallbackException)
+        { GD.PushError($"Content unavailable: {contentError.Message}"); return Error.FileCorrupt; }
         Stop();
         var peer = new ENetMultiplayerPeer();
         // Reserve a few bounded handshake slots so a full room can send RoomFull.
         var error = peer.CreateServer(port, LobbyHost.MaxTransportConnections);
         if (error != Error.Ok) { peer.Dispose(); return error; }
-        _host = new(roomName, playerName, new MonotonicGameClock());
+        _host = new(roomName, playerName, new MonotonicGameClock(), pack.Questions[0]);
         _peer = peer;
         Multiplayer.MultiplayerPeer = peer;
         Emit("HostListening");

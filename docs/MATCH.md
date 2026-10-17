@@ -8,9 +8,10 @@ explanation and authoritative scores. The host opens the scoreboard and final
 results. Back returns to the menu and closes the connection; create a new room
 to play again.
 
-This is a single permitted Greek fixture, not a reviewed production question pack
-or full game mode. Safe x1 base/time scoring is implemented; packs, multiple
-questions, confidence multipliers, strategy and tie-breakers are later phases.
+Phase 05 loads the first reviewed question from the canonical Greek JSON pack;
+the initial pack contains one human-approved question. This is not a full game
+mode. Safe x1 base/time scoring is implemented; multiple questions, confidence
+multipliers, strategy and tie-breakers are later phases.
 Wrong/unanswered players receive zero. English system locale uses English UI
 with Greek fixture content; Greek localization is also provided. Plain visuals
 remain intentional until the art/polish phase.

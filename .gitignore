@@ -42,3 +42,5 @@ reports/
 src/QuizParty.Godot/android/
 src/QuizParty.Godot/packages.lock.json
 src/QuizParty.Godot/gdunit4_testadapter_v5/
+# Generated only by validated canonical question staging.
+src/QuizParty.Godot/Content/

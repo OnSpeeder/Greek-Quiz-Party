@@ -151,3 +151,38 @@ Optional later: offline embedding/semantic tooling for editorial review. Do not 
 UI strings use Godot localization keys (`.po` or supported localization resources).
 
 Questions are locale-specific content packs because their wording, cultural relevance and distractors often need editorial adaptation rather than literal translation.
+
+## 12. Implemented Phase 05 contract
+
+Canonical packs live only in content/questions/<locale>/. manifest.json owns schema
+version 1, locale, numeric dotted packVersion and unique category id/nameKey pairs.
+Every other *.json in that folder is an array of questions. Fields are case-sensitive;
+unknown/duplicate JSON fields and malformed UTF-8/Unicode are errors. UTF-8 BOM is
+accepted. Editor schemas live in content/schema/; the shared C# validator also
+checks cross-file references, normalized uniqueness and release eligibility.
+
+Run scripts/validate-content.ps1 (strict reviewed-only) or dotnet run --project
+tools/QuizParty.QuestionValidator -- <pack-directory> [--locale=el-GR] [--development].
+CLI exit codes: 0 valid, 1 content/read error, 2 usage error. Development mode may
+validate mixed statuses but returns only reviewed entries as playable; no reviewed
+entries is an error. No mode promotes drafts automatically.
+
+Limits: 64 question files, 4 MiB each, 10000 entries/file, 128 categories, 32 tags.
+Question text <=2048, answer <=512, explanation <=4096 UTF-16 units. JSON-encoded
+text/answers/explanation must also fit a conservative 12000-byte content budget,
+reserving space in the existing 16384-byte match envelope. Warnings: long text,
+missing source, replacement characters, repeated distractors, token similarity
+(Jaccard >=0.8), verification over two years old or expired date. HTTP(S) source
+format and optional YYYY-MM-DD dates are checked; no online scraping in validator.
+Equality normalization uses Unicode NFC, case folding and collapsed whitespace;
+accent distinctions remain preserved. Factual/editorial review remains human work.
+
+Build/test/smoke/export scripts validate before staging into ignored Godot Content/.
+Export presets explicitly include those JSON files. Runtime FileAccess revalidates
+reviewed-only content inside the PCK and fails visibly if unavailable. No hardcoded
+production fallback. One-question mode uses the first reviewed entry in stable
+filename/array order; selection/no-repeat scheduling belongs to Phase 06.
+
+The initial one-question pack was explicitly approved by the user; content/EDITORIAL.md
+records review. Larger reviewed libraries remain editorial work, not an AI-reviewed
+bulk fill. Metadata is not added to network DTOs; protocol version remains 2.

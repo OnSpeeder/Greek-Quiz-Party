@@ -1,0 +1,44 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="QuizParty"
+run/main_scene="res://Scenes/Main.tscn"
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[dotnet]
+
+project/assembly_name="QuizParty.Godot"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg", "res://addons/gdUnit4/plugin.cfg")
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://Localization/ui.el_GR.translation", "res://Localization/ui.en.translation")
+locale/fallback="el_GR"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

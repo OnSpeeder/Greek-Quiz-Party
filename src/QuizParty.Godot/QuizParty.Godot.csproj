@@ -1,0 +1,23 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Godot Android C# requires .NET 9 or later; Core stays on .NET 8. -->
+    <TargetFramework Condition="'$(GodotTargetPlatform)' == 'android'">net9.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <IsTestProject Condition="'$(EnableGodotTests)' == 'true'">true</IsTestProject>
+    <CopyLocalLockFileAssemblies Condition="'$(EnableGodotTests)' == 'true'">true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../QuizParty.Core/QuizParty.Core.csproj" />
+    <ProjectReference Include="../QuizParty.Infrastructure/QuizParty.Infrastructure.csproj" />
+    <Compile Remove="addons/**/*.cs" />
+    <Compile Remove="android/**/*.cs" />
+    <Compile Remove="Tests/**/*.cs" Condition="'$(EnableGodotTests)' != 'true'" />
+    <Compile Remove="gdunit4_testadapter_v5/**/*.cs" Condition="'$(EnableGodotTests)' != 'true'" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(EnableGodotTests)' == 'true'">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="gdUnit4.api" Version="5.1.0-rc5" PrivateAssets="all" />
+    <PackageReference Include="gdUnit4.test.adapter" Version="3.1.1" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

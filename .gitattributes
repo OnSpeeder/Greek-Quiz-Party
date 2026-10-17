@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+* text=auto eol=lf
+# Keep upstream dependency whitespace unchanged.
+src/QuizParty.Godot/addons/** -whitespace

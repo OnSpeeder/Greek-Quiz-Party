@@ -1,0 +1,44 @@
+# Godot
+.godot/
+.import/
+export.cfg
+*.tmp
+
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# IDE
+.vs/
+.vscode/*.log
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android/signing/secrets
+*.keystore
+*.jks
+*.p12
+*.pem
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+artifacts/
+builds/
+exports/
+
+# Logs
+*.log
+TestResults/
+reports/
+**/test-results/
+**/.gdunit4*
+src/QuizParty.Godot/android/
+src/QuizParty.Godot/packages.lock.json
+src/QuizParty.Godot/gdunit4_testadapter_v5/

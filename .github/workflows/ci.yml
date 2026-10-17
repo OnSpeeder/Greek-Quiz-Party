@@ -1,0 +1,30 @@
+name: Foundation checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Install pinned Godot .NET editor
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_win64.zip -OutFile "$env:RUNNER_TEMP/godot.zip"
+          Expand-Archive "$env:RUNNER_TEMP/godot.zip" "$env:RUNNER_TEMP/godot"
+          $binary = Get-ChildItem "$env:RUNNER_TEMP/godot" -Recurse -Filter '*console.exe' | Select-Object -First 1
+          "GODOT_PATH=$($binary.FullName)" >> $env:GITHUB_ENV
+      - name: Restore and build
+        shell: pwsh
+        run: ./scripts/build.ps1
+      - name: Core and Godot integration tests
+        shell: pwsh
+        run: ./scripts/test.ps1 -IncludeGodot
+      - name: Startup smoke
+        shell: pwsh
+        run: ./scripts/smoke.ps1
+      - name: Whitespace check
+        run: git diff --check

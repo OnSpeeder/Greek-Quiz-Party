@@ -2,6 +2,38 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-17 — Phase 01 — Windows/Android LAN technical spike complete
+- User authorized pre-spike and post-spike commit/push. Baseline c710604 was pushed
+  to origin/main before implementation; GitHub Actions 39065537445 passed.
+- Implemented: separate localized spike scene, host/manual-IP join/send/disconnect,
+  C# ENet adapter, bounded host probe validation and idempotent receipts. Pure Core
+  remains independent of Godot; no lobby/gameplay/content systems were added.
+- Build: scripts/build.ps1 -> 0 warnings, 0 errors.
+- Tests: scripts/test.ps1 -IncludeGodot -> 8 passed (1 Core, 5 infrastructure/
+  config, 2 scene tests), 0 failed/skipped. Production rebuild clean.
+- Network regression: scripts/test-network-spike.ps1 passed independent-process
+  hello/action/ack, duplicate count safety, protocol-version rejection and bounded
+  unreachable-host failure. Added the same test to GitHub Actions.
+- Exports: both final debug packages built; Android signature verifies; APK
+  installed and launched on physical Android 15/model 23013PC75G. Windows packaged
+  host launched through normal main-entry flags, not a prohibited scene override.
+- Real LAN: user manually entered Windows Ethernet IP 192.168.68.105 from phone
+  Wi-Fi 192.168.68.106. Host accepted hello and button action; phone displayed
+  acknowledged count 1. No ADB reverse/forward network tunnel was used. ADB input
+  injection was blocked by the device; the user operated the actual touch UI.
+- Failure path: after terminating host, phone logged SERVER_DISCONNECTED.
+- Final-build repeat: user rejoined and sent two actions, host counts 1/2 and
+  phone acknowledgements 1/2 match. Phone acknowledgement screenshot inspected.
+- Evidence: docs/LAN_SPIKE_EVIDENCE.md contains durable exact excerpts; phase context
+  captures compatibility findings. Full ignored artifacts/phase01-* contain builds,
+  local tests, network logs and phone screenshots. git diff --check passed.
+- Limitations: one physical Android phone/home LAN tested. Two-phone and larger
+  matrix coverage remain future work. Existing Godot editor/export teardown
+  diagnostic persists; no game/network runtime errors observed. No firewall or
+  VPN settings changed. No production lobby/discovery/reconnect or game rules.
+- Phase boundary: Phase 01 acceptance met; stop here. Phase 02 needs separate user
+  approval. Completion changes are committed/pushed under the approved workflow.
+
 ## 2026-10-17 — Product and project renamed to QuizParty
 - User explicitly chose QuizParty, without the geographic qualifier. Greek-first
   language/content focus and selected Cartoon Showtime direction are preserved.

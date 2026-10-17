@@ -68,8 +68,9 @@ raw logs are in ignored `artifacts/`.
 
 ## Remaining human/runtime gates
 
-- Windows-to-phone LAN communication and gameplay/touch behavior remain Phase 01
-  or later work. Successful APK installation/launch does not prove networking.
+- Phase 01 manual-IP Windows-to-phone ENet action/ack is now observed on real
+  hardware. See [LAN spike evidence](LAN_SPIKE_EVIDENCE.md). Production gameplay,
+  lobby/discovery and broader network/device coverage remain later work.
 - Reload the Codex client/chat to load the replacement MCP tool catalog. The
   configured stdio server starts with Codex; open this Godot project so its addon
   can connect. Never run the optional HTTP diagnostic server at the same time.

@@ -26,5 +26,8 @@ jobs:
       - name: Startup smoke
         shell: pwsh
         run: ./scripts/smoke.ps1
+      - name: ENet network spike regression
+        shell: pwsh
+        run: ./scripts/test-network-spike.ps1
       - name: Whitespace check
         run: git diff --check

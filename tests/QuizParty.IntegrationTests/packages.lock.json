@@ -108,6 +108,15 @@
         "dependencies": {
           "xunit.extensibility.core": "[2.9.3]"
         }
+      },
+      "quizparty.core": {
+        "type": "Project"
+      },
+      "quizparty.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "QuizParty.Core": "[1.0.0, )"
+        }
       }
     }
   }

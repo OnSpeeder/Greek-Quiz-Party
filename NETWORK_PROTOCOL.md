@@ -298,3 +298,30 @@ Required before release:
 - Invalid answer index.
 - Wrong protocol version.
 - Discovery unavailable + manual IP succeeds.
+
+## Phase 01 disposable LAN probe
+
+The separate `LanSpike.tscn` scene uses reliable ENet RPCs on UDP 7777 (overridable
+for process tests). This is a technical compatibility probe, not implementation of
+the production v1 lobby/message envelope above. Its version is checked separately
+as `ProbeInbox.ProtocolVersion = 1`; future production handshake implementation
+must not assume these RPCs are the production protocol.
+
+- Client `Hello(protocol, platform)`; host derives sender connection ID from RPC
+  transport, bounds/validates platform, and sends `HelloResult(accepted)`.
+- Only accepted connections may call `ReceiveAction(protocol, requestId)`.
+  Request ID is exactly 32 hexadecimal characters representing a non-empty GUID.
+  The action is implicit: a disposable test-button press; there is no score/player.
+- Host returns `ActionReceipt(requestId, hostCount)` only to the submitting client.
+  A duplicate returns the original count without incrementing it again.
+- At most 7 clients and 256 unique actions per connection are retained. Disconnect
+  removes that connection's accepted-session and duplicate cache. New connection
+  IDs have no right to submit without a new hello. No reconnect/slot reclaim exists.
+- Client accepts acknowledgements only from server ID 1, for its current request.
+  Client cannot set host count. No answers, clocks or game RNG are exchanged.
+- Join times out after ten seconds; host exit/failure is visible in the UI. Scene
+  exit closes the peer. Automatic process tests have separate bounded timeouts.
+
+Compatibility checks for this contract: valid round trip, duplicate handling,
+unknown connection/invalid ID/version rejection, and wrong-version ENet client.
+Godot RPC signatures and identical scene node paths must match on both platforms.

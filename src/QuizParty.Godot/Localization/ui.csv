@@ -1,3 +1,24 @@
 keys,el_GR,en
 APP_TITLE,QuizParty,QuizParty
 SETUP_READY,Το περιβάλλον ανάπτυξης είναι έτοιμο,Development environment ready
+LAN_SPIKE_OPEN,Δοκιμή σύνδεσης LAN,LAN connection test
+SPIKE_TITLE,QuizParty — Τεχνική δοκιμή LAN,QuizParty — LAN technical spike
+SPIKE_ADDRESSES,Διευθύνσεις συσκευής: {0},Device addresses: {0}
+SPIKE_HOST,Δημιουργία διακομιστή (UDP 7777),Start host (UDP 7777)
+SPIKE_ADDRESS,Διεύθυνση IP υπολογιστή,Windows host IP address
+SPIKE_JOIN,Σύνδεση με IP,Join by IP
+SPIKE_SEND,Αποστολή δοκιμαστικής ενέργειας,Send test action
+SPIKE_DISCONNECT,Αποσύνδεση,Disconnect
+SPIKE_BACK,Πίσω,Back
+SPIKE_IDLE,Έτοιμο για δοκιμή σύνδεσης,Ready to test a connection
+SPIKE_HOST_READY,Ο διακομιστής περιμένει σύνδεση,Host is listening
+SPIKE_CONNECTING,Σύνδεση…,Connecting…
+SPIKE_CONNECTED,Η σύνδεση επιβεβαιώθηκε — στείλε μια ενέργεια,Connected — send a test action
+SPIKE_HOST_RECEIVED,Ελήφθη ενέργεια από πελάτη,Client action received
+SPIKE_ACK_RECEIVED,Ο διακομιστής επιβεβαίωσε την ενέργεια,Host acknowledged the action
+SPIKE_ACK_COUNT,Σύνολο ενεργειών διακομιστή: {0},Host action count: {0}
+SPIKE_TIMEOUT,Η σύνδεση έληξε — έλεγξε IP και δίκτυο,Connection timed out — check IP and network
+SPIKE_FAILED,Αποτυχία σύνδεσης,Connection failed
+SPIKE_SERVER_LEFT,Ο διακομιστής αποσυνδέθηκε,Host disconnected
+SPIKE_REJECTED,Η δοκιμαστική έκδοση δεν είναι συμβατή,Incompatible probe version or platform
+SPIKE_START_ERROR,Αδυναμία εκκίνησης: {0},Could not start: {0}

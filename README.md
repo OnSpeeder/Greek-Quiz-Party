@@ -7,7 +7,7 @@ The root solution is `QuizParty.sln`; the Godot project is
 `src/QuizParty.Godot/project.godot`. Core/desktop target .NET 8; Android
 targets .NET 9 because Godot requires .NET 9 or later for C# Android export.
 
-Implemented through Phase 07: platform/LAN foundation, pure C# game rules,
+Implemented through Phase 08: platform/LAN foundation, pure C# game rules,
 LAN room discovery/browser and optional PIN, manual-IP joining, four-round
 matches, no-repeat selection, scoreboards, statistics and sudden-death ties. See
 [Match guide](docs/MATCH.md) and [observed evidence](docs/MATCH_EVIDENCE.md).
@@ -18,7 +18,10 @@ categories. Long-match regression uses explicit synthetic debug fixtures.
 Disconnect handling is explicit: lobby rejoin creates a fresh seat; an active
 match cannot be resumed. Discovery/PIN verified with Windows and physical Android
 hosting in both directions. See [Lobby guide](docs/LOBBY.md).
-Next is Phase 08: Confidence, streaks, Chaos Cards and Secret Missions.
+Strategy now includes confidence bets, capped streak bonuses, Chaos Meter,
+six host-validated cards and five feasible private missions. Optional Steal is
+off by default. See [strategy rules](GAME_DESIGN.md#phase-08-implemented-strategy-balance).
+Next is Phase 09: team mode and mixed local/LAN players.
 
 This repository is intended to become a polished Greek-first party trivia game for **Windows and Android**, built with **Godot 4.7.2 .NET / C#**.
 

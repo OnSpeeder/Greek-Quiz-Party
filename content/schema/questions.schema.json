@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "QuestionValidator additionally limits JSON-encoded text/answers/explanation to 7000 bytes per question, reserving space for strategy details within the 16 KiB network envelope.",
   "type": "array", "maxItems": 10000,
   "items": {
     "type": "object", "additionalProperties": false,

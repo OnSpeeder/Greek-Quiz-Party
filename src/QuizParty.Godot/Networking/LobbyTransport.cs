@@ -21,6 +21,7 @@ public partial class LobbyTransport : Node
     private readonly HashSet<long> _closing = new();
     private string? _lastReadyRequest;
     private string? _lastAnswerRequest;
+    private string? _lastCardRequest;
     private long _lastMatchRevision;
     private int? _hostAnswerIndex;
     private Guid _presentedQuestion;
@@ -28,6 +29,9 @@ public partial class LobbyTransport : Node
     private IReadOnlyList<Core.Questions.QuestionDefinition>? _debugQuestions;
     public int QuestionCount { get; set; } = 1;
     public int QuestionSeconds { get; set; } = 20;
+    public bool StrategyEnabled { get; set; } = true;
+    public bool AllowSteal { get; set; }
+    public int? DebugStrategySeed { get; set; }
     public int AvailableQuestions { get; private set; }
     public IReadOnlyList<Core.Questions.QuestionCategory> QuestionCategories { get; private set; } = [];
     public HashSet<string>? EnabledCategories { get; set; }
@@ -37,7 +41,8 @@ public partial class LobbyTransport : Node
         if (!OS.IsDebugBuild() || count is not (10 or 20 or 30)) throw new InvalidOperationException("Debug fixture only.");
         _debugQuestions = Enumerable.Range(1, count + 5).Select(i => new Core.Questions.QuestionDefinition(
             $"fixture_{i}", $"ΔΟΚΙΜΗ {i} — επιλέξτε «Σωστό»", ["Σωστό", "Λάθος Α", "Λάθος Β", "Λάθος Γ"],
-            0, "fixture", i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.")).ToArray();
+            0, StrategyEnabled ? new[] { "history", "science", "arts", "sports", "geography" }[(i - 1) % 5] : "fixture",
+            i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.")).ToArray();
         QuestionCount = count;
         GD.Print($"MATCH SYNTHETIC_FIXTURE count={count} debug-only; no reviewed content added");
     }
@@ -46,6 +51,8 @@ public partial class LobbyTransport : Node
     public event Action<string>? MatchInputChanged;
     public MatchSnapshotDto? MatchSnapshot => _host?.MatchSnapshot() ?? _client.Match.Snapshot;
     public bool AnswerPending => !IsHost && _client.Match.Pending;
+    public bool CardPending => !IsHost && _client.Match.CardPending;
+    public event Action<string>? CardInputChanged;
     public int? OwnAnswerIndex => IsHost ? _hostAnswerIndex : _client.Match.OwnAnswerIndex;
     public event Action<LobbySnapshotDto>? SnapshotChanged;
     public event Action<string>? StatusChanged;
@@ -91,8 +98,10 @@ public partial class LobbyTransport : Node
         var questions = _debugQuestions ?? pack.Questions;
         AvailableQuestions = questions.Count;
         EnabledCategories = null;
-        QuestionCategories = _debugQuestions is null ? pack.Categories : [new("fixture", "MATCH_TEST_CATEGORY")];
-        _host = new(roomName, playerName, new MonotonicGameClock(), questions, new(1), pin);
+        QuestionCategories = _debugQuestions is null ? pack.Categories : questions.Select(q => q.CategoryId).Distinct()
+            .Select(id => new Core.Questions.QuestionCategory(id, "MATCH_TEST_CATEGORY")).ToArray();
+        _host = new(roomName, playerName, new MonotonicGameClock(), questions, new(1), pin,
+            OS.IsDebugBuild() && DebugStrategySeed is { } seed ? new Core.Randomness.SeededRandomSource(seed) : null);
         _peer = peer;
         Multiplayer.MultiplayerPeer = peer;
         var host = _host;
@@ -141,28 +150,44 @@ public partial class LobbyTransport : Node
     public void StartGame()
     {
         if (_host is null) { Emit("NotHost"); return; }
-        if (PlayMatch && !_host.ConfigureMatch(new(QuestionCount, QuestionSeconds), EnabledCategories)) { Emit("InsufficientContent"); return; }
+        if (PlayMatch && !_host.ConfigureMatch(new(QuestionCount, QuestionSeconds,
+            StrategyEnabled ? new Core.Game.StrategyRules(AllowSteal: AllowSteal) : null), EnabledCategories)) { Emit("InsufficientContent"); return; }
         var result = _host.Start();
         Emit(result.ToString());
         Broadcast();
         if (result == LobbyError.None && PlayMatch && _host.BeginMatch()) BroadcastMatch();
     }
 
-    public void SubmitAnswer(int index, bool repeatLastRequest = false)
+    public void SubmitAnswer(int index, bool repeatLastRequest = false, int confidence = 1)
     {
         if (_host is not null)
         {
-            var error = _host.SubmitHostAnswer(index);
+            var error = _host.SubmitHostAnswer(index, confidence);
             if (error == Core.Game.SubmissionError.None) _hostAnswerIndex = index;
             MatchInputChanged?.Invoke(error.ToString());
             BroadcastMatch();
             return;
         }
-        var json = repeatLastRequest ? _lastAnswerRequest : _client.Match.CreateAnswer(index);
+        var json = repeatLastRequest ? _lastAnswerRequest : _client.Match.CreateAnswer(index, confidence);
         if (json is null) return;
         _lastAnswerRequest = json;
         RpcId(1, MethodName.ClientMessage, json);
         MatchInputChanged?.Invoke("Pending");
+    }
+
+    public void ActivateCard(Guid card, Guid? target = null, string? category = null, bool repeatLastRequest = false)
+    {
+        if (MatchSnapshot is not { } snapshot) return;
+        if (_host is not null)
+        {
+            var result = _host.ActivateHostCard(new(snapshot.Question.InstanceId, card, target, category));
+            GD.Print($"STRATEGY CARD_RECEIPT reason={result}");
+            CardInputChanged?.Invoke(result.ToString()); BroadcastMatch(); return;
+        }
+        var json = repeatLastRequest ? _lastCardRequest : _client.Match.CreateCard(card, target, category);
+        if (json is null) return;
+        _lastCardRequest = json;
+        RpcId(1, MethodName.ClientMessage, json); CardInputChanged?.Invoke("Pending");
     }
 
     public void AdvanceMatch()
@@ -197,6 +222,7 @@ public partial class LobbyTransport : Node
         _closing.Clear();
         _lastReadyRequest = null;
         _lastAnswerRequest = null;
+        _lastCardRequest = null;
         _lastMatchRevision = 0;
         _hostAnswerIndex = null;
         _presentedQuestion = Guid.Empty;
@@ -287,6 +313,7 @@ public partial class LobbyTransport : Node
             _presentedQuestion = snapshot.Question.InstanceId;
             _hostAnswerIndex = null;
             _lastAnswerRequest = null;
+            _lastCardRequest = null;
         }
         _lastMatchRevision = snapshot.Revision;
         GD.Print($"MATCH SNAPSHOT revision={snapshot.Revision} phase={snapshot.Phase} question={snapshot.Question.InstanceId} scores={string.Join('|', snapshot.Scores.OrderBy(score => score.DisplayName, StringComparer.Ordinal).Select(score => $"{score.DisplayName}:{score.Total}"))}");
@@ -347,6 +374,11 @@ public partial class LobbyTransport : Node
         {
             GD.Print($"MATCH RECEIPT reason={_client.Match.LastReason}");
             MatchInputChanged?.Invoke(_client.Match.LastReason);
+        }
+        if (update == LobbyClientUpdate.CardReceipt)
+        {
+            GD.Print($"STRATEGY CARD_RECEIPT reason={_client.Match.CardReason}");
+            CardInputChanged?.Invoke(_client.Match.CardReason);
         }
     }
 }

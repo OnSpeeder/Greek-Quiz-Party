@@ -2,6 +2,63 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-18 — Phase 08 — strategy mechanics complete
+
+- Started from pushed Phase 07 f6fe343; this phase stays local/uncommitted.
+  Confidence x1/x2/x3 penalties/floor, capped streak bonuses, host-owned Chaos
+  Meter/two-card hands, six approved cards and five feasible private missions
+  implemented in pure Core. Exact balance/windows in GAME_DESIGN; optional
+  Steal/Shield pool off by default. Mission bonus once before final ranking;
+  strategy disabled in sudden death. No new dependencies, services or GitHub CI.
+- Protocol 5/app 0.5.0 rejects earlier builds. Separate recipient snapshots keep
+  hand/mission private. Host validates card ownership/phase/timing/target/category
+  and correlated duplicate-safe receipts; disconnected actors cannot act. Client
+  validates bounded views and accepts authoritative deductions after reveal.
+- Localized responsive strategy controls, private-panel privacy toggle, personal
+  timer, hidden choices and final mission/card/confidence results added. Host
+  private panel collapsed; narrow button wraps. Review found and fixed stale x3
+  selection after switching to base mode; runtime UI test covers the Safe guard.
+- New eight-player strategy packet test observed 16975 bytes at the former
+  10000-byte content budget. Tightened validator to7000, preserved16KiB envelope,
+  kept an explicit regression rejecting the formerly valid oversized content,
+  and tested populated missions/two cards/long Greek names/category/final stats.
+  Content format/schema commentary updated. Existing reviewed question passes.
+- scripts/build.ps1 clean, zero warnings/errors. Final scripts/test.ps1
+  -IncludeGodot passed232 Core +88 Infrastructure +6 GdUnit =326, none
+  failed/skipped. Canonical content and CLI-negative gates pass. No failing
+  check removed/skipped/weakened. Deterministic replay covers clock/seed/question/
+  card IDs; card/mission Core cases and full30-question wire cases pass.
+- Source and packaged30-question strategy host/two-client playtests passed with
+  all six cards accepted and identical final scores/winner/stats/strategy records.
+  Source rev204 Host110031/Anna101639/Maria0; packaged rev207
+  Host110031/Anna102132/Maria0. Default-pool packaged20 passed all four card kinds:
+  rev141 Host75731/Anna67828/Maria0. Greek narrow/final screenshots inspected.
+- Packaged base-preview and discovery/PIN regression passed: broadcast/custom
+  port, admission/rate limits, manual IP, fresh rejoin, started metadata, host exit
+  and graceful match departure. Startup explicitly waited for Godot process exit
+  and observed 'QuizParty: C# startup ready.' with clean runtime stderr.
+- Windows/Android debug exports and APK signature verification pass. Physical
+  Android15/23013PC75G install/normal launch succeeded. Actual20-question LAN
+  matches passed both hosting roles with identical final score/winner/stats and
+  mission/card/confidence results: Windows-host aggressive rev116
+  Host68208/Phone72012; Android-host aggressive rev116 Phone68211/Windows-player
+  Host72023; default Windows-host final run rev122 Host68105/Phone74640.
+  Both final-run players completed missions and used9 cards each. Screenshots
+  inspected, no app runtime errors. One earlier extra default run was interrupted
+  by overlapping test orchestration; preserved under
+  artifacts/phase08-android-default-interrupted/ and isolated repeat passed.
+- No ADB network tunnel/input injection/lock bypass/device settings/permission or
+  firewall changes. Private argument fixture absence confirmed after cleanup;
+  normal Android app restored, Windows peers stopped. Automated physical
+  execution, not human touch-play acceptance. Known Godot export teardown
+  shutdown_adb_on_exit diagnostic retained; no new blocking error.
+- Evidence: artifacts/phase08-build.log, phase08-tests-final.log, phase08-runtime*
+  .log, phase08-network*, phase08-android*, phase08-export-*.log and
+  phase08-startup*.log; durable details in phase-08 strategy context. Generated
+  platform lockfile churn restored; diff whitespace check passes. Production
+  still has one human-reviewed question; all long fixtures synthetic. Stop at
+  Phase 08. Phase 09 mixed local/LAN and teams requires separate user approval.
+
 ## 2026-10-18 — Phase 07 — discovery, PIN and graceful disconnect complete
 - Baseline Phase 06 pushed as 153c835 before this approved phase. New changes
   remain local/uncommitted. No GitHub CI, dependencies or external services added.

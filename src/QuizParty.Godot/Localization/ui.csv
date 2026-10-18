@@ -114,3 +114,66 @@ LOBBY_STATUS_InsufficientContent,Δεν υπάρχουν αρκετές μονα
 MATCH_WINNER,Νικητής: {0},Winner: {0}
 MATCH_SHARED,Κοινή πρώτη θέση: {0} — εξαντλήθηκαν οι ερωτήσεις,Shared first place: {0} — question pack exhausted
 MATCH_STATS,{0}: σωστές {1} · λάθος {2} · χωρίς απάντηση {3} · ακρίβεια {4:F0}% · μέσος χρόνος {5:F2}s · καλύτερο σερί {6},{0}: correct {1} · wrong {2} · unanswered {3} · accuracy {4:F0}% · average {5:F2}s · best streak {6}
+STRATEGY_ENABLED,Στρατηγική: αυτοπεποίθηση / κάρτες / αποστολές,Strategy: confidence / cards / missions
+STRATEGY_ALLOW_STEAL,Προαιρετικά: Κλοπή 100 πόντων και Ασπίδα,Optional: Steal 100 points and Shield
+STRATEGY_CONFIDENCE_1,Αυτοπεποίθηση x1 — λάθος: 0,Confidence x1 — wrong: 0
+STRATEGY_CONFIDENCE_2,Αυτοπεποίθηση x2 — λάθος: −250,Confidence x2 — wrong: −250
+STRATEGY_CONFIDENCE_3,Αυτοπεποίθηση x3 — λάθος: −500,Confidence x3 — wrong: −500
+STRATEGY_PRIVATE,Δείξε / κρύψε τις προσωπικές κάρτες και την αποστολή,Show / hide personal cards and mission
+STRATEGY_PROGRESS,Σερί: {0} · Chaos: {1}/100 · έως 2 κάρτες,Streak: {0} · Chaos: {1}/100 · up to 2 cards
+STRATEGY_MISSION,Μυστική αποστολή: {0} · {1}/{2} · μπόνους 500,Secret mission: {0} · {1}/{2} · 500 bonus
+STRATEGY_NO_MISSION,Χωρίς αποστολή για αυτό το πακέτο,No feasible mission for this pack
+STRATEGY_MISSION_Historian,Ιστορικός — 3 σωστές στην Ιστορία,Historian — 3 correct in History
+STRATEGY_MISSION_HotStreak,Καυτό σερί — 4 διαδοχικές σωστές,Hot Streak — 4 consecutive correct
+STRATEGY_MISSION_Gambler,Τζογαδόρος — 2 σωστές με x3,Gambler — 2 correct with x3
+STRATEGY_MISSION_Speedster,Ταχύτατος — 3 ταχύτερες σωστές,Speedster — 3 fastest correct answers
+STRATEGY_MISSION_Generalist,Παντογνώστης — σωστά σε 5 κατηγορίες,Generalist — correct in 5 categories
+STRATEGY_EMPTY_HAND,Οι σωστές απαντήσεις γεμίζουν τον μετρητή και δίνουν κάρτες.,Correct answers fill the meter and award cards.
+STRATEGY_TIE_DISABLED,Στην ισοπαλία παίζουμε χωρίς στρατηγική.,Strategy is disabled during sudden death.
+STRATEGY_SHIELD_ACTIVE,Ασπίδα ενεργή μέχρι την επόμενη Κλοπή ή το τέλος.,Shield active until the next Steal or game end.
+STRATEGY_DOUBLE_ACTIVE,Διπλοί πόντοι οπλισμένοι για την επόμενη επιλέξιμη απάντηση.,Double Points armed for the next eligible answer.
+STRATEGY_HIDDEN,— Αποκλείστηκε με 50/50 —,— Removed by 50/50 —
+STRATEGY_FINAL,{0}: {1} ({2}/{3}) · μπόνους {4} · κάρτες {5} · x2 σωστές/λάθος {6}/{7} ({10:F0}%) · x3 {8}/{9} ({11:F0}%),{0}: {1} ({2}/{3}) · bonus {4} · cards {5} · x2 correct/wrong {6}/{7} ({10:F0}%) · x3 {8}/{9} ({11:F0}%)
+STRATEGY_DESCRIPTION_DoublePoints,Διπλασιάζει τους θετικούς πόντους αυτής της ερώτησης. Στη βαθμολογία οπλίζεται για την επόμενη. Συνολικό όριο x6.,Doubles positive points this question. During recap arms for the next. Combined multiplier capped at x6.
+STRATEGY_DESCRIPTION_FiftyFifty,Αφαιρεί δύο λάθος επιλογές μόνο από τη δική σου οθόνη πριν απαντήσεις.,Removes two wrong choices on your screen before you answer.
+STRATEGY_DESCRIPTION_ExtraTime,Προσθέτει 5 δευτερόλεπτα μόνο για εσένα. Χρήση με τουλάχιστον 3 δευτερόλεπτα στον αρχικό χρόνο.,Adds 5 seconds only for you. Use with at least 3 seconds on the original timer.
+STRATEGY_DESCRIPTION_CategorySwap,Στη βαθμολογία αλλάζει την κατηγορία της επόμενης ερώτησης. Οι διαθέσιμες επιλογές κρατούν εφικτές τις αποστολές.,During recap changes the next category. Offered categories preserve mission opportunities.
+STRATEGY_DESCRIPTION_Shield,Μπλοκάρει μία Κλοπή. Διαρκεί μέχρι να χρησιμοποιηθεί ή μέχρι το τέλος του παιχνιδιού.,Blocks one Steal. Lasts until used or the game ends.
+STRATEGY_DESCRIPTION_Steal,Στη βαθμολογία μεταφέρει έως 100 πόντους. Κάθε αντίπαλος στοχοποιείται μόνο μία φορά σε όλο το παιχνίδι.,During recap transfers up to 100 points. Each opponent can be targeted only once in the whole game.
+STRATEGY_USE_DoublePoints,Χρήση: Διπλοί πόντοι,Use: Double Points
+STRATEGY_NOTICE_DoublePoints,Διπλοί πόντοι ενεργοποιήθηκε,Double Points activated
+STRATEGY_USE_FiftyFifty,Χρήση: 50/50,Use: 50/50
+STRATEGY_NOTICE_FiftyFifty,50/50 ενεργοποιήθηκε,50/50 activated
+STRATEGY_USE_ExtraTime,Χρήση: Έξτρα χρόνος,Use: Extra Time
+STRATEGY_NOTICE_ExtraTime,Έξτρα χρόνος ενεργοποιήθηκε,Extra Time activated
+STRATEGY_USE_CategorySwap,Χρήση: Αλλαγή κατηγορίας,Use: Category Swap
+STRATEGY_NOTICE_CategorySwap,Αλλαγή κατηγορίας ενεργοποιήθηκε,Category Swap activated
+STRATEGY_USE_Shield,Χρήση: Ασπίδα,Use: Shield
+STRATEGY_NOTICE_Shield,Ασπίδα ενεργοποιήθηκε,Shield activated
+STRATEGY_USE_Steal,Χρήση: Κλοπή,Use: Steal
+STRATEGY_NOTICE_Steal,Κλοπή ενεργοποιήθηκε,Steal activated
+STRATEGY_NOTICE_ShieldBlocked,Η Ασπίδα σου μπλόκαρε την Κλοπή.,Your Shield blocked a Steal.
+STRATEGY_NOTICE_StealBlocked,Η Κλοπή μπλοκαρίστηκε από Ασπίδα.,Steal was blocked by Shield.
+STRATEGY_NOTICE_StealLost,Μεταφέρθηκαν έως 100 πόντοι σε αντίπαλο.,Up to 100 points transferred to an opponent.
+STRATEGY_CARD_Pending,Αναμονή επιβεβαίωσης κάρτας…,Waiting for card confirmation…
+STRATEGY_CARD_Disabled,Οι κάρτες δεν είναι διαθέσιμες.,Cards are unavailable.
+STRATEGY_CARD_UnknownPlayer,Ο παίκτης δεν συμμετέχει πλέον.,Player is no longer participating.
+STRATEGY_CARD_UnknownCard,Η κάρτα δεν είναι διαθέσιμη.,Card is no longer available.
+STRATEGY_CARD_StaleQuestion,Η ερώτηση έχει αλλάξει.,Question has changed.
+STRATEGY_CARD_InvalidWindow,Αυτή η κάρτα δεν χρησιμοποιείται τώρα.,This card cannot be used now.
+STRATEGY_CARD_AlreadyAnswered,Έχεις ήδη απαντήσει.,You have already answered.
+STRATEGY_CARD_Late,Πέρασε το χρονικό όριο της κάρτας.,Card cutoff has passed.
+STRATEGY_CARD_InvalidReceiveTime,Μη έγκυρος χρόνος αιτήματος.,Invalid request time.
+STRATEGY_CARD_EffectActive,Το αποτέλεσμα είναι ήδη ενεργό.,Effect is already active.
+STRATEGY_CARD_InvalidTarget,Διάλεξε άλλον συνδεδεμένο αντίπαλο.,Choose another connected opponent.
+STRATEGY_CARD_AlreadyTargeted,Ο αντίπαλος έχει ήδη στοχοποιηθεί.,Opponent has already been targeted.
+STRATEGY_CARD_NoEffect,Ο αντίπαλος δεν έχει πόντους.,Opponent has no points.
+STRATEGY_CARD_InvalidCategory,Η κατηγορία δεν είναι διαθέσιμη.,Category is unavailable.
+STRATEGY_CARD_NoUpcomingQuestion,Δεν υπάρχει επόμενη κανονική ερώτηση.,No next normal question.
+STRATEGY_CARD_MalformedRequest,Μη έγκυρο αίτημα κάρτας.,Invalid card request.
+STRATEGY_CATEGORY_history,Ιστορία,History
+STRATEGY_CATEGORY_science,Επιστήμη,Science
+STRATEGY_CATEGORY_arts,Τέχνες,Arts
+STRATEGY_CATEGORY_sports,Αθλητισμός,Sports
+STRATEGY_CATEGORY_geography,Γεωγραφία,Geography
+STRATEGY_CATEGORY_greece,Ελλάδα,Greece

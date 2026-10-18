@@ -214,3 +214,33 @@ Do not tag a release unless:
 - Android package launches on physical device,
 - release checklist completed,
 - known issues documented.
+
+## Phase 08 strategy verification
+
+Core StrategyTests cover confidence lock/penalties/floor, capped streak stacking,
+meter/hand limits, every approved card, ownership/staleness/duplicate effects,
+personal Extra Time boundaries/cutoff, swap feasibility/no-repeat, Shield/Steal
+targeting and all five mission conditions/one-time bonus. Injected seed/clock/
+question/card IDs replay complete strategy state deterministically.
+
+StrategyProtocolTests run full 30-question matches for each card kind, including
+per-recipient privacy, foreign-card spoofing, cached duplicate receipts, stale
+receipts, negative totals deltas, malformed private views and final agreement.
+Eight-player packet tests retain 16 KiB with a stricter 7000-byte content budget.
+GdUnit checks strategy defaults, privacy collapse and touch-sized controls.
+
+Additional process checks (explicit synthetic debug fixtures, no editorial approval):
+
+~~~powershell
+./scripts/test-network-match.ps1 -QuestionCount 30 -Strategy -Steal -Capture
+./scripts/test-network-match.ps1 -Packaged -QuestionCount 30 -Strategy -Steal -Capture
+./scripts/test-network-match.ps1 -Packaged -QuestionCount 20 -Strategy
+./scripts/test-android-match.ps1 -HostAddress <LAN-IP> -QuestionCount 20 -Strategy -Steal
+./scripts/test-android-match.ps1 -AndroidHost -HostAddress <PHONE-IP> -QuestionCount 20 -Strategy -Steal
+~~~
+
+Use -Seed for reproducible host RNG during fixture runs. Probes log successful
+card uses and final mission/card/confidence records; scripts require all enabled
+card kinds to be used and identical final authoritative results across peers.
+Actual clock/network arrival times remain observed rather than deterministic.
+Run base-match and discovery/PIN regressions after the protocol bump too.

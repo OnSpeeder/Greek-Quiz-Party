@@ -1,8 +1,10 @@
-param([int]$Port = 17781, [switch]$Packaged, [switch]$TimeoutCase, [ValidateSet(1,20,30)][int]$QuestionCount = 1, [switch]$Capture)
+param([int]$Port = 17781, [switch]$Packaged, [switch]$TimeoutCase, [ValidateSet(1,20,30)][int]$QuestionCount = 1,
+    [switch]$Capture, [switch]$Strategy, [switch]$Steal, [int]$Seed = 8)
 . "$PSScriptRoot/common.ps1"
 $output = Join-Path $RepoRoot $(if ($Packaged) { 'artifacts/phase04-network-packaged' } else { 'artifacts/phase04-network' })
 if ($TimeoutCase) { $output += '-timeout' }
 if ($QuestionCount -gt 1) { $output = Join-Path $RepoRoot "artifacts/phase06-network-$QuestionCount$(if ($Packaged) { '-packaged' })" }
+if ($Strategy) { $output = Join-Path $RepoRoot "artifacts/phase08-network-$QuestionCount$(if ($Steal) { '-steal' })$(if ($Packaged) { '-packaged' })" }
 New-Item -ItemType Directory -Force $output | Out-Null
 $binary = (Get-Godot) -replace '_console\.exe$', '.exe'
 $baseArgs = "--headless --path `"$GodotProject`" --"
@@ -14,6 +16,12 @@ function Start-Match([string]$Name, [string]$Flags) {
         $launchArgs = $baseArgs -replace '--headless', '--resolution 1152x720 --language el_GR'
         $Flags += " --match-capture=$output/host-final.png"
     }
+    if ($Capture -and $Strategy -and $Name -eq 'first') {
+        $launchArgs = $baseArgs -replace '--headless', '--resolution 420x900 --language el_GR'
+        $Flags += " --match-capture=$output/client-active.png --match-capture-phase=QuestionActive --match-capture-number=4"
+    }
+    if ($Strategy) { $Flags += " --match-strategy --match-seed=$Seed" }
+    if ($Steal) { $Flags += ' --match-steal' }
     $process = Start-Process $binary -WindowStyle Hidden -PassThru `
         -ArgumentList "$launchArgs --match-port=$Port --match-auto $Flags" `
         -RedirectStandardOutput "$output/$Name.log" -RedirectStandardError "$output/$Name-errors.log"
@@ -22,6 +30,7 @@ function Start-Match([string]$Name, [string]$Flags) {
 }
 try {
     $fixtureFlags = if ($QuestionCount -gt 1) { "--match-fixture=$QuestionCount --match-fast --match-delay=0.10" } else { '' }
+    if ($Strategy) { $fixtureFlags = "--match-fixture=$QuestionCount --match-delay=0.10" }
     $hostProcess = Start-Match 'host' "--match-host --match-name=Host --match-players=3 $fixtureFlags"
     $deadline = [DateTime]::UtcNow.AddSeconds(15)
     while (!(Select-String "$output/host.log" -Pattern HostListening -Quiet)) {
@@ -32,7 +41,7 @@ try {
     $lastFlag = if ($TimeoutCase) { '--match-unanswered' } else { '--match-wrong' }
     $second = Start-Match 'second' "--match-join=127.0.0.1 --match-name=Maria $lastFlag"
     foreach ($process in $processes) {
-        if (!$process.WaitForExit(35000 + $QuestionCount * $(if ($TimeoutCase) { 21000 } else { 1000 }))) { throw 'Match process timed out.' }
+        if (!$process.WaitForExit(35000 + $QuestionCount * $(if ($TimeoutCase) { 21000 } elseif ($Strategy) { 5000 } else { 1000 }))) { throw 'Match process timed out.' }
         if ($process.ExitCode -ne 0) { throw "Match process exited $($process.ExitCode); inspect $output." }
     }
     $finals = @()
@@ -57,6 +66,14 @@ try {
     }
     if (($finals | Select-Object -Unique).Count -ne 1) { throw 'Final question/revision/scores disagree across peers.' }
     if (($statistics | Select-Object -Unique).Count -ne 1 -or !$statistics[0]) { throw 'Final winners/statistics disagree across peers.' }
+    if ($Strategy) {
+        $strategyFinals = @('host','first','second') | ForEach-Object { Get-Content "$output/$_.log" | Where-Object { $_ -like 'STRATEGY FINAL *' } | Select-Object -Last 1 }
+        if (($strategyFinals | Select-Object -Unique).Count -ne 1 -or !$strategyFinals[0]) { throw 'Final mission/card/confidence results disagree.' }
+        foreach ($card in $(if ($Steal) { @('DoublePoints','FiftyFifty','ExtraTime','CategorySwap','Shield','Steal') } else { @('DoublePoints','FiftyFifty','ExtraTime','CategorySwap') })) {
+            if (!(Select-String "$output/host.log","$output/first.log" -Pattern "STRATEGY PLAYTEST used=$card " -Quiet | Where-Object { $_ })) { throw "No accepted $card in full strategy match." }
+        }
+        if ($strategyFinals[0] -notmatch '"MissionBonus":500' -or $strategyFinals[0] -notmatch '"AllInCorrect":[1-9]') { throw 'Mission bonus or confidence results missing.' }
+    }
     if ($finals[0] -notmatch 'scores=Anna:[1-9]\d*\|Host:[1-9]\d*\|Maria:0') { throw 'Correct/wrong or unanswered scoring is unexpected.' }
     $mariaResult = if ($TimeoutCase) { 'RESULT player=Maria answer=none points=0' } else { 'RESULT player=Maria answer=[0-3] points=0' }
     if (!(Select-String "$output/second.log" -Pattern $mariaResult -Quiet)) { throw 'Wrong/unanswered result was not observed.' }

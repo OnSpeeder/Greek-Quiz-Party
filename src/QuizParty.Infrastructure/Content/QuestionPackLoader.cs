@@ -16,7 +16,7 @@ public static class QuestionPackLoader
 {
     public const int MaxFileBytes = 4 * 1024 * 1024;
     public const int MaxFiles = 64;
-    public const int MaxEncodedQuestionBytes = 10000;
+    public const int MaxEncodedQuestionBytes = 7000;
     private static readonly string[] ManifestFields = ["schemaVersion", "locale", "packVersion", "categories"];
     private static readonly string[] QuestionFields = ["id", "text", "answers", "correctAnswerIndex", "categoryId", "difficulty", "explanation", "source", "locale", "tags", "status", "verifiedAt", "expiresAfter"];
 

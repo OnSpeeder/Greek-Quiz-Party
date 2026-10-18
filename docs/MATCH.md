@@ -19,8 +19,9 @@ response time and best streak; sudden-death answers do not change regular totals
 The canonical Greek pack still has one human-approved question, so normal play
 defaults to an explicit one-question preview. Longer starts fail visibly until
 enough reviewed questions exist in selected categories. No content repeats to
-fill a requested length. Confidence multipliers and strategy remain later work.
-Wrong/unanswered players receive zero. English system locale uses English UI
+fill a requested length. Strategy is enabled by default and can be disabled by
+the host. Safe wrong answers and unanswered questions receive zero; confidence
+bets can deduct points down to a zero total. English system locale uses English UI
 with Greek fixture content; Greek localization is also provided. Plain visuals
 remain intentional until the art/polish phase.
 
@@ -41,7 +42,7 @@ remain intentional until the art/polish phase.
 ./scripts/smoke.ps1
 ```
 
-Production protocol is now 4, intentionally incompatible with versions 1/2/3.
+Production protocol is now 5, intentionally incompatible with versions 1–4.
 The old lobby-only regression opts out of starting a match; normal menu Start
 always enters gameplay. This preserves the lobby checks without skipping tests.
 
@@ -84,3 +85,23 @@ content solely for long-loop regression. They add no reviewed pack entries and
 are unavailable in release builds. Normal host loading still validates JSON.
 
 See [observed hardware evidence](MATCH_EVIDENCE.md) and NETWORK_PROTOCOL.md.
+
+## Strategy controls
+
+Enable/disable strategy in the host lobby. Optional Steal also enables Shield and
+starts off. Before answering select x1/x2/x3; the label states the wrong-answer
+penalty. Confirmation locks the answer and confidence. Total score never goes
+below zero; correct streaks add capped bonuses.
+
+The personal panel shows your streak, Chaos Meter, two-card hand, active effects
+and private mission progress. It starts collapsed on the host's shared screen.
+Each card explains its timing; activate before submitting or during recap as
+specified. Extra Time changes only your displayed timer. Category Swap offers
+host-approved alternatives; Steal offers connected opponents and may reject an
+already targeted victim. Receipt status explains accepted effects/rejections.
+Only owning players receive private cards and missions. GameOver reveals every
+mission outcome/bonus and confidence success/card-use statistics.
+
+Normal navigation uses validated reviewed content. --match-strategy,
+--match-steal and --match-seed=N are opt-in playtest flags; -Strategy/-Steal on the
+network/Android scripts select them. These fixtures add no reviewed questions.

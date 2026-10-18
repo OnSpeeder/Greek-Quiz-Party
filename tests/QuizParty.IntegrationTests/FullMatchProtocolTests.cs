@@ -107,17 +107,19 @@ public class FullMatchProtocolTests
         Assert.False(host.ConfigureMatch(new(1), [])); Assert.True(host.ConfigureMatch(new(1), ["test"]));
     }
 
-    [Fact]
-    public void LargestContentBudgetStillFitsEightPlayerFinalPacket()
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void LargestContentBudgetStillFitsEightPlayerFinalPacket(bool strategy)
     {
         var clock = new Clock();
         const string manifest = """{"schemaVersion":1,"locale":"el-GR","packVersion":"1.0.0","categories":[{"id":"test","nameKey":"CATEGORY_TEST"}]}""";
-        PackValidation Validate(int explanationLength) => QuestionPackLoader.Validate(manifest,
+        PackValidation Validate(int explanationLength, int textLength = 1000) => QuestionPackLoader.Validate(manifest,
             new Dictionary<string,string> { ["test.json"] = JsonSerializer.Serialize(new[] { new {
-                id = "q", text = new string('α', 1500), answers = new[] { "a", "b", "c", "d" }, correctAnswerIndex = 0,
+                id = "q", text = new string('α', textLength), answers = new[] { "a", "b", "c", "d" }, correctAnswerIndex = 0,
                 categoryId = "test", difficulty = 1, explanation = new string('β', explanationLength), locale = "el-GR", status = "reviewed"
             } }) }, "el-GR");
-        // The old 12KB budget produced a 17KB final packet with eight players.
+        // Phase08's private/final details made a previously valid 10KB question exceed16KiB.
+        Assert.Contains(Validate(150, 1500).Issues, issue => issue.Code == "wire-limit" && !issue.Warning);
         Assert.Contains(Validate(470).Issues, issue => issue.Code == "wire-limit" && !issue.Warning);
         var valid = Validate(150); Assert.True(valid.Success, string.Join(';', valid.Issues));
         var host = new LobbyHost("Room", new string('Ω', 32), clock, valid.Pack!.Questions.Single());
@@ -127,10 +129,25 @@ public class FullMatchProtocolTests
             foreach (var p in host.Handle(i, client.BeginHello(new string('Ω', 31) + i, "Android")).Messages.Where(p => p.ConnectionId == i)) client.Apply(p.Json);
             host.Handle(i, client.CreateReady(true)!);
         }
+        Assert.True(host.ConfigureMatch(new(1, strategy: strategy ? new StrategyRules() : null)));
         host.Start(); host.BeginMatch(); clock.Now += TimeSpan.FromSeconds(21); host.PollMatch(); host.PollMatch();
         host.AdvanceMatch(); host.AdvanceMatch();
         Assert.Equal("GameOver", host.MatchSnapshot()!.Phase);
         foreach (var packet in host.BroadcastMatch()) Assert.True(LobbyProtocol.TryDecode(packet.Json, out _), $"Oversized final packet: {System.Text.Encoding.UTF8.GetByteCount(packet.Json)}");
+        if (strategy)
+        {
+            var final = host.MatchSnapshot()!;
+            var own = final.Private!;
+            // Fill the additional bounded fields: longest Unicode category, two cards,
+            // complete missions and nonzero confidence/card statistics for every player.
+            final = final with { QuestionNumber = 30, TotalQuestions = 30,
+                Question = final.Question with { CategoryId = new string('Ω', 128) },
+                Private = own with { Hand = [new(Guid.NewGuid(), 0), new(Guid.NewGuid(), 1)], Mission = new(4, 5, 5, true), Streak = 30, Meter = 99 },
+                FinalStrategy = final.Scores.Select(s => new StrategyFinalDto(s.PlayerId, new(4, 5, 5, true), 500, 30, 10, 5, 10, 5)).ToArray(),
+                Statistics = final.Scores.Select(s => new MatchStatisticsDto(s.PlayerId, 20, 10, 0, 20, 19500000000, 30)).ToArray() };
+            var encoded = LobbyProtocol.Encode("MatchSnapshot", host.SessionId, final);
+            Assert.True(LobbyProtocol.TryDecode(encoded, out _), $"Oversized populated strategy final: {System.Text.Encoding.UTF8.GetByteCount(encoded)}");
+        }
     }
 
     [Fact]

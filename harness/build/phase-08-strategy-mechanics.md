@@ -1,5 +1,13 @@
 # Phase 08 — Confidence, Streaks, Chaos and Missions
 
+## Status — complete locally, 2026-10-18
+
+Confidence, capped streak scoring, Chaos Meter, six cards and five feasible
+private missions implemented with host validation and localized controls.
+326 tests pass; source/packaged full matches and physical Android full matches
+with either device hosting passed. See phase context/build log for evidence.
+Commit/push authorized after verification. Stop before Phase 09 without separate approval.
+
 ## Goal
 
 Implement Confidence, streaks, Chaos Meter, approved cards and Secret Missions in incremental substeps.

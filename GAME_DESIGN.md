@@ -238,3 +238,42 @@ Display:
 - cards used,
 - mission result,
 - fastest correct answers.
+
+## Phase 08 implemented strategy balance
+
+The LAN host enables strategy by default or selects the base-only profile in
+the lobby. Aggressive cards are separately opt-in (off by default). Existing
+normal question lengths, four rounds, content limits and sudden death remain.
+
+| Mechanic | Implemented rule |
+|---|---|
+| Confidence | Choose x1/x2/x3 before submitting. Correct: positive base/time points times confidence. Wrong x2 deducts 250; wrong x3 deducts 500. Safe/unanswered deduct 0. Totals floor at 0. First accepted answer locks confidence. |
+| Streak | Correct streak 3 adds 10%; streak 5 adds 15%. Wrong/unanswered resets. Combine positive multipliers and cap at x6; round once away from zero. |
+| Chaos Meter | Correct gains 20+5*difficulty; streak 5+ adds 10. At 100 consume the threshold and award a random eligible card if the two-card hand has room. Streak 7 also awards one if room. Empty starting hands; excess hand awards are discarded. |
+| Double Points | Before answering in QuestionActive, or arm in Scoreboard/RoundEnd for the next normal question. One per question; doubles positive points only. Expires after that question, including wrong/unanswered. |
+| 50/50 | Before answering while active. Host hides exactly two wrong choices privately. Removed choices cannot be submitted by that owner. |
+| Extra Time | Before answering, with at least 3 seconds of the original host timer left. Add 5 seconds to that player's deadline once/question. After the base deadline time bonus is 0; streak/confidence still apply. Answered extended players cannot hold other expired seats open. |
+| Category Swap | Scoreboard/RoundEnd before another normal question. One accepted swap globally per selection. Host offers up to 3 feasible alternative categories; a swap preserves no-repeat selection and remaining mission opportunities. |
+| Shield | Only in aggressive pool. Arm before answering or in recap. Blocks one Steal and is consumed by that attack or expires at game end. |
+| Steal | Only in aggressive pool, during Scoreboard/RoundEnd. Transfer up to 100 available points from a connected opponent. Every victim may be targeted once per whole match globally, including a shield-blocked attempt. Self-targeting is invalid. |
+
+Cards have unique host-issued instance IDs. Invalid requests never consume a
+card. Shield and Steal are absent from the award pool when aggressive cards are
+disabled. All decisions, random choices, deadlines, awards and progress live in
+Core on the host. Clients only send confidence/card intents.
+
+Each player gets one randomly assigned feasible approved mission, using the
+actual selected normal-question plan: Historian 3 correct history; Hot Streak 4
+consecutive correct; Gambler 2 correct x3; Speedster 3 fastest correct (equal host
+receipt times count for every tied fastest player); Generalist 5 distinct correct
+categories. Omit missions if none are feasible (including one-question preview).
+Progress is capped at the target. Completion gives 500 once at the end of normal
+play **before ranking and tie resolution**. A later incorrect answer does not
+undo an already completed streak mission.
+
+Sudden death disables all strategy scoring, cards and mission progression and
+keeps normal totals. Mission identities stay owner-only until GameOver. The
+host's personal panel starts collapsed for shared screens; phone clients can
+hide their own panel. Final results reveal missions/progress/bonuses, cards used,
+and x2/x3 correct/wrong counts and success percentages. This phase adds functional
+localized controls; the visual direction/art pass remains Phase 10.

@@ -169,7 +169,7 @@ entries is an error. No mode promotes drafts automatically.
 
 Limits: 64 question files, 4 MiB each, 10000 entries/file, 128 categories, 32 tags.
 Question text <=2048, answer <=512, explanation <=4096 UTF-16 units. JSON-encoded
-text/answers/explanation must also fit a conservative 10000-byte content budget,
+text/answers/explanation must also fit a conservative 7000-byte content budget,
 reserving space in the existing 16384-byte match envelope. Warnings: long text,
 missing source, replacement characters, repeated distractors, token similarity
 (Jaccard >=0.8), verification over two years old or expired date. HTTP(S) source

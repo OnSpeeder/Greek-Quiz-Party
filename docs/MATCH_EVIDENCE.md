@@ -1,5 +1,37 @@
 # Observed match evidence
 
+## Phase 08 — strategy, 2026-10-18
+
+326 tests passed (232 Core, 88 Infrastructure, 6 Godot runtime). Source and
+packaged 30-question Windows host/two-client strategy matches used all six cards
+successfully with identical authoritative final scores, mission bonuses and
+strategy stats. Packaged 20-question default pool used all four enabled cards;
+base preview and discovery/PIN/departure regressions also passed. Protocol is 5.
+
+Windows/Android exports, APK signature verification and physical install/launch
+passed. Actual LAN 20-question runs passed with both devices hosting:
+
+| Host / rules | Observed final |
+|---|---|
+| Windows / Steal enabled | revision116; Host68208 / Phone72012 |
+| Android / Steal enabled | revision116; Phone68211 / Windows player Host72023 |
+| Windows / default strategy | revision122; Host68105 / Phone74640 |
+
+Final scores, winner, response stats, missions/bonuses, cards used and confidence
+results agreed across devices. In the default run both players completed their
+feasible missions and used nine cards each. Rendered narrow Greek client and
+physical Android active/final screens were inspected; no runtime errors observed.
+Private fixtures were removed, normal app restored and Windows peers stopped.
+One overlapping extra test interrupted a phone run; isolated repeat passed and
+the interrupted evidence is retained rather than counted as a pass.
+
+Evidence: artifacts/phase08-network*, phase08-android*, phase08-tests-final.log,
+phase08-export-*.log. Full decisions/commands are in
+[Phase 08 context](../harness/context/phase-08-strategy-mechanics-context.md).
+Automated physical runs used labeled synthetic questions; human touch/balance
+acceptance and more reviewed content remain later work. No network tunneling,
+touch injection or device/firewall settings changes. Phase 09 not started.
+
 ## Phase 06 — full loop, 2026-10-18
 
 275 automated tests passed (208 Core, 62 Infrastructure, 5 Godot). Source

@@ -2,7 +2,7 @@ using QuizParty.Core.Lobby;
 
 namespace QuizParty.Infrastructure.Networking;
 
-public enum LobbyClientUpdate { Ignored, Rejected, Joined, Snapshot, RequestResult, MatchSnapshot, AnswerReceipt }
+public enum LobbyClientUpdate { Ignored, Rejected, Joined, Snapshot, RequestResult, MatchSnapshot, AnswerReceipt, CardReceipt }
 
 public sealed class LobbyClientState
 {
@@ -62,6 +62,7 @@ public sealed class LobbyClientState
         if (packet.MessageType == "MatchSnapshot" && PlayerId is { } playerId && Match.ApplySnapshot(packet, _snapshot.SessionId, playerId))
             return LobbyClientUpdate.MatchSnapshot;
         if (packet.MessageType == "AnswerAccepted" && Match.ApplyReceipt(packet, _snapshot.SessionId)) return LobbyClientUpdate.AnswerReceipt;
+        if (packet.MessageType == "CardResult" && Match.ApplyCardReceipt(packet, _snapshot.SessionId)) return LobbyClientUpdate.CardReceipt;
         if (packet.MessageType == "LobbySnapshot" && LobbyProtocol.TryPayload<LobbySnapshotDto>(packet, out var next) &&
             ValidSnapshot(next) && next!.SessionId == _snapshot.SessionId && next.Revision > _snapshot.Revision &&
             next.Players.Any(player => player.PlayerId == PlayerId) && !(_snapshot.Phase == "GameStarting" && next.Phase != "GameStarting"))

@@ -29,6 +29,7 @@ public partial class LanProcessProbe : Node
             !int.TryParse(Argument("--lan-discovery-port=") ?? "7778", out var discoveryPort)) { GetTree().Quit(2); return; }
         _transport.DiscoveryPort = discoveryPort;
         _transport.PlayMatch = _args.Contains("--lan-match");
+        _transport.StrategyEnabled = false;
         _transport.QuestionSeconds = 5;
         _transport.StatusChanged += OnStatus;
         _transport.MatchChanged += OnMatch;

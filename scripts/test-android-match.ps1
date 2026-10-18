@@ -1,10 +1,13 @@
 param([Parameter(Mandatory = $true)][string]$HostAddress, [int]$Port = 17783, [switch]$Wrong, [switch]$Unanswered,
-    [ValidateSet(1,20,30)][int]$QuestionCount = 1)
+    [ValidateSet(1,20,30)][int]$QuestionCount = 1, [switch]$Strategy, [switch]$Steal, [int]$Seed = 8,
+    [switch]$AndroidHost)
 . "$PSScriptRoot/common.ps1"
-if ($HostAddress -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw 'Supply the actual Windows LAN IPv4 address.' }
+if ($HostAddress -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw 'Supply the actual host LAN IPv4 address.' }
 $adb = Resolve-Tool 'adb' @("$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe")
 $output = Join-Path $RepoRoot $(if ($Unanswered) { 'artifacts/phase04-android-timeout' } elseif ($Wrong) { 'artifacts/phase04-android-wrong' } else { 'artifacts/phase04-android' })
 if ($QuestionCount -gt 1) { $output = Join-Path $RepoRoot "artifacts/phase06-android-$QuestionCount" }
+if ($Strategy) { $output = Join-Path $RepoRoot "artifacts/phase08-android-$QuestionCount$(if ($Steal) { '-steal' })" }
+if ($AndroidHost) { $output += '-phone-host' }
 New-Item -ItemType Directory -Force $output | Out-Null
 $binary = Join-Path $RepoRoot 'artifacts/exports/Windows/QuizParty.exe'
 $hostProcess = $null
@@ -23,14 +26,27 @@ try {
         $fixtureFlags = "--match-fixture=$QuestionCount --match-fast --match-delay=0.1"
         $hostDelay = '0.1'
     }
+    if ($Strategy) {
+        $deviceArgs += '--match-strategy'
+        $fixtureFlags = "--match-fixture=$QuestionCount --match-strategy --match-seed=$Seed"
+        if ($Steal) { $deviceArgs += '--match-steal'; $fixtureFlags += ' --match-steal' }
+    }
+    if ($AndroidHost) {
+        $deviceArgs = @('--match-host', "--match-port=$Port", '--match-name=Phone', '--match-auto', '--match-keep-open', '--match-delay=0.1')
+        if ($QuestionCount -gt 1) { $deviceArgs += "--match-fixture=$QuestionCount" }
+        if ($Strategy) { $deviceArgs += @('--match-strategy', "--match-seed=$Seed") }
+        if ($Steal) { $deviceArgs += '--match-steal' }
+        if ($Wrong) { $deviceArgs += '--match-wrong' }
+        if ($Unanswered) { $deviceArgs += '--match-unanswered' }
+    }
     $json = ConvertTo-Json -InputObject $deviceArgs -Compress
     $json | & $adb shell run-as org.quizparty.game tee $deviceFixture | Out-Null
     Assert-Exit 'Write app-private debug test fixture'
-    $hostProcess = Start-Process $binary -WindowStyle Hidden -PassThru `
+    if (!$AndroidHost) { $hostProcess = Start-Process $binary -WindowStyle Hidden -PassThru `
         -ArgumentList "--resolution 1152x720 --language el_GR -- --match-host --match-port=$Port --match-name=Host --match-auto --match-players=2 --match-delay=$hostDelay --match-keep-open --match-capture=$output/host-final.png $fixtureFlags" `
-        -RedirectStandardOutput "$output/host.log" -RedirectStandardError "$output/host-errors.log"
-    $deadline = [DateTime]::UtcNow.AddSeconds(45 + $QuestionCount * $(if ($Unanswered) { 21 } else { 2 }))
-    while (!(Select-String "$output/host.log" -Pattern HostListening -Quiet)) {
+        -RedirectStandardOutput "$output/host.log" -RedirectStandardError "$output/host-errors.log" }
+    $deadline = [DateTime]::UtcNow.AddSeconds(45 + $QuestionCount * $(if ($Unanswered) { 21 } elseif ($Strategy) { 5 } else { 2 }))
+    while (!$AndroidHost -and !(Select-String "$output/host.log" -Pattern HostListening -Quiet)) {
         if ($hostProcess.HasExited -or [DateTime]::UtcNow -gt $deadline) { throw 'Packaged LAN host did not start.' }
         Start-Sleep -Milliseconds 100
     }
@@ -38,6 +54,16 @@ try {
     Assert-Exit 'Launch physical Android app'
     $deviceAppPid = (& $adb shell pidof -s org.quizparty.game).Trim()
     if (!$deviceAppPid) { throw 'Android app did not stay running.' }
+    if ($AndroidHost) {
+        while (-not ((& $adb logcat "--pid=$deviceAppPid" -d -v time) -match 'LOBBY STATUS HostListening')) {
+            if ([DateTime]::UtcNow -gt $deadline) { throw 'Android host did not listen.' }
+            Start-Sleep -Milliseconds 100
+        }
+        $windowsFlags = if ($Strategy) { '--match-strategy' } else { '' }
+        $hostProcess = Start-Process $binary -WindowStyle Hidden -PassThru `
+            -ArgumentList "--resolution 1152x720 --language el_GR -- --match-join=$HostAddress --match-port=$Port --match-name=Host --match-auto --match-delay=0.6 --match-keep-open --match-capture=$output/host-final.png $windowsFlags" `
+            -RedirectStandardOutput "$output/host.log" -RedirectStandardError "$output/host-errors.log"
+    }
     $activeCaptured = $false
     do {
         & $adb logcat "--pid=$deviceAppPid" -d -v time | Set-Content -Encoding utf8 "$output/phone.log"
@@ -63,6 +89,12 @@ try {
         $phoneStats = [regex]::Match($phoneLog, 'MATCH FINAL[^\r\n]*').Value
         if (!$hostStats -or $hostStats -ne $phoneStats) { throw 'Physical final statistics disagree.' }
     }
+    if ($Strategy) {
+        $hostStrategy = [regex]::Match((Get-Content "$output/host.log" -Raw), 'STRATEGY FINAL[^\r\n]*').Value
+        $phoneStrategy = [regex]::Match($phoneLog, 'STRATEGY FINAL[^\r\n]*').Value
+        if (!$hostStrategy -or $hostStrategy -ne $phoneStrategy) { throw 'Physical final mission/card/confidence results disagree.' }
+        if ($phoneLog -notmatch 'STRATEGY PLAYTEST used=' -or $hostStrategy -notmatch '"MissionBonus":500') { throw 'Physical card activation or mission completion missing.' }
+    }
     if ($Unanswered -and $phoneLog -notmatch 'RESULT player=Phone answer=none points=0') { throw 'Physical timeout result was not observed.' }
     if ($Wrong -and $phoneLog -notmatch 'RESULT player=Phone answer=[0-3] points=0') { throw 'Physical wrong-answer result was not observed.' }
     if (!$Wrong -and !$Unanswered -and $hostFinal -notmatch 'scores=Host:[1-9]\d*\|Phone:[1-9]\d*') { throw 'Physical correct answer did not score.' }
@@ -73,7 +105,7 @@ try {
     $frameDeadline = [DateTime]::UtcNow.AddSeconds(5)
     while (!(Test-Path "$output/host-final.png")) { if ([DateTime]::UtcNow -gt $frameDeadline) { throw 'Host final capture missing.' }; Start-Sleep -Milliseconds 100 }
     if ((Get-Content "$output/host-errors.log" -Raw) -match 'ERROR:|Unhandled exception' -or $phoneLog -match 'ERROR:|SCRIPT ERROR:|Unhandled exception|FATAL EXCEPTION') { throw 'Runtime errors observed.' }
-    Write-Output "PASS: physical Android -> packaged Windows over LAN $HostAddress; no ADB network tunnel. $hostFinal"
+    Write-Output "PASS: physical Android $(if ($AndroidHost) { 'host' } else { 'client' }) / packaged Windows over LAN $HostAddress; no ADB network tunnel. $hostFinal"
 } finally {
     & $adb shell run-as org.quizparty.game rm -f $deviceFixture
     & $adb shell rm -f /sdcard/quizparty-phase04-active.png /sdcard/quizparty-phase04-final.png

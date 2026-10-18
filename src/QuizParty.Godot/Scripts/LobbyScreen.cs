@@ -67,6 +67,12 @@ public partial class LobbyScreen : Control
         timer.Select(1);
         timer.ItemSelected += index => _transport.QuestionSeconds = timer.GetItemId((int)index);
         _settings.AddChild(timer);
+        var strategy = new CheckButton { Name = "Strategy", Text = Tr("STRATEGY_ENABLED"), ButtonPressed = true,
+            CustomMinimumSize = new(0, 64) };
+        var steal = new CheckButton { Name = "AllowSteal", Text = Tr("STRATEGY_ALLOW_STEAL"), CustomMinimumSize = new(0, 64) };
+        strategy.Toggled += enabled => { _transport.StrategyEnabled = enabled; steal.Disabled = !enabled; };
+        steal.Toggled += enabled => _transport.AllowSteal = enabled;
+        _settings.AddChild(strategy); _settings.AddChild(steal);
         _categories = new VBoxContainer { Name = "Categories" };
         _settings.AddChild(_categories);
         _host.Pressed += () => ShowError(_transport.Host(_room.Text.Trim(), _name.Text.Trim(), pin: _pin.Text));

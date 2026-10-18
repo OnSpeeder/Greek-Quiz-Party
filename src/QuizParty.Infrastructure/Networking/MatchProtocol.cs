@@ -12,7 +12,17 @@ public sealed record MatchPlayerResultDto(Guid PlayerId, int? AnswerIndex, bool 
 public sealed record MatchRevealDto(int CorrectAnswerIndex, string Explanation, MatchPlayerResultDto[] Players);
 public sealed record MatchStatisticsDto(Guid PlayerId, int Correct, int Wrong, int Unanswered,
     int BestStreak, long ResponseTicks, int Responses);
+public sealed record StrategyRulesDto(bool Confidence, bool Streaks, bool Cards, bool Missions, bool AllowSteal);
+public sealed record CardDto(Guid Id, int Kind);
+public sealed record MissionDto(int Kind, int Target, int Progress, bool Complete);
+public sealed record StrategyPrivateDto(Guid PlayerId, CardDto[] Hand, int[] HiddenAnswers, long DeadlineTicks,
+    bool Shield, bool DoublePoints, int Streak, int Meter, MissionDto? Mission, string[] SwapCategories, string Notice);
+public sealed record StrategyFinalDto(Guid PlayerId, MissionDto? Mission, int MissionBonus, int CardsUsed,
+    int ConfidentCorrect, int ConfidentWrong, int AllInCorrect, int AllInWrong);
+public sealed record CardRequestDto(Guid QuestionInstanceId, Guid CardId, Guid? Target = null, string? Category = null);
+public sealed record CardReceiptDto(bool Accepted, string Reason, Guid QuestionInstanceId, Guid CardId);
 public sealed record MatchSnapshotDto(Guid SessionId, long Revision, string Phase, long HostNowTicks,
     MatchQuestionDto Question, int AcceptedAnswerCount, MatchScoreDto[] Scores, MatchRevealDto? Reveal,
     int QuestionNumber, int TotalQuestions, int RoundNumber, bool IsTieBreaker, Guid[] EligiblePlayers,
-    Guid[] Winners, bool ContentExhausted, MatchStatisticsDto[] Statistics);
+    Guid[] Winners, bool ContentExhausted, MatchStatisticsDto[] Statistics,
+    StrategyRulesDto? Strategy = null, StrategyPrivateDto? Private = null, StrategyFinalDto[]? FinalStrategy = null);

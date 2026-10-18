@@ -577,3 +577,59 @@ must not assume these RPCs are the production protocol.
 Compatibility checks for this contract: valid round trip, duplicate handling,
 unknown connection/invalid ID/version rejection, and wrong-version ENet client.
 Godot RPC signatures and identical scene node paths must match on both platforms.
+
+## Phase 08 implemented strategy contract (production v5)
+
+Envelope version 5/app 0.5.0 deliberately rejects v1–4, including discovery's
+embedded gameplay version. Strict unknown-field rejection, 16 KiB packet/depth 8,
+ENet RPC signatures/paths, host receive timing, PIN/manual IP/discovery and the
+graceful-disconnect policy remain. Peers must update together.
+
+MatchSnapshot adds nullable Strategy (Confidence/Streaks/Cards/Missions/AllowSteal
+booleans), nullable Private, and FinalStrategy (empty until GameOver). Base-only
+games have null Strategy/Private and empty FinalStrategy. Rules cannot change
+mid-match. **BroadcastMatch maps a separate snapshot for each transport-owned
+PlayerId**; it must never broadcast the host's personalized snapshot.
+
+Private contains only the recipient's PlayerId, Hand (0–2 Id/Kind cards),
+HiddenAnswers (0 or 2 distinct indices), DeadlineTicks, Shield, DoublePoints,
+Streak, Meter (0–99), nullable Mission, up to 3 SwapCategories (128 units each),
+and bounded Notice. Card Kind: 0 DoublePoints, 1 FiftyFifty, 2 ExtraTime,
+3 CategorySwap, 4 Shield, 5 Steal. Mission Kind: 0 Historian, 1 HotStreak, 2 Gambler,
+3 Speedster, 4 Generalist, with Target/Progress/Complete. No correct answer,
+foreign hand or foreign mission is included before reveal/game end.
+Private deadlines range from base deadline through base+5 seconds.
+
+SubmitAnswer accepts Confidence 1–3 only under enabled confidence rules and normal
+play. A wrong answer's revealed Points may now be negative (minimum -500), while
+totals remain nonnegative. Clients still enforce monotonic totals for base-only
+games; strategy snapshots allow host deductions/Steal only after reveal. They
+never compute authoritative scores. Base max question points 1000, strategy 6000.
+Final accepted response statistics allow 65 seconds (base 60+personal 5).
+
+ActivateCard payload: QuestionInstanceId, CardId, nullable Target, nullable
+Category (max 128). No actor, kind, time, hidden indices or effect values. The host
+resolves the actor from the admitted connection and the kind from that owner's
+hand; validates session, current instance, connection/eligibility, phase,
+answer lock, original/personal deadlines, effect stacking and target/category
+rules; then consumes only accepted cards. Final category selection and 50/50
+indices use host RNG. An active-match disconnect revokes future answer/card
+intents while retaining the fixed score/answer roster.
+
+CardResult is a private correlated receipt: Accepted, Reason,
+QuestionInstanceId, CardId. Identical request ID/JSON returns the same cached
+receipt without applying twice. Clients retain at most one pending activation;
+correlation/card/question must all match. New questions clear pending card state;
+old receipts cannot confirm a new card. Rejections include Disabled,
+UnknownPlayer, UnknownCard, StaleQuestion, InvalidWindow, AlreadyAnswered, Late,
+InvalidReceiveTime, EffectActive, InvalidTarget, AlreadyTargeted, NoEffect,
+InvalidCategory, NoUpcomingQuestion, plus envelope/session/admission errors.
+
+FinalStrategy contains PlayerId, nullable Mission, MissionBonus, CardsUsed,
+ConfidentCorrect/Wrong, AllInCorrect/Wrong for each fixed-roster player, only at
+GameOver. Client shape checks bound every list/index/enum/progress and return
+defensive copies. The content validator's encoded text/answers/explanation budget
+is now 7000 bytes (was 10000): the previous limit produced a 16975-byte eight-player
+strategy final. Regression checks cover long Greek names/content, two cards,
+complete missions, maximum category ID and populated final statistics while
+retaining the 16 KiB bound. No signing/encryption/reconnect scope is added.

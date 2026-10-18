@@ -18,15 +18,15 @@ public enum SubmissionError
 public static class SubmissionValidator
 {
     public static SubmissionError Validate(AnswerSubmission submission, GamePhase phase,
-        QuestionPresentation? question, bool isEligible, bool alreadyAnswered, TimeSpan hostReceivedAt, TimeSpan hostNow)
+        QuestionPresentation? question, bool isEligible, bool alreadyAnswered, TimeSpan hostReceivedAt, TimeSpan hostNow, bool allowConfidence = false)
     {
         if (!isEligible) return SubmissionError.UnknownPlayer;
         if (phase != GamePhase.QuestionActive || question is null) return SubmissionError.InvalidState;
         if (submission.QuestionInstanceId != question.InstanceId) return SubmissionError.StaleQuestion;
         if (alreadyAnswered) return SubmissionError.AlreadyAnswered;
         if (submission.AnswerIndex is < 0 or > 3) return SubmissionError.InvalidAnswerIndex;
-        // Strategic confidence is deliberately deferred to Phase 08.
-        if (submission.Confidence != ConfidenceLevel.Safe) return SubmissionError.InvalidConfidence;
+        if (submission.Confidence is < ConfidenceLevel.Safe or > ConfidenceLevel.AllIn ||
+            (!allowConfidence && submission.Confidence != ConfidenceLevel.Safe)) return SubmissionError.InvalidConfidence;
         if (hostReceivedAt > hostNow) return SubmissionError.InvalidReceiveTime;
         if (hostReceivedAt < question.StartedAt) return SubmissionError.TooEarly;
         if (hostReceivedAt > question.Deadline) return SubmissionError.Late;

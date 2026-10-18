@@ -16,6 +16,8 @@ public partial class MatchProcessProbe : Node
     private bool _ready;
     private Guid _answered;
     private int _players = 2;
+    private readonly HashSet<Guid> _attemptedCards = new();
+    private string _cardReason = "None";
     private bool Live => GodotObject.IsInstanceValid(this) && IsInsideTree();
 
     // Android's exported launcher deliberately strips CLI extras. A debug-only,
@@ -54,6 +56,10 @@ public partial class MatchProcessProbe : Node
             !int.TryParse(Argument("--match-players=") ?? "2", out _players) || _players is < 2 or > 8)
         { GetTree().Quit(2); return; }
         _transport.PlayMatch = true;
+        _transport.StrategyEnabled = _args.Contains("--match-strategy");
+        _transport.AllowSteal = _args.Contains("--match-steal");
+        if (int.TryParse(Argument("--match-seed="), out var seed)) _transport.DebugStrategySeed = seed;
+        _transport.CardInputChanged += reason => _cardReason = reason;
         if (int.TryParse(Argument("--match-fixture="), out var count)) _transport.UseSyntheticQuestions(count);
         _transport.SnapshotChanged += snapshot =>
         {
@@ -86,15 +92,16 @@ public partial class MatchProcessProbe : Node
             GetTree().CreateTimer(Math.Clamp(delay, 0.05, 30)).Timeout += () =>
             {
                 if (!Live || _transport.MatchSnapshot?.Question.InstanceId != snapshot.Question.InstanceId) return;
-                _transport.SubmitAnswer(index);
-                if (!_transport.IsHost) _transport.SubmitAnswer(index, repeatLastRequest: true);
+                AnswerWithStrategy(snapshot.Question.InstanceId, index);
             };
         }
+        if (snapshot.Strategy?.Cards == true && snapshot.Phase is "Scoreboard" or "RoundEnd") PlayRecapCard(snapshot);
         if (_transport.IsHost && snapshot.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd")
             GetTree().CreateTimer(_args.Contains("--match-fast") ? 0.05 : 1).Timeout += () =>
             { if (Live && _transport.MatchSnapshot?.Revision == snapshot.Revision) _transport.AdvanceMatch(); };
         if (snapshot.Phase == "GameOver")
         {
+            if (snapshot.FinalStrategy is { Length: > 0 } final) GD.Print($"STRATEGY FINAL {JsonSerializer.Serialize(final)}");
             GD.Print($"MATCH AUTO_PASS question={snapshot.Question.InstanceId} players={snapshot.Scores.Length}");
             foreach (var result in snapshot.Reveal!.Players)
             {
@@ -106,7 +113,47 @@ public partial class MatchProcessProbe : Node
             if (!_args.Contains("--match-keep-open")) GetTree().CreateTimer(_transport.IsHost ? 4 : 2).Timeout += () => { if (Live) GetTree().Quit(); };
         }
         var capture = Argument("--match-capture=");
-        if (capture is not null && snapshot.Phase == (Argument("--match-capture-phase=") ?? "GameOver")) Capture(capture);
+        if (capture is not null && snapshot.Phase == (Argument("--match-capture-phase=") ?? "GameOver") &&
+            (!int.TryParse(Argument("--match-capture-number="), out var number) || snapshot.QuestionNumber == number)) Capture(capture);
+    }
+
+    private async void AnswerWithStrategy(Guid question, int index)
+    {
+        try
+        {
+            var snapshot = _transport.MatchSnapshot!;
+            var card = snapshot.Private?.Hand.FirstOrDefault(c => c.Kind is 0 or 1 or 2 || c.Kind == 4 && !snapshot.Private.Shield);
+            if (!snapshot.IsTieBreaker && card is not null && _attemptedCards.Add(card.Id))
+                await PlayCard(card);
+            if (!Live || _transport.MatchSnapshot is not { Phase: "QuestionActive" } next || next.Question.InstanceId != question) return;
+            _transport.SubmitAnswer(index, confidence: next.Strategy?.Confidence == true && !next.IsTieBreaker ? (_args.Contains("--match-wrong") ? 2 : 3) : 1);
+            if (!_transport.IsHost) _transport.SubmitAnswer(index, repeatLastRequest: true);
+        }
+        catch (Exception error) { GD.PushError($"Strategy bot failed: {error}"); GetTree().Quit(5); }
+    }
+
+    private async void PlayRecapCard(MatchSnapshotDto snapshot)
+    {
+        try
+        {
+            var card = snapshot.Private?.Hand.FirstOrDefault(c => !_attemptedCards.Contains(c.Id) &&
+                (c.Kind == 3 && snapshot.Private.SwapCategories.Length != 0 || c.Kind == 5));
+            if (card is null || !_attemptedCards.Add(card.Id)) return;
+            var target = card.Kind == 5 ? snapshot.Scores.FirstOrDefault(s => s.PlayerId != _transport.LocalPlayerId && s.Total > 0)?.PlayerId : null;
+            await PlayCard(card, target, card.Kind == 3 ? snapshot.Private!.SwapCategories.First() : null);
+        }
+        catch (Exception error) { GD.PushError($"Strategy recap bot failed: {error}"); GetTree().Quit(5); }
+    }
+
+    private async Task PlayCard(CardDto card, Guid? target = null, string? category = null)
+    {
+        _transport.ActivateCard(card.Id, target, category);
+        if (!_transport.IsHost) _transport.ActivateCard(card.Id, repeatLastRequest: true);
+        for (var i = 0; i < 60 && Live && _transport.CardPending; i++)
+            await ToSignal(GetTree().CreateTimer(0.05), global::Godot.Timer.SignalName.Timeout);
+        if (!Live) return;
+        if (_transport.CardPending) throw new TimeoutException("Card receipt did not arrive.");
+        if (_cardReason == "None") GD.Print($"STRATEGY PLAYTEST used={(Core.Game.CardKind)card.Kind} player={_transport.LocalPlayerId}");
     }
 
     private async void Capture(string path)

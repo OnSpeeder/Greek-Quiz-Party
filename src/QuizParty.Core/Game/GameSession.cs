@@ -25,9 +25,11 @@ public sealed class GameSession
     private QuestionResult? _reveal;
     private HashSet<PlayerId>? _eligible;
     private bool _awardPoints = true;
+    private readonly StrategySession? _strategy;
+    private readonly Dictionary<PlayerId, TimeSpan> _deadlines = new();
 
     public GameSession(GameAuthority authority, IEnumerable<Player> players, IGameClock clock,
-        IRandomSource random, ScoringRules? scoringRules = null)
+        IRandomSource random, ScoringRules? scoringRules = null, StrategySession? strategy = null)
     {
         ArgumentNullException.ThrowIfNull(players);
         ArgumentNullException.ThrowIfNull(clock);
@@ -41,6 +43,9 @@ public sealed class GameSession
         _clock = clock;
         _random = random;
         _scoring = new(scoringRules ?? new ScoringRules());
+        _strategy = strategy;
+        if (strategy is not null && (long)MaximumRawScore(scoringRules) * StrategyRules.MaxMultiplier > int.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(scoringRules));
         _scores = _players.ToDictionary(player => player.Id, _ => 0L);
     }
 
@@ -83,6 +88,8 @@ public sealed class GameSession
         _answers.Clear();
         _eligible = eligible?.ToHashSet();
         _awardPoints = awardPoints;
+        foreach (var player in _players) _deadlines[player.Id] = question.Presentation.Deadline;
+        _strategy?.BeginQuestion();
         _usedInstances.Add(instanceId);
         return GameError.None;
     }
@@ -94,11 +101,14 @@ public sealed class GameSession
     {
         if (_authority != GameAuthority.Host) return SubmissionError.NotAuthoritative;
         ArgumentNullException.ThrowIfNull(submission);
-        var error = SubmissionValidator.Validate(submission, Phase, _question?.Presentation,
+        var presentation = _question?.Presentation;
+        if (presentation is not null && _deadlines.TryGetValue(submission.PlayerId, out var deadline)) presentation = presentation with { Deadline = deadline };
+        var error = SubmissionValidator.Validate(submission, Phase, presentation,
             _scores.ContainsKey(submission.PlayerId) && (_eligible?.Contains(submission.PlayerId) ?? true),
-            _answers.ContainsKey(submission.PlayerId), hostReceivedAt, _clock.Now);
+            _answers.ContainsKey(submission.PlayerId), hostReceivedAt, _clock.Now, _awardPoints && _strategy?.Rules.Confidence == true);
         if (error != SubmissionError.None) return error;
-        _answers.Add(submission.PlayerId, new(submission.AnswerIndex, hostReceivedAt));
+        if (_strategy?.HasHidden(submission.PlayerId, submission.AnswerIndex) == true) return SubmissionError.InvalidAnswerIndex;
+        _answers.Add(submission.PlayerId, new(submission.AnswerIndex, hostReceivedAt, submission.Confidence));
         if (_answers.Count == (_eligible?.Count ?? _players.Length)) _machine.TryTransition(GameTrigger.LockQuestion);
         return SubmissionError.None;
     }
@@ -108,7 +118,9 @@ public sealed class GameSession
         if (_authority != GameAuthority.Host) return GameError.NotAuthoritative;
         if (Phase != GamePhase.QuestionActive) return GameError.InvalidTransition;
         // Exact-deadline receipts are legal. Close only after that instant, or all answers.
-        if (_answers.Count < (_eligible?.Count ?? _players.Length) && _clock.Now <= _question!.Presentation.Deadline)
+        var lastDeadline = _players.Where(p => (_eligible?.Contains(p.Id) ?? true) && !_answers.ContainsKey(p.Id))
+            .Select(p => Deadline(p.Id)).DefaultIfEmpty(TimeSpan.MinValue).Max();
+        if (_answers.Count < (_eligible?.Count ?? _players.Length) && _clock.Now <= lastDeadline)
             return GameError.QuestionNotReady;
         return _machine.TryTransition(GameTrigger.LockQuestion);
     }
@@ -126,6 +138,7 @@ public sealed class GameSession
         foreach (var total in totals) _scores[total.Key] = total.Value;
         _reveal = new(question.Presentation.InstanceId, question.CorrectAnswerIndex,
             question.Explanation, Array.AsReadOnly(results));
+        if (_awardPoints) _strategy?.RecordResults(question.Presentation.CategoryId, question.Presentation.Difficulty, results);
         return GameError.None;
     }
 
@@ -134,9 +147,41 @@ public sealed class GameSession
         if (!_answers.TryGetValue(playerId, out var answer)) return new(playerId, null, false, 0);
         var correct = answer.AnswerIndex == question.CorrectAnswerIndex;
         var view = question.Presentation;
-        var points = _scoring.Calculate(correct, answer.ReceivedAt - view.StartedAt, view.Deadline - view.StartedAt);
-        return new(playerId, answer.AnswerIndex, correct, _awardPoints ? points : 0, answer.ReceivedAt - view.StartedAt);
+        var duration = view.Deadline - view.StartedAt;
+        var elapsed = answer.ReceivedAt - view.StartedAt;
+        var raw = _scoring.Calculate(correct, elapsed > duration ? duration : elapsed, duration);
+        var points = _strategy?.Delta(playerId, correct, raw, answer.Confidence, _scores[playerId]) ?? raw;
+        return new(playerId, answer.AnswerIndex, correct, _awardPoints ? points : 0, elapsed, answer.Confidence);
     }
+
+    internal bool HasAnswered(PlayerId player) => _answers.ContainsKey(player);
+    internal TimeSpan Deadline(PlayerId player) => _deadlines.GetValueOrDefault(player);
+    internal int[] HideWrongAnswers()
+    {
+        var candidates = Enumerable.Range(0, 4).Where(i => i != _question!.CorrectAnswerIndex).ToList();
+        var first = _random.Next(candidates.Count);
+        if (first < 0 || first >= candidates.Count) throw new InvalidOperationException("Invalid random source.");
+        var hidden = candidates[first]; candidates.RemoveAt(first);
+        var second = _random.Next(candidates.Count);
+        if (second < 0 || second >= candidates.Count) throw new InvalidOperationException("Invalid random source.");
+        return [hidden, candidates[second]];
+    }
+    internal void ExtendDeadline(PlayerId player) => _deadlines[player] += TimeSpan.FromSeconds(StrategyRules.ExtraSeconds);
+    internal int Transfer(PlayerId actor, PlayerId target)
+    {
+        if (_authority != GameAuthority.Host || Phase is not (GamePhase.Scoreboard or GamePhase.RoundEnd)) throw new InvalidOperationException("Transfer window closed.");
+        var amount = (int)Math.Min(StrategyRules.StealPoints, _scores[target]);
+        var updated = checked(_scores[actor] + amount);
+        _scores[target] -= amount; _scores[actor] = updated;
+        return amount;
+    }
+    internal void ApplyBonuses(IReadOnlyDictionary<PlayerId, int> bonuses)
+    {
+        if (_authority != GameAuthority.Host || Phase != GamePhase.Scoreboard) throw new InvalidOperationException("Bonus window closed.");
+        var totals = bonuses.ToDictionary(p => p.Key, p => checked(_scores[p.Key] + p.Value));
+        foreach (var pair in totals) _scores[pair.Key] = pair.Value;
+    }
+    private static int MaximumRawScore(ScoringRules? rules) => checked((rules?.BaseCorrect ?? 500) + (rules?.TimeBonusMax ?? 500));
 
     public GameError ShowScoreboard() => _machine.TryTransition(GameTrigger.ShowScoreboard);
     public GameError EndRound() => _machine.TryTransition(GameTrigger.EndRound);
@@ -155,5 +200,5 @@ public sealed class GameSession
     public GameSnapshot GetSnapshot() => new(Phase, _question?.Presentation, _answers.Count, _reveal,
         Array.AsReadOnly(_players.Select(player => new PlayerScore(player.Id, player.DisplayName, _scores[player.Id])).ToArray()));
 
-    private sealed record ReceivedAnswer(int AnswerIndex, TimeSpan ReceivedAt);
+    private sealed record ReceivedAnswer(int AnswerIndex, TimeSpan ReceivedAt, ConfidenceLevel Confidence);
 }

@@ -633,3 +633,53 @@ is now 7000 bytes (was 10000): the previous limit produced a 16975-byte eight-pl
 strategy final. Regression checks cover long Greek names/content, two cards,
 complete missions, maximum category ID and populated final statistics while
 retaining the 16 KiB bound. No signing/encryption/reconnect scope is added.
+
+## Phase 09 implemented mixed-controller contract (production v6)
+
+Protocol 6/app 0.6.0 deliberately rejects versions 1–5. Reliable ENet paths,
+16KiB/depth8 bounds, host receipt timing, PIN/discovery/manual IP and graceful
+disconnect remain. Discovery embeds the current gameplay version too.
+
+LobbyPlayer adds opaque ControllerId, LocalSlot (0–7) and nullable TeamId (1/2).
+LobbySnapshot adds TeamMode. Production controller IDs are host-generated UUIDs
+for device groups, never transport connection IDs. ServerHello includes the
+admitted controller ID and primary PlayerId. Client DTO defaults permit singleton
+test fixtures; production always populates controller groups. The primary slot 0
+cannot be removed individually. Each controller may own multiple PlayerIds.
+
+New AddLocalPlayer contains DisplayName (same 1–32 trimmed-name rules) and required
+LocalSlot 1–7. RemoveLocalPlayer contains required LocalSlot 1–7. SetReady,
+SubmitAnswer and ActivateCard add LocalSlot (default 0). Host resolves the actor
+by **actual source ConnectionId plus validated LocalSlot**. No client actor,
+controller, score, team assignment or timestamp is accepted. Client SetTeam is
+rejected NotHost; host team assignments are local validated intents. All add/
+remove/team/ready changes are lobby-only and duplicate-safe.
+
+Lobby broadcasts go once per remote connection, not once per player. Match
+broadcasts send a separate MatchSnapshot per owned player with top-level
+LocalSlot. Each packet contains only that player's Private view. AnswerAccepted
+and CardResult echo LocalSlot and must match slot/question/correlation/card.
+Client maintains at most eight MatchClientState instances; removed/replaced slots
+cannot inherit old pending/private state. Owner switches preserve independent
+confirmed answers and pending requests. Equal revisions for different slots are
+separate views, never a reason to overwrite another actor's private data.
+
+MatchSnapshot adds Teams (empty or two TeamId/Total/Members entries) and
+WinningTeams (empty until GameOver). Membership partitions the fixed score roster
+and remains immutable through the match. Team totals are host-calculated checked
+sums; the client validates shapes and renders received totals. Team winners map
+to all member PlayerIds in Winners. ExtraTime deadlines and 50/50 removals remain
+per-player even when slots share a physical connection. Disconnect removes all
+that connection's lobby slots and revokes all future match intents while keeping
+fixed match scores/confirmed answers.
+
+Receipt cache now retains up to 2048 requests/connection, with a 2 MiB encoded
+request+reply byte gate (plus at most one bounded final record before refusal).
+This supports eight actors' long matches without assuming one player/connection.
+Old duplicate receipts are retained, never evicted and reapplied; new requests
+over either bound reject RequestLimit/disconnect. 32 messages/second and malformed
+strike limits remain. Tests cross 256 requests and exercise the byte gate.
+
+The 7000-byte question-content budget is unchanged. Eight-player final packets
+with team membership, two cards, full missions/Greek names/category/stats remain
+within 16 KiB. No reconnect, encryption, transport identity exposure or new service.

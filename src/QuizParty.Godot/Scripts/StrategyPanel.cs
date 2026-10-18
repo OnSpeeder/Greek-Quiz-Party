@@ -11,6 +11,8 @@ public partial class StrategyPanel : VBoxContainer
     private LobbyTransport? _transport;
     private MatchSnapshotDto? _snapshot;
     private Guid _question;
+    private Guid _owner;
+    private Guid _session;
     private bool _initialized;
     private string _reason = "None";
     private OptionButton _confidence = null!;
@@ -46,8 +48,11 @@ public partial class StrategyPanel : VBoxContainer
         _snapshot = snapshot;
         Visible = snapshot.Strategy is not null && snapshot.Phase != "GameOver";
         if (_transport is null || !Visible || snapshot.Private is not { } own) return;
+        if (_session != snapshot.SessionId)
+        { _session = snapshot.SessionId; _initialized = false; _owner = Guid.Empty; _question = Guid.Empty; }
         if (!_initialized) { _private.Visible = !_transport.IsHost; _initialized = true; }
-        if (_question != snapshot.Question.InstanceId) { _question = snapshot.Question.InstanceId; _confidence.Select(0); _reason = "None"; }
+        if (_question != snapshot.Question.InstanceId || _owner != own.PlayerId)
+        { _question = snapshot.Question.InstanceId; _owner = own.PlayerId; _confidence.Select(0); _reason = "None"; }
         _confidence.Visible = snapshot.Strategy!.Confidence && !snapshot.IsTieBreaker;
         _confidence.Disabled = snapshot.Phase != "QuestionActive" || _transport.OwnAnswerIndex is not null ||
             _transport.AnswerPending || _transport.CardPending || !snapshot.EligiblePlayers.Contains(own.PlayerId);
@@ -77,7 +82,8 @@ public partial class StrategyPanel : VBoxContainer
             if (kind == CardKind.Steal)
             {
                 options = new OptionButton { CustomMinimumSize = new(0, 64) };
-                var others = snapshot.Scores.Where(s => s.PlayerId != own.PlayerId &&
+                var ownTeam = snapshot.Teams?.FirstOrDefault(t => t.Members.Contains(own.PlayerId));
+                var others = snapshot.Scores.Where(s => s.PlayerId != own.PlayerId && ownTeam?.Members.Contains(s.PlayerId) != true &&
                     _transport.Snapshot?.Players.Any(p => p.PlayerId == s.PlayerId) == true).ToArray();
                 targets = others.Select(p => p.PlayerId).ToArray();
                 foreach (var player in others) options.AddItem(player.DisplayName);

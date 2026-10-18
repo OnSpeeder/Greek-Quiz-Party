@@ -22,6 +22,7 @@ public partial class LobbyScreen : Control
     private VBoxContainer _categories = null!;
     private LineEdit _pin = null!;
     private RoomBrowser _browser = null!;
+    private RosterEditor _players = null!;
 
     public override void _Ready()
     {
@@ -38,6 +39,8 @@ public partial class LobbyScreen : Control
         _roster = GetNode<Label>(path + "Roster");
         _status = GetNode<Label>(path + "Status");
         var content = GetNode<VBoxContainer>(path.TrimEnd('/'));
+        _players = new RosterEditor { Name = "RosterEditor" };
+        content.AddChild(_players); content.MoveChild(_players, _ready.GetIndex()); _players.Bind(_transport);
         _pin = new LineEdit { Name = "RoomPin", MaxLength = 6, Secret = true, PlaceholderText = Tr("LOBBY_PIN"),
             CustomMinimumSize = new Vector2(0, 64), VirtualKeyboardType = LineEdit.VirtualKeyboardTypeEnum.Number };
         content.AddChild(_pin); content.MoveChild(_pin, _host.GetIndex());
@@ -63,7 +66,7 @@ public partial class LobbyScreen : Control
         length.ItemSelected += index => _transport.QuestionCount = length.GetItemId((int)index);
         _settings.AddChild(length);
         var timer = new OptionButton { Name = "Duration", CustomMinimumSize = new Vector2(0, 64) };
-        foreach (var seconds in new[] { 10, 20, 30 }) timer.AddItem(string.Format(Tr("MATCH_DURATION"), seconds), seconds);
+        foreach (var seconds in new[] { 10, 20, 30, 60 }) timer.AddItem(string.Format(Tr("MATCH_DURATION"), seconds), seconds);
         timer.Select(1);
         timer.ItemSelected += index => _transport.QuestionSeconds = timer.GetItemId((int)index);
         _settings.AddChild(timer);
@@ -97,6 +100,7 @@ public partial class LobbyScreen : Control
         _transport.MatchChanged += _ =>
         {
             _settings.Visible = false;
+            _players.Visible = false;
             foreach (var name in new[] { "Title", "Addresses", "Roster", "Ready", "Start", "Status" })
                 GetNode<Control>(path + name).Visible = false;
         };
@@ -104,6 +108,7 @@ public partial class LobbyScreen : Control
             IP.GetLocalAddresses().Where(ip => ip.StartsWith("192.168.", StringComparison.Ordinal) || ip.StartsWith("10.", StringComparison.Ordinal))));
         Reset();
         AddChild(new LanProcessProbe { Name = "LanProbe" });
+        AddChild(new MixedProcessProbe { Name = "MixedProbe" });
     }
 
     private void Reset()
@@ -114,6 +119,7 @@ public partial class LobbyScreen : Control
         _start.Disabled = true;
         _start.Visible = false;
         _settings.Visible = false;
+        _players.Visible = false;
         foreach (var child in _categories.GetChildren()) { _categories.RemoveChild(child); child.QueueFree(); }
         _name.Editable = true;
         _room.Editable = true;
@@ -168,7 +174,8 @@ public partial class LobbyScreen : Control
                 _categories.AddChild(toggle);
             }
         }
-        _start.Disabled = snapshot.Phase != "Lobby" || snapshot.Players.Length < 2 || snapshot.Players.Any(player => !player.Ready);
+        _start.Disabled = snapshot.Phase != "Lobby" || snapshot.Players.Length < 2 || snapshot.Players.Any(player => !player.Ready) ||
+            snapshot.TeamMode && snapshot.Players.Select(p => p.TeamId).Distinct().Count() != 2;
         _roster.Text = snapshot.RoomName + "\n" + string.Join("\n", snapshot.Players.Select(player =>
             $"{player.DisplayName}{(player.IsHost ? " — " + Tr("LOBBY_HOST_MARK") : "")} — {Tr(player.Ready ? "LOBBY_READY_YES" : "LOBBY_READY_NO")}"));
         _status.Text = Tr(snapshot.Phase == "GameStarting" ? "LOBBY_STATUS_GameStarting" : "LOBBY_STATUS_Joined");

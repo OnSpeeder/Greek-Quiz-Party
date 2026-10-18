@@ -20,10 +20,12 @@ public partial class LobbyTransport : Node
     private readonly HashSet<long> _handshaken = new();
     private readonly HashSet<long> _closing = new();
     private string? _lastReadyRequest;
-    private string? _lastAnswerRequest;
-    private string? _lastCardRequest;
+    private readonly Dictionary<int, string> _lastAnswers = new();
+    private readonly Dictionary<int, string> _lastCards = new();
+    private readonly Dictionary<int, int> _hostAnswers = new();
     private long _lastMatchRevision;
-    private int? _hostAnswerIndex;
+    private int _activeSlot;
+    private int _lastPresentedSlot;
     private Guid _presentedQuestion;
     private bool? _previousRelay;
     private IReadOnlyList<Core.Questions.QuestionDefinition>? _debugQuestions;
@@ -49,15 +51,31 @@ public partial class LobbyTransport : Node
     public bool PlayMatch { get; set; } = true;
     public event Action<MatchSnapshotDto>? MatchChanged;
     public event Action<string>? MatchInputChanged;
-    public MatchSnapshotDto? MatchSnapshot => _host?.MatchSnapshot() ?? _client.Match.Snapshot;
-    public bool AnswerPending => !IsHost && _client.Match.Pending;
-    public bool CardPending => !IsHost && _client.Match.CardPending;
+    public MatchSnapshotDto? MatchSnapshot => MatchForSlot(_activeSlot);
+    public bool AnswerPending => AnswerPendingForSlot(_activeSlot);
+    public bool CardPending => CardPendingForSlot(_activeSlot);
     public event Action<string>? CardInputChanged;
-    public int? OwnAnswerIndex => IsHost ? _hostAnswerIndex : _client.Match.OwnAnswerIndex;
+    public int? OwnAnswerIndex => AnswerForSlot(_activeSlot);
+    public int ActiveSlot => _activeSlot;
+    public event Action? OwnedStateChanged;
+    public event Action? LocalPlayerChanged;
+    public IReadOnlyList<LobbyPlayerDto> OwnedPlayers => _host is null ? _client.OwnedPlayers : Array.AsReadOnly(
+        _host.Snapshot().Players.Where(p => p.ControllerId == _host.Snapshot().Players.Single(p => p.IsHost).ControllerId).OrderBy(p => p.LocalSlot).ToArray());
+    public MatchSnapshotDto? MatchForSlot(int slot) => slot is < 0 or > 7 ? null : _host is not null
+        ? OwnedPlayers.FirstOrDefault(p => p.LocalSlot == slot) is { } own ? _host.MatchSnapshot(new Core.Players.PlayerId(own.PlayerId)) : null
+        : _client.MatchForSlot(slot).Snapshot;
+    public int? AnswerForSlot(int slot) => IsHost ? _hostAnswers.TryGetValue(slot, out var index) ? index : null : _client.MatchForSlot(slot).OwnAnswerIndex;
+    public bool AnswerPendingForSlot(int slot) => !IsHost && _client.MatchForSlot(slot).Pending;
+    public bool CardPendingForSlot(int slot) => !IsHost && _client.MatchForSlot(slot).CardPending;
+    public bool SelectLocalPlayer(int slot)
+    {
+        if (!OwnedPlayers.Any(p => p.LocalSlot == slot)) return false;
+        _activeSlot = slot; LocalPlayerChanged?.Invoke(); PublishMatch(); return true;
+    }
     public event Action<LobbySnapshotDto>? SnapshotChanged;
     public event Action<string>? StatusChanged;
     public bool IsHost => _host is not null;
-    public Guid? LocalPlayerId => _host?.Snapshot().Players.Single(player => player.IsHost).PlayerId ?? _client.PlayerId;
+    public Guid? LocalPlayerId => OwnedPlayers.FirstOrDefault(p => p.LocalSlot == _activeSlot)?.PlayerId;
     public LobbySnapshotDto? Snapshot => _host?.Snapshot() ?? _client.Snapshot;
     public int ClientProtocol { get; set; } = LobbyProtocol.Version;
 
@@ -133,18 +151,39 @@ public partial class LobbyTransport : Node
         return Error.Ok;
     }
 
-    public void SetReady(bool ready, bool repeatLastRequest = false)
+    public void SetReady(bool ready, bool repeatLastRequest = false, int localSlot = 0)
     {
         if (_host is not null)
         {
-            Emit(_host.SetHostReady(ready).ToString());
+            Emit(_host.SetHostReady(ready, localSlot).ToString());
             Broadcast();
             return;
         }
-        var json = repeatLastRequest ? _lastReadyRequest : _client.CreateReady(ready);
+        var json = repeatLastRequest ? _lastReadyRequest : _client.CreateReady(ready, localSlot);
         if (json is null) return;
         _lastReadyRequest = json;
         RpcId(1, MethodName.ClientMessage, json);
+    }
+
+    public void AddLocalPlayer(string name, int slot)
+    {
+        if (_host is not null) { Emit(_host.AddHostLocal(name, slot).ToString()); Broadcast(); return; }
+        var json = _client.CreateAddLocal(name, slot); if (json is not null) RpcId(1, MethodName.ClientMessage, json);
+    }
+    public void RemoveLocalPlayer(int slot)
+    {
+        if (_host is not null) { Emit(_host.RemoveHostLocal(slot).ToString()); Broadcast(); return; }
+        var json = _client.CreateRemoveLocal(slot); if (json is not null) RpcId(1, MethodName.ClientMessage, json);
+    }
+    public void SetTeamMode(bool enabled)
+    {
+        if (_host is null) { Emit("NotHost"); return; }
+        Emit(_host.SetTeamMode(enabled).ToString()); Broadcast();
+    }
+    public void AssignTeam(Guid player, int team)
+    {
+        if (_host is null) { Emit("NotHost"); return; }
+        Emit(_host.AssignTeam(player, team).ToString()); Broadcast();
     }
 
     public void StartGame()
@@ -158,36 +197,41 @@ public partial class LobbyTransport : Node
         if (result == LobbyError.None && PlayMatch && _host.BeginMatch()) BroadcastMatch();
     }
 
-    public void SubmitAnswer(int index, bool repeatLastRequest = false, int confidence = 1)
+    public void SubmitAnswer(int index, bool repeatLastRequest = false, int confidence = 1, int? localSlot = null)
     {
+        var slot = localSlot ?? _activeSlot;
+        if (!OwnedPlayers.Any(p => p.LocalSlot == slot)) return;
         if (_host is not null)
         {
-            var error = _host.SubmitHostAnswer(index, confidence);
-            if (error == Core.Game.SubmissionError.None) _hostAnswerIndex = index;
-            MatchInputChanged?.Invoke(error.ToString());
+            var error = _host.SubmitHostAnswer(index, confidence, slot);
+            if (error == Core.Game.SubmissionError.None) _hostAnswers[slot] = index;
+            if (slot == _activeSlot) MatchInputChanged?.Invoke(error.ToString());
             BroadcastMatch();
             return;
         }
-        var json = repeatLastRequest ? _lastAnswerRequest : _client.Match.CreateAnswer(index, confidence);
+        var json = repeatLastRequest ? _lastAnswers.GetValueOrDefault(slot) : _client.MatchForSlot(slot).CreateAnswer(index, confidence);
         if (json is null) return;
-        _lastAnswerRequest = json;
+        _lastAnswers[slot] = json;
         RpcId(1, MethodName.ClientMessage, json);
-        MatchInputChanged?.Invoke("Pending");
+        if (slot == _activeSlot) MatchInputChanged?.Invoke("Pending");
+        OwnedStateChanged?.Invoke();
     }
 
-    public void ActivateCard(Guid card, Guid? target = null, string? category = null, bool repeatLastRequest = false)
+    public void ActivateCard(Guid card, Guid? target = null, string? category = null, bool repeatLastRequest = false, int? localSlot = null)
     {
-        if (MatchSnapshot is not { } snapshot) return;
+        var slot = localSlot ?? _activeSlot;
+        if (MatchForSlot(slot) is not { } snapshot) return;
         if (_host is not null)
         {
-            var result = _host.ActivateHostCard(new(snapshot.Question.InstanceId, card, target, category));
+            var result = _host.ActivateHostCard(new(snapshot.Question.InstanceId, card, target, category, slot));
             GD.Print($"STRATEGY CARD_RECEIPT reason={result}");
-            CardInputChanged?.Invoke(result.ToString()); BroadcastMatch(); return;
+            if (slot == _activeSlot) CardInputChanged?.Invoke(result.ToString()); BroadcastMatch(); return;
         }
-        var json = repeatLastRequest ? _lastCardRequest : _client.Match.CreateCard(card, target, category);
+        var json = repeatLastRequest ? _lastCards.GetValueOrDefault(slot) : _client.MatchForSlot(slot).CreateCard(card, target, category);
         if (json is null) return;
-        _lastCardRequest = json;
-        RpcId(1, MethodName.ClientMessage, json); CardInputChanged?.Invoke("Pending");
+        _lastCards[slot] = json;
+        RpcId(1, MethodName.ClientMessage, json); if (slot == _activeSlot) CardInputChanged?.Invoke("Pending");
+        OwnedStateChanged?.Invoke();
     }
 
     public void AdvanceMatch()
@@ -221,10 +265,9 @@ public partial class LobbyTransport : Node
         _handshaken.Clear();
         _closing.Clear();
         _lastReadyRequest = null;
-        _lastAnswerRequest = null;
-        _lastCardRequest = null;
+        _lastAnswers.Clear(); _lastCards.Clear(); _hostAnswers.Clear();
         _lastMatchRevision = 0;
-        _hostAnswerIndex = null;
+        _activeSlot = 0; _lastPresentedSlot = 0;
         _presentedQuestion = Guid.Empty;
         if (_peer is not null)
         {
@@ -283,8 +326,10 @@ public partial class LobbyTransport : Node
     {
         var snapshot = Snapshot;
         if (snapshot is null) return;
+        if (!OwnedPlayers.Any(p => p.LocalSlot == _activeSlot)) _activeSlot = 0;
         GD.Print($"LOBBY SNAPSHOT revision={snapshot.Revision} phase={snapshot.Phase} roster={string.Join('|', snapshot.Players.OrderBy(player => player.DisplayName, StringComparer.Ordinal).Select(player => $"{player.DisplayName}:{player.Ready}"))}");
         SnapshotChanged?.Invoke(snapshot);
+        OwnedStateChanged?.Invoke();
     }
 
     private void Broadcast()
@@ -307,17 +352,17 @@ public partial class LobbyTransport : Node
     private void PublishMatch()
     {
         var snapshot = MatchSnapshot;
-        if (snapshot is null || snapshot.Revision <= _lastMatchRevision) return;
+        if (snapshot is null || snapshot.Revision <= _lastMatchRevision && _lastPresentedSlot == _activeSlot) return;
         if (_presentedQuestion != snapshot.Question.InstanceId)
         {
             _presentedQuestion = snapshot.Question.InstanceId;
-            _hostAnswerIndex = null;
-            _lastAnswerRequest = null;
-            _lastCardRequest = null;
+            _hostAnswers.Clear(); _lastAnswers.Clear(); _lastCards.Clear();
         }
         _lastMatchRevision = snapshot.Revision;
+        _lastPresentedSlot = _activeSlot;
         GD.Print($"MATCH SNAPSHOT revision={snapshot.Revision} phase={snapshot.Phase} question={snapshot.Question.InstanceId} scores={string.Join('|', snapshot.Scores.OrderBy(score => score.DisplayName, StringComparer.Ordinal).Select(score => $"{score.DisplayName}:{score.Total}"))}");
         GD.Print($"MATCH PROGRESS number={snapshot.QuestionNumber} total={snapshot.TotalQuestions} round={snapshot.RoundNumber} tie={snapshot.IsTieBreaker}");
+        if (snapshot.Teams is { Length: > 0 }) GD.Print($"MATCH TEAMS scores={string.Join('|', snapshot.Teams.Select(t => $"{t.TeamId}:{t.Total}"))} winners={string.Join('|', snapshot.WinningTeams ?? [])}");
         if (snapshot.Phase == "GameOver") GD.Print($"MATCH FINAL winners={string.Join('|', snapshot.Winners.Order())} stats={string.Join('|',
             snapshot.Statistics.OrderBy(s => s.PlayerId).Select(s => $"{s.PlayerId}:{s.Correct}/{s.Wrong}/{s.Unanswered}/{s.BestStreak}/{s.ResponseTicks}/{s.Responses}"))}");
         MatchChanged?.Invoke(snapshot);
@@ -328,6 +373,7 @@ public partial class LobbyTransport : Node
         if (_host is null) return;
         foreach (var message in _host.BroadcastMatch()) SendToConnectedPeer(message);
         PublishMatch();
+        OwnedStateChanged?.Invoke();
     }
 
     private void DisconnectPeer(long connection)
@@ -369,16 +415,20 @@ public partial class LobbyTransport : Node
         if (update is LobbyClientUpdate.Joined or LobbyClientUpdate.Snapshot) Publish();
         if (update == LobbyClientUpdate.Joined) Emit("Joined");
         if (update == LobbyClientUpdate.RequestResult) Emit(_client.LastReason);
-        if (update == LobbyClientUpdate.MatchSnapshot) PublishMatch();
+        if (update == LobbyClientUpdate.MatchSnapshot) { PublishMatch(); OwnedStateChanged?.Invoke(); }
         if (update == LobbyClientUpdate.AnswerReceipt)
         {
-            GD.Print($"MATCH RECEIPT reason={_client.Match.LastReason}");
-            MatchInputChanged?.Invoke(_client.Match.LastReason);
+            var state = _client.MatchForSlot(_client.LastMatchSlot);
+            GD.Print($"MATCH RECEIPT reason={state.LastReason}");
+            if (_client.LastMatchSlot == _activeSlot) MatchInputChanged?.Invoke(state.LastReason);
+            OwnedStateChanged?.Invoke();
         }
         if (update == LobbyClientUpdate.CardReceipt)
         {
-            GD.Print($"STRATEGY CARD_RECEIPT reason={_client.Match.CardReason}");
-            CardInputChanged?.Invoke(_client.Match.CardReason);
+            var state = _client.MatchForSlot(_client.LastMatchSlot);
+            GD.Print($"STRATEGY CARD_RECEIPT reason={state.CardReason}");
+            if (_client.LastMatchSlot == _activeSlot) CardInputChanged?.Invoke(state.CardReason);
+            OwnedStateChanged?.Invoke();
         }
     }
 }

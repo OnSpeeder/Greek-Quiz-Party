@@ -42,7 +42,7 @@ remain intentional until the art/polish phase.
 ./scripts/smoke.ps1
 ```
 
-Production protocol is now 5, intentionally incompatible with versions 1–4.
+Production protocol is now 6, intentionally incompatible with versions 1–5.
 The old lobby-only regression opts out of starting a match; normal menu Start
 always enters gameplay. This preserves the lobby checks without skipping tests.
 
@@ -105,3 +105,24 @@ mission outcome/bonus and confidence success/card-use statistics.
 Normal navigation uses validated reviewed content. --match-strategy,
 --match-steal and --match-seed=N are opt-in playtest flags; -Strategy/-Steal on the
 network/Android scripts select them. These fixtures add no reviewed questions.
+
+## Shared devices and teams
+
+Create a room, then use Add player on this device for each extra local person.
+Each has a separate ready button; the room still has a total limit of eight.
+Removing an extra player in lobby discards that seat; Disconnect leaves with all
+players from that device. Two or more players on just the host can play without
+any remote joins.
+
+Enable Team Mode in the host's roster editor and assign Team A/B. Both teams must
+have players. Scores sum individual scores, including mission bonuses and
+penalties; unequal sizes are allowed. Final results show team totals/winning team
+as well as individual stats. Sudden death uses the fastest correct host receipt
+among tied-team members, without changing normal totals.
+
+When several players share a device, give it to the next person and tap Play as
+their name. Personal controls stay behind the handoff curtain until claimed.
+Submitting hides them; switching owners resets confidence to x1 and hides prior
+personal controls. Select a player again during recap to use their recap cards.
+The shared question timer keeps running; choose a longer timer (up to 60 seconds)
+for larger shared groups. Phones with one player retain their normal controls.

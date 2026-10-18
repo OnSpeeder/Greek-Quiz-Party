@@ -244,3 +244,38 @@ card uses and final mission/card/confidence records; scripts require all enabled
 card kinds to be used and identical final authoritative results across peers.
 Actual clock/network arrival times remain observed rather than deterministic.
 Run base-match and discovery/PIN regressions after the protocol bump too.
+
+## Phase 09 mixed local/LAN and teams
+
+MixedTeamTests exercise every 2–8 player count in local-only and mixed rosters,
+per-slot readiness/capacity/removal/departure, host-only assignments, invalid team
+membership, checked aggregation, a team win despite an opponent's higher personal
+score, host-timed sudden death, shared exhaustion, strategy/mission sums and
+teammate Steal rejection. MixedTeamProtocolTests cover multiple actors per
+connection, forged/missing/out-of-range slots, foreign-card ownership, separate
+private 50/50/deadlines, stale/removed slot state, defensive team copies,30-question
+eight-player progression beyond 256 requests, cache byte bounds and final agreement.
+Eight-player packet regression also runs with teams enabled.
+
+Runtime GdUnit drives real local roster controls, readiness/team start, the
+handoff curtain and two independent answer submissions, checks confidence reset,
+recap access, explicit owner-change hiding and new-session privacy collapse.
+Tests await deferred node deletion before checking cleanup; no orphan warnings
+are ignored or checks disabled.
+
+~~~powershell
+./scripts/test-network-mixed.ps1 -Teams -Strategy -Capture
+./scripts/test-network-mixed.ps1 -HostPlayers 8 -ClientPlayers 0 -Teams -Strategy -Port 17795
+./scripts/test-network-mixed.ps1 -HostPlayers 2 -ClientPlayers 2 -SecondClientPlayers 4 -Teams -Strategy -Port 17797
+./scripts/test-network-mixed.ps1 -Packaged -Teams -Strategy -Port 17801 -Capture
+./scripts/test-network-mixed.ps1 -Packaged -HostPlayers 2 -ClientPlayers 6 -Port 17803
+./scripts/test-android-mixed.ps1 -HostAddress <WINDOWS-IP> -HostPlayers 2 -ClientPlayers 3
+./scripts/test-android-mixed.ps1 -AndroidHost -HostAddress <PHONE-IP> -HostPlayers 2 -ClientPlayers 3
+~~~
+
+Mixed probes are explicit debug-only --match-mixed launches with bounded
+--match-local/--match-players and optional --match-teams/--match-strategy flags.
+No bot is active in normal navigation. Synthetic fixtures confer no editorial
+review. Final public-state SHA256 digests avoid Android logcat line truncation;
+desktop helpers also compare full JSON and independently verify team sums.
+Run base-match and discovery/PIN regressions after the protocol change.

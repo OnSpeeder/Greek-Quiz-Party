@@ -277,3 +277,36 @@ host's personal panel starts collapsed for shared screens; phone clients can
 hide their own panel. Final results reveal missions/progress/bonuses, cards used,
 and x2/x3 correct/wrong counts and success percentages. This phase adds functional
 localized controls; the visual direction/art pass remains Phase 10.
+
+## Phase 09 implemented local and team rules
+
+A party has 2–8 total players across one or more devices. Each device has a
+primary local slot 0 and may add slots 1–7 while in lobby. Every player has an
+independent identity, readiness, answer, confidence, hand, mission and statistics.
+Host controls match progression and team assignments. Removing an extra slot
+before start discards that identity; replacing it creates a new one.
+
+Team Mode uses two teams A/B, both nonempty at start. The host initially gets
+alternating assignments and can change them before starting. New players join
+the smaller team. Unequal sizes are permitted; scores are **sums**, without
+normalization. Each member still answers individually and receives individual
+strategy bonuses/penalties. Mission bonuses count in team totals before ranking.
+Personal Shield/ExtraTime/50–50 remain personal; Steal may target only opponents.
+
+If team totals tie after normal play, every member of the tied teams is eligible
+for sudden death. The earliest correct host receipt wins for that player's team.
+Equal earliest receipts from different teams continue with all members of those
+teams; all-wrong/unanswered continues. Normal totals remain unchanged. Content
+exhaustion shares victory among remaining teams. Winners contains every member
+of a winning team; individual statistics stay available.
+
+Shared-device controllers show a handoff curtain: select a player explicitly to
+open their controls; answer submission or player change hides them. Confidence
+resets to x1 on owner change. Recap allows explicit claims for that player's card
+controls. A new host session collapses the personal panel again. All players use
+the same host question start/timer, with only accepted personal ExtraTime changing
+a player's deadline. The host can choose 60 seconds for larger shared groups.
+
+One-device party play uses the same host coordinator without remote joins. No
+discussion timer, custom team names, balancing formula, host migration or secure
+reconnect was added. Functional UI remains separate from the Phase 10 visual pass.

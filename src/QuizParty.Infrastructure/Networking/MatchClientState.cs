@@ -26,7 +26,7 @@ public sealed class MatchClientState
         _pendingId = Guid.NewGuid();
         _pendingIndex = index;
         return LobbyProtocol.Encode("SubmitAnswer", _snapshot.SessionId,
-            new AnswerRequestDto(_snapshot.Question.InstanceId, index, confidence), messageId: _pendingId);
+            new AnswerRequestDto(_snapshot.Question.InstanceId, index, confidence, _snapshot.LocalSlot), messageId: _pendingId);
     }
 
     public string? CreateCard(Guid card, Guid? target = null, string? category = null)
@@ -37,14 +37,14 @@ public sealed class MatchClientState
             _snapshot.Private?.Hand.Any(c => c.Id == card) != true || category?.Length > 128) return null;
         _pendingCardMessage = Guid.NewGuid(); _pendingCard = card; CardReason = "Pending";
         return LobbyProtocol.Encode("ActivateCard", _snapshot.SessionId,
-            new CardRequestDto(_snapshot.Question.InstanceId, card, target, category), messageId: _pendingCardMessage);
+            new CardRequestDto(_snapshot.Question.InstanceId, card, target, category, _snapshot.LocalSlot), messageId: _pendingCardMessage);
     }
 
     public bool ApplyCardReceipt(LobbyEnvelope packet, Guid sessionId)
     {
         if (packet.SessionId != sessionId || _pendingCardMessage is null || packet.CorrelationId != _pendingCardMessage ||
             !LobbyProtocol.TryPayload<CardReceiptDto>(packet, out var receipt) || receipt is null || receipt.CardId != _pendingCard ||
-            receipt.QuestionInstanceId != _snapshot?.Question.InstanceId) return false;
+            receipt.QuestionInstanceId != _snapshot?.Question.InstanceId || receipt.LocalSlot != _snapshot.LocalSlot) return false;
         _pendingCardMessage = null;
         CardReason = receipt.Accepted ? "None" : receipt.Reason is { Length: > 0 and <= 40 } ? receipt.Reason : "MalformedRequest";
         return true;
@@ -72,7 +72,7 @@ public sealed class MatchClientState
     {
         if (packet.SessionId != sessionId || _pendingId is null || packet.CorrelationId != _pendingId ||
             !LobbyProtocol.TryPayload<AnswerReceiptDto>(packet, out var receipt) || receipt is null ||
-            receipt.QuestionInstanceId != _snapshot?.Question.InstanceId) return false;
+            receipt.QuestionInstanceId != _snapshot?.Question.InstanceId || receipt.LocalSlot != _snapshot.LocalSlot) return false;
         if (receipt.Accepted) OwnAnswerIndex = _pendingIndex;
         _pendingId = null;
         LastReason = receipt.Accepted ? "None" : receipt.Reason is { Length: > 0 and <= 40 } ? receipt.Reason : "MalformedRequest";
@@ -88,6 +88,7 @@ public sealed class MatchClientState
     private static bool Forward(MatchSnapshotDto old, MatchSnapshotDto next)
     {
         if (next.Revision <= old.Revision || old.Phase == "GameOver" || next.TotalQuestions != old.TotalQuestions || next.Strategy != old.Strategy ||
+            next.LocalSlot != old.LocalSlot || !SameTeams(old.Teams, next.Teams) ||
             !old.Scores.Select(s => s.PlayerId).Order().SequenceEqual(next.Scores.Select(s => s.PlayerId).Order()) ||
             (next.Strategy is null && next.Scores.Any(s => s.Total < old.Scores.Single(p => p.PlayerId == s.PlayerId).Total)) ||
             (Rank(next.Phase) < 2 && next.Scores.Any(s => s.Total != old.Scores.Single(p => p.PlayerId == s.PlayerId).Total))) return false;
@@ -114,7 +115,7 @@ public sealed class MatchClientState
             next.EligiblePlayers is not { Length: >= 1 and <= 8 } eligible || eligible.Distinct().Count() != eligible.Length ||
             eligible.Any(id => !scores.Any(s => s.PlayerId == id)) || next.Winners is not { Length: <= 8 } winners ||
             winners.Distinct().Count() != winners.Length || winners.Any(id => !eligible.Contains(id)) ||
-            next.Statistics is not { Length: <= 8 } || !ValidStrategy(next, localPlayer)) return false;
+            next.Statistics is not { Length: <= 8 } || next.LocalSlot is < 0 or > 7 || !ValidTeams(next) || !ValidStrategy(next, localPlayer)) return false;
         if (next.Phase != "GameOver" && (winners.Length != 0 || next.Statistics.Length != 0 || next.ContentExhausted)) return false;
         if (next.Phase == "GameOver" && (winners.Length == 0 || next.Statistics.Length != scores.Length ||
             next.Statistics.Any(s => s is null || s.Correct < 0 || s.Wrong < 0 || s.Unanswered < 0 || s.BestStreak < 0 ||
@@ -133,6 +134,20 @@ public sealed class MatchClientState
     private static bool ValidMission(MissionDto? mission) => mission is null || mission.Kind is >= 0 and <= 4 &&
         mission.Target == (mission.Kind switch { 0 or 3 => 3, 1 => 4, 2 => 2, _ => 5 }) &&
         mission.Progress >= 0 && mission.Progress <= mission.Target && mission.Complete == (mission.Progress == mission.Target);
+
+    private static bool SameTeams(TeamScoreDto[]? old, TeamScoreDto[]? next) => (old?.Length ?? 0) == (next?.Length ?? 0) &&
+        (old is null || old.All(t => next!.Any(n => n.TeamId == t.TeamId && n.Members.SequenceEqual(t.Members))));
+    private static bool ValidTeams(MatchSnapshotDto next)
+    {
+        var teams = next.Teams; var winners = next.WinningTeams;
+        if (teams is null or { Length: 0 }) return winners is null or { Length: 0 };
+        if (teams.Length != 2 || teams.Any(t => t is null || t.TeamId is not (1 or 2) || t.Total < 0 || t.Members is not { Length: >= 1 and <= 7 }) ||
+            teams.Select(t => t.TeamId).Distinct().Count() != 2 ||
+            !teams.SelectMany(t => t.Members).Order().SequenceEqual(next.Scores.Select(s => s.PlayerId).Order()) ||
+            winners is not { Length: <= 2 } || winners.Distinct().Count() != winners.Length || winners.Any(t => t is not (1 or 2))) return false;
+        return next.Phase != "GameOver" ? winners.Length == 0 : winners.Length != 0 &&
+            teams.Where(t => winners.Contains(t.TeamId)).SelectMany(t => t.Members).Order().SequenceEqual(next.Winners.Order());
+    }
 
     private static bool ValidStrategy(MatchSnapshotDto next, Guid owner)
     {
@@ -164,6 +179,7 @@ public sealed class MatchClientState
         Reveal = value.Reveal is null ? null : value.Reveal with { Players = value.Reveal.Players.ToArray() },
         Private = value.Private is not { } own ? null : own with
         { Hand = own.Hand.ToArray(), HiddenAnswers = own.HiddenAnswers.ToArray(), SwapCategories = own.SwapCategories.ToArray() },
-        FinalStrategy = value.FinalStrategy?.ToArray()
+        FinalStrategy = value.FinalStrategy?.ToArray(),
+        Teams = value.Teams?.Select(t => t with { Members = t.Members.ToArray() }).ToArray(), WinningTeams = value.WinningTeams?.ToArray()
     };
 }

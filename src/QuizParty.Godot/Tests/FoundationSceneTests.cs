@@ -9,7 +9,61 @@ public class FoundationSceneTests
 {
     [TestCase]
     [RequireGodotRuntime]
-    public void StrategyRendersPersonalCardsAndUsesSafeConfidenceWhenDisabledOrTied()
+    public async Task SharedDeviceHandoffHidesPreviousPlayerAndPreservesIndependentInputs()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<Control>();
+        tree.Root.AddChild(root);
+        try
+        {
+            var transport = root.GetNode<Networking.LobbyTransport>("Transport");
+            transport.DiscoveryPort = 19992;
+            AssertThat(transport.Host("Local test", "Host", 19991)).IsEqual(Error.Ok);
+            const string prefix = "Margin/Scroll/Content/";
+            var editor = root.GetNode<Presentation.RosterEditor>(prefix + "RosterEditor");
+            AssertThat(editor.GetNode<Button>("AddLocal").CustomMinimumSize.Y >= 64).IsTrue();
+            editor.GetNode<LineEdit>("LocalName").Text = "Ελένη";
+            editor.GetNode<Button>("AddLocal").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(transport.OwnedPlayers.Count).IsEqual(2);
+            AssertThat(transport.OwnedPlayers.Single(p => p.LocalSlot == 1).Ready).IsFalse();
+            transport.SetReady(true, localSlot: 1);
+            editor.GetNode<CheckButton>("Teams").ButtonPressed = true;
+            AssertThat(transport.Snapshot!.TeamMode).IsTrue(); transport.StartGame();
+            var match = root.GetNode<Presentation.MatchPanel>(prefix + "MatchPanel");
+            var controllers = match.GetNode<Presentation.LocalControllerPanel>("LocalControllers");
+            var strategy = match.GetNode<Presentation.StrategyPanel>("Strategy");
+            AssertThat(controllers.Open).IsFalse(); AssertThat(strategy.Visible).IsFalse();
+            AssertThat(match.GetNode<Button>("Answer0").Visible).IsFalse();
+            controllers.GetChildren().OfType<Button>().First().EmitSignal(Button.SignalName.Pressed);
+            AssertThat(controllers.Open).IsTrue(); AssertThat(strategy.Visible).IsTrue();
+            strategy.GetNode<OptionButton>("Confidence").Select(2);
+            var correct = Array.IndexOf(transport.MatchSnapshot!.Question.Answers, "Αθήνα");
+            match.GetNode<Button>($"Answer{correct}").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(controllers.Open).IsFalse(); AssertThat(strategy.Visible).IsFalse();
+            AssertThat(transport.AnswerForSlot(0)).IsEqual(correct); AssertThat(transport.AnswerForSlot(1)).IsNull();
+            controllers.GetChildren().OfType<Button>().Single(b => b.Text.Contains("Ελένη", StringComparison.Ordinal)).EmitSignal(Button.SignalName.Pressed);
+            AssertThat(transport.ActiveSlot).IsEqual(1); AssertThat(controllers.Open).IsTrue();
+            AssertThat(strategy.Confidence).IsEqual(1);
+            AssertThat(transport.MatchSnapshot!.Private!.PlayerId).IsEqual(transport.OwnedPlayers.Single(p => p.LocalSlot == 1).PlayerId);
+            match.GetNode<Button>($"Answer{correct}").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(transport.AnswerForSlot(0)).IsEqual(correct); AssertThat(transport.AnswerForSlot(1)).IsEqual(correct);
+            await root.ToSignal(tree.CreateTimer(0.15), global::Godot.Timer.SignalName.Timeout);
+            AssertThat(transport.MatchSnapshot!.Phase).IsEqual("AnswerReveal"); transport.AdvanceMatch();
+            controllers.GetChildren().OfType<Button>().Single(b => b.Text.Contains("Ελένη", StringComparison.Ordinal)).EmitSignal(Button.SignalName.Pressed);
+            AssertThat(controllers.Open).IsTrue(); AssertThat(strategy.Visible).IsTrue();
+            transport.SelectLocalPlayer(0); AssertThat(controllers.Open).IsFalse(); AssertThat(strategy.Visible).IsFalse();
+            strategy.Render(transport.MatchSnapshot!);
+            strategy.GetNode<Button>("Privacy").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(strategy.GetNode<VBoxContainer>("Private").Visible).IsTrue();
+            strategy.Render(transport.MatchSnapshot! with { SessionId = Guid.NewGuid() });
+            AssertThat(strategy.GetNode<VBoxContainer>("Private").Visible).IsFalse();
+        }
+        finally { root.Free(); await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task StrategyRendersPersonalCardsAndUsesSafeConfidenceWhenDisabledOrTied()
     {
         using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<Control>();
         ((SceneTree)Engine.GetMainLoop()).Root.AddChild(root);
@@ -34,6 +88,8 @@ public class FoundationSceneTests
         AssertThat(panel.Confidence).IsEqual(1);
         AssertThat(personal.GetChildren().OfType<Button>().Any()).IsFalse();
         root.Free();
+        var tree = (SceneTree)Engine.GetMainLoop();
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
     }
 
     [TestCase]

@@ -15,6 +15,8 @@ public partial class MatchPanel : VBoxContainer
     private Label _statistics = null!;
     private Label _departures = null!;
     private StrategyPanel _strategy = null!;
+    private LocalControllerPanel _controllers = null!;
+    private Label _teams = null!;
 
     public override void _Ready()
     {
@@ -28,6 +30,10 @@ public partial class MatchPanel : VBoxContainer
         MoveChild(_departures, 2);
         _strategy = new StrategyPanel { Name = "Strategy" };
         AddChild(_strategy); MoveChild(_strategy, GetNode<Button>("Answer0").GetIndex());
+        _controllers = new LocalControllerPanel { Name = "LocalControllers" };
+        AddChild(_controllers); MoveChild(_controllers, _strategy.GetIndex());
+        _teams = new Label { Name = "TeamScores", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        AddChild(_teams); MoveChild(_teams, GetNode<Label>("Scores").GetIndex());
         for (var index = 0; index < 4; index++)
         {
             var choice = index;
@@ -47,9 +53,12 @@ public partial class MatchPanel : VBoxContainer
         transport.MatchInputChanged += OnInputChanged;
         transport.SnapshotChanged += OnLobbyChanged;
         _strategy.Bind(transport);
+        _controllers.Bind(transport); _controllers.Changed += OnControllerChanged;
         transport.CardInputChanged += OnCardInput;
     }
     private void OnCardInput(string reason) => UpdateControls();
+    private void OnControllerChanged()
+    { _reason = "None"; if (_transport?.MatchSnapshot is { } snapshot) Render(snapshot); }
 
     private void OnLobbyChanged(LobbySnapshotDto lobby)
     {
@@ -70,6 +79,7 @@ public partial class MatchPanel : VBoxContainer
         Visible = true;
         if (_snapshot?.Question.InstanceId != snapshot.Question.InstanceId) _reason = "None";
         _snapshot = snapshot;
+        _controllers.Refresh();
         _strategy.Render(snapshot);
         if (_transport?.Snapshot is { } lobby) OnLobbyChanged(lobby);
         _receivedAtMs = global::Godot.Time.GetTicksMsec();
@@ -77,9 +87,15 @@ public partial class MatchPanel : VBoxContainer
         GetNode<Label>("Heading").Text = Tr(snapshot.Phase == "GameOver" ? "MATCH_FINAL" : "MATCH_TITLE");
         _progress.Text = snapshot.IsTieBreaker ? Tr("MATCH_TIE") : string.Format(Tr("MATCH_PROGRESS"),
             snapshot.RoundNumber, snapshot.QuestionNumber, snapshot.TotalQuestions);
+        var teamMode = snapshot.Teams is { Length: > 0 };
+        var winnerNames = teamMode ? (snapshot.WinningTeams ?? []).Select(team => Tr("TEAM_" + team).ToString()) :
+            snapshot.Scores.Where(s => snapshot.Winners.Contains(s.PlayerId)).Select(s => s.DisplayName);
+        _teams.Text = snapshot.Reveal is null || !teamMode ? "" : string.Join("\n", snapshot.Teams!.Select(team =>
+            string.Format(Tr("TEAM_SCORE"), Tr("TEAM_" + team.TeamId), team.Total, string.Join(", ",
+                snapshot.Scores.Where(s => team.Members.Contains(s.PlayerId)).Select(s => s.DisplayName)))));
         _statistics.Text = snapshot.Phase != "GameOver" ? "" :
-            string.Format(Tr(snapshot.ContentExhausted ? "MATCH_SHARED" : "MATCH_WINNER"), string.Join(", ",
-                snapshot.Scores.Where(s => snapshot.Winners.Contains(s.PlayerId)).Select(s => s.DisplayName))) + "\n" +
+            string.Format(Tr(teamMode ? snapshot.ContentExhausted ? "TEAM_SHARED" : "TEAM_WINNER" :
+                snapshot.ContentExhausted ? "MATCH_SHARED" : "MATCH_WINNER"), string.Join(", ", winnerNames)) + "\n" +
             string.Join("\n", snapshot.Statistics.Select(s => string.Format(Tr("MATCH_STATS"),
                 snapshot.Scores.Single(p => p.PlayerId == s.PlayerId).DisplayName, s.Correct, s.Wrong, s.Unanswered,
                 s.Correct + s.Wrong + s.Unanswered == 0 ? 0 : 100.0 * s.Correct / (s.Correct + s.Wrong + s.Unanswered),
@@ -105,10 +121,12 @@ public partial class MatchPanel : VBoxContainer
     private void UpdateControls()
     {
         if (_snapshot is null || _transport is null) return;
+        _controllers.Refresh();
         var active = _snapshot.Phase == "QuestionActive";
+        _strategy.Visible = _controllers.Open && _snapshot.Strategy is not null && _snapshot.Phase != "GameOver";
         for (var i = 0; i < 4; i++)
         {
-            _answers[i].Visible = _snapshot.Phase is "QuestionActive" or "QuestionLocked" or "AnswerReveal";
+            _answers[i].Visible = _snapshot.Phase == "AnswerReveal" || _controllers.Open && _snapshot.Phase is "QuestionActive" or "QuestionLocked";
             _answers[i].Disabled = !active || !_snapshot.EligiblePlayers.Contains(_transport.LocalPlayerId ?? Guid.Empty) ||
                 _transport.AnswerPending || _transport.CardPending || _transport.OwnAnswerIndex is not null ||
                 _snapshot.Private?.HiddenAnswers.Contains(i) == true;
@@ -131,7 +149,7 @@ public partial class MatchPanel : VBoxContainer
     private void UpdateCountdown()
     {
         if (_snapshot is null || !Visible) return;
-        var seconds = Math.Max(0, TimeSpan.FromTicks((_snapshot.Private?.DeadlineTicks ?? _snapshot.Question.DeadlineTicks) - _snapshot.HostNowTicks).TotalSeconds -
+        var seconds = Math.Max(0, TimeSpan.FromTicks((_controllers.Open ? _snapshot.Private?.DeadlineTicks ?? _snapshot.Question.DeadlineTicks : _snapshot.Question.DeadlineTicks) - _snapshot.HostNowTicks).TotalSeconds -
             (global::Godot.Time.GetTicksMsec() - _receivedAtMs) / 1000.0);
         GetNode<Label>("Countdown").Text = _snapshot.Phase == "QuestionActive"
             ? string.Format(Tr("MATCH_TIME"), (int)Math.Ceiling(seconds)) : "";

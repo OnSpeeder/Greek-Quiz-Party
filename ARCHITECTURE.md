@@ -77,6 +77,20 @@ game rules. The selected disconnect strategy preserves the fixed match roster,
 shows departed players and expires missing answers; only lobby joins get fresh
 identities. No reconnect token or match-state recovery is implemented.
 
+Phase 08 adds Core StrategySession, host-validated card intents and personalized
+match DTOs. Phase 09 keys LobbySession by PlayerId, preserving unique
+(ConnectionId, LocalSlot) ownership. Infrastructure assigns an opaque public
+controller group, resolves intents against the real transport connection and
+slot, and routes separate private snapshots/receipts for each owned player.
+LobbyClientState retains bounded MatchClientState instances per slot.
+
+Immutable Core TeamRoster validates two complete nonempty teams and computes
+checked sums from individual scores. FullMatch resolves team ranking/ties and
+excludes teammates from Steal targets. No client aggregates authoritative scores.
+Godot RosterEditor renders slot/readiness/team controls; LocalControllerPanel
+provides the explicit handoff curtain. MatchPanel/StrategyPanel render only the
+selected owner's private state after claim. Networking survives owner switches.
+
 Suggested namespaces:
 
 ```text

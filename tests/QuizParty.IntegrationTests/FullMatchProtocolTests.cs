@@ -108,8 +108,8 @@ public class FullMatchProtocolTests
     }
 
     [Theory]
-    [InlineData(false)] [InlineData(true)]
-    public void LargestContentBudgetStillFitsEightPlayerFinalPacket(bool strategy)
+    [InlineData(false, false)] [InlineData(true, false)] [InlineData(true, true)]
+    public void LargestContentBudgetStillFitsEightPlayerFinalPacket(bool strategy, bool teams)
     {
         var clock = new Clock();
         const string manifest = """{"schemaVersion":1,"locale":"el-GR","packVersion":"1.0.0","categories":[{"id":"test","nameKey":"CATEGORY_TEST"}]}""";
@@ -130,6 +130,7 @@ public class FullMatchProtocolTests
             host.Handle(i, client.CreateReady(true)!);
         }
         Assert.True(host.ConfigureMatch(new(1, strategy: strategy ? new StrategyRules() : null)));
+        host.SetTeamMode(teams);
         host.Start(); host.BeginMatch(); clock.Now += TimeSpan.FromSeconds(21); host.PollMatch(); host.PollMatch();
         host.AdvanceMatch(); host.AdvanceMatch();
         Assert.Equal("GameOver", host.MatchSnapshot()!.Phase);

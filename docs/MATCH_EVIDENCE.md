@@ -1,5 +1,29 @@
 # Observed match evidence
 
+## Phase 09 — mixed controllers and teams, 2026-10-18
+
+359 automated tests passed (252 Core, 100 Infrastructure, 7 Godot), including real
+UI handoff/independent input and every 2–8 player count in Core. Source 20-question
+team+strategy matches passed with8 local,2 local+2/4 remote slots and2 local+3
+remote slots. Packaged5-player team and 8-player individual/base full matches,
+base preview and discovery/PIN regressions also passed. Protocol is 6.
+
+Physical Android15/23013PC75G and packaged Windows completed 20-question5-player
+team+strategy matches both roles: Windows host2/phone client3, Team A 212833/ B 0;
+Android host2/Windows client3, Team A 212757/ B 0. Public-final SHA256 digests matched
+all scores/team membership/winners/stats/missions/cards, avoiding logcat's long
+line truncation. Owner-specific views were separately validated per local slot.
+Phone active curtain showed separate submitted/unanswered owners without prior
+answer/private-panel exposure. Greek desktop and phone finals inspected; runtime
+errors clean. Exports/signature/install/launch passed and fixtures removed.
+
+Evidence: artifacts/phase09-*.log, phase09-*/ and
+[Phase 09 context](../harness/context/phase-09-mixed-teams-context.md).
+Long runs use labeled synthetic debug questions; production still has one reviewed
+question. One physical phone, automated execution and GdUnit UI interaction are
+claimed, not multi-phone/human touch or balance acceptance. Changes uncommitted;
+Phase 10 not started.
+
 ## Phase 08 — strategy, 2026-10-18
 
 326 tests passed (232 Core, 88 Infrastructure, 6 Godot runtime). Source and

@@ -8,14 +8,17 @@ From the main menu choose **Παιχνίδι στο τοπικό δίκτυο / 
    required, and select a room. Full/started rooms are disabled. If discovery
    finds nothing or fails, enter the host's LAN IP and use **Join by IP**.
    The host shows local addresses; select the actual LAN interface, not a VPN.
-3. Remote players choose ready. The host can also change their ready state.
+3. Each device can add extra local players (up to eight players total), remove
+   its extra slots and mark each of its players ready independently. The primary
+   slot stays until that device leaves. Host can enable Team Mode and assign
+   each player to Team A/B; both teams must have players before starting.
 4. With at least two players and everyone ready, only the host can start.
 5. Start continues into the configured match. See [Match guide](MATCH.md).
    The retained lobby-only regression explicitly stops at GameStarting.
 
 Disconnect closes the current session on that device. Back returns to the main
 menu and closes its peer. A host exit disconnects everyone. A departing client
-is removed from the lobby roster. A lobby rejoin gets a fresh identity and must
+has all of its local players removed from the lobby roster. A lobby rejoin gets a fresh identity and must
 set ready again. Active matches cannot be resumed: departed names are shown,
 confirmed answers/scores stay, and missing answers expire normally. Host loss
 shows room-closed guidance. This is Phase 07's graceful-disconnect baseline;

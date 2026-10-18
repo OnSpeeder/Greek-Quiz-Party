@@ -43,7 +43,7 @@ public partial class MatchProcessProbe : Node
     public override void _Ready()
     {
         _args = LaunchArguments();
-        if (_args.Any(value => value.StartsWith("--match-", StringComparison.Ordinal))) Callable.From(Begin).CallDeferred();
+        if (!_args.Contains("--match-mixed") && _args.Any(value => value.StartsWith("--match-", StringComparison.Ordinal))) Callable.From(Begin).CallDeferred();
     }
 
     private string? Argument(string prefix) => _args.FirstOrDefault(value => value.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];

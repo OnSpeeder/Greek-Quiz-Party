@@ -1,5 +1,13 @@
 # Phase 09 — Mixed Local/LAN and Team Mode
 
+## Status — complete locally, 2026-10-18
+
+2–8 local/mixed players, multiple slots per controller, independent private
+handoff controls and host-assigned two-team scoring/ties implemented. 359 tests
+pass, including runtime UI interaction. Full source/packaged eight-player and
+physical Android five-player matches with either hosting role passed.
+Commit and push authorized after verification; stop before separately approved Phase 10.
+
 ## Goal
 
 Implement multiple local players, mixed remote/local roster and Team Mode using separate player/connection/local-slot identities.

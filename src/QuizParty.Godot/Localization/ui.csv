@@ -54,7 +54,7 @@ LOBBY_STATUS_WrongSession,Η αίθουσα άλλαξε — συνδέσου ξ
 LOBBY_STATUS_RequestConflict,Το αίτημα έχει ήδη χρησιμοποιηθεί,Request ID was already used
 LOBBY_STATUS_RequestLimit,Πάρα πολλά αιτήματα — συνδέσου ξανά,Too many requests — connect again
 LOBBY_STATUS_UnknownConnection,Η σύνδεση δεν είναι ενεργή,Connection is no longer active
-LOBBY_STATUS_InvalidPlayer,Μη έγκυρος παίκτης,Invalid player
+LOBBY_STATUS_InvalidPlayer,Το όνομα ή η τοπική θέση παίκτη δεν είναι έγκυρα,Player name or local slot is invalid
 LOBBY_STATUS_ConnectionTimeout,Η σύνδεση έληξε — έλεγξε IP και δίκτυο,Connection timed out — check IP and network
 LOBBY_STATUS_ConnectionFailed,Αποτυχία σύνδεσης — έλεγξε IP και δίκτυο,Connection failed — check IP and network
 LOBBY_STATUS_ServerDisconnected,Η αίθουσα έκλεισε — δημιούργησε ή βρες νέα αίθουσα. Το παιχνίδι δεν συνεχίζεται μετά την αποσύνδεση.,Room closed — create or find a new room. This match cannot be resumed after disconnect.
@@ -177,3 +177,21 @@ STRATEGY_CATEGORY_arts,Τέχνες,Arts
 STRATEGY_CATEGORY_sports,Αθλητισμός,Sports
 STRATEGY_CATEGORY_geography,Γεωγραφία,Geography
 STRATEGY_CATEGORY_greece,Ελλάδα,Greece
+LOCAL_NAME,Όνομα νέου παίκτη αυτής της συσκευής,New player name on this device
+LOCAL_ADD,Προσθήκη παίκτη σε αυτή τη συσκευή,Add player on this device
+LOCAL_REMOVE,Αφαίρεση,Remove
+LOCAL_THIS_DEVICE,σε αυτή τη συσκευή,on this device
+LOCAL_HINT,Κάθε παίκτης ετοιμάζεται χωριστά. Οι παίκτες της ίδιας συσκευής μοιράζονται τα χειριστήρια.,Each player readies separately. Players on the same device share its controls.
+LOCAL_HANDOFF_HINT,Δώστε τη συσκευή στον παίκτη που θα επιλέξετε. Οι προσωπικές επιλογές κρύβονται μετά την αποστολή. Ο χρόνος είναι κοινός.,Pass the device to the selected player. Personal controls hide after submission. The timer is shared.
+LOCAL_PLAY_AS,Παίξε ως {0},Play as {0}
+LOCAL_SUBMITTED,{0} — στάλθηκε απάντηση,{0} — answer submitted
+LOCAL_HIDE,Κρύψε προσωπικά χειριστήρια,Hide personal controls
+TEAM_ENABLE,Ομαδικό παιχνίδι,Team Mode
+TEAM_1,Ομάδα Α,Team A
+TEAM_2,Ομάδα Β,Team B
+TEAM_HINT,Η βαθμολογία ομάδας είναι το άθροισμα των παικτών της. Ο οικοδεσπότης ορίζει τις ομάδες.,Team score is the sum of its players. The host assigns teams.
+TEAM_NEED_TWO,Χρειάζονται παίκτες και στις δύο ομάδες για την έναρξη.,Both teams need players before starting.
+TEAM_SCORE,{0}: {1} πόντοι — {2},{0}: {1} points — {2}
+TEAM_WINNER,Νικήτρια: {0},Winning team: {0}
+TEAM_SHARED,Κοινή νίκη: {0} — εξαντλήθηκαν οι ερωτήσεις,Shared team victory: {0} — question pack exhausted
+LOBBY_STATUS_InvalidTeam,Ελέγξτε ότι και οι δύο ομάδες έχουν παίκτες,Check that both teams have players

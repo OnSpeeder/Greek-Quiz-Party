@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 namespace QuizParty.Infrastructure.Networking;
 
 public sealed record AnswerRequestDto(Guid QuestionInstanceId, [property: JsonRequired] int AnswerIndex,
-    [property: JsonRequired] int Confidence);
-public sealed record AnswerReceiptDto(bool Accepted, string Reason, Guid QuestionInstanceId);
+    [property: JsonRequired] int Confidence, int LocalSlot = 0);
+public sealed record AnswerReceiptDto(bool Accepted, string Reason, Guid QuestionInstanceId, int LocalSlot = 0);
 public sealed record MatchQuestionDto(Guid InstanceId, string Text, string[] Answers, string CategoryId,
     int Difficulty, long StartedAtTicks, long DeadlineTicks);
 public sealed record MatchScoreDto(Guid PlayerId, string DisplayName, long Total);
@@ -19,10 +19,12 @@ public sealed record StrategyPrivateDto(Guid PlayerId, CardDto[] Hand, int[] Hid
     bool Shield, bool DoublePoints, int Streak, int Meter, MissionDto? Mission, string[] SwapCategories, string Notice);
 public sealed record StrategyFinalDto(Guid PlayerId, MissionDto? Mission, int MissionBonus, int CardsUsed,
     int ConfidentCorrect, int ConfidentWrong, int AllInCorrect, int AllInWrong);
-public sealed record CardRequestDto(Guid QuestionInstanceId, Guid CardId, Guid? Target = null, string? Category = null);
-public sealed record CardReceiptDto(bool Accepted, string Reason, Guid QuestionInstanceId, Guid CardId);
+public sealed record CardRequestDto(Guid QuestionInstanceId, Guid CardId, Guid? Target = null, string? Category = null, int LocalSlot = 0);
+public sealed record CardReceiptDto(bool Accepted, string Reason, Guid QuestionInstanceId, Guid CardId, int LocalSlot = 0);
+public sealed record TeamScoreDto(int TeamId, long Total, Guid[] Members);
 public sealed record MatchSnapshotDto(Guid SessionId, long Revision, string Phase, long HostNowTicks,
     MatchQuestionDto Question, int AcceptedAnswerCount, MatchScoreDto[] Scores, MatchRevealDto? Reveal,
     int QuestionNumber, int TotalQuestions, int RoundNumber, bool IsTieBreaker, Guid[] EligiblePlayers,
     Guid[] Winners, bool ContentExhausted, MatchStatisticsDto[] Statistics,
-    StrategyRulesDto? Strategy = null, StrategyPrivateDto? Private = null, StrategyFinalDto[]? FinalStrategy = null);
+    StrategyRulesDto? Strategy = null, StrategyPrivateDto? Private = null, StrategyFinalDto[]? FinalStrategy = null,
+    TeamScoreDto[]? Teams = null, int[]? WinningTeams = null, int LocalSlot = 0);

@@ -2,6 +2,57 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-18 — Phase 09 — mixed local/LAN and Team Mode complete
+
+- Baseline Phase 08 pushed as 5268832. Phase 09 changes stay local/uncommitted.
+  Lobby keyed by PlayerId with unique connection/slot ownership; every device
+  can own multiple players. Independent readiness/answers/cards/missions/stats,
+  logical8-player cap and whole-device departure implemented. Two host-assigned
+  nonempty teams use checked sums, team ranking/sudden death/shared exhaustion;
+  strategy/mission bonuses count and Steal excludes teammates.
+- Protocol 6/app 0.6.0 adds opaque controller grouping, slot intents and separate
+  private snapshots/receipts per owner. No native connection IDs exposed.
+  Duplicate-safe cache supports 2048 requests/2 MiB plus a bounded last record;
+  rate 32/s and 16 KiB envelope stay. Existing7000-byte question budget still fits
+  populated eight-player team finals. No dependencies/services/GitHub CI added.
+- Localized composable roster/team controls and explicit handoff curtain added.
+  Owner change/submission hides prior controls; confidence resets to Safe; new
+  host session collapses private panel. Shared timer supports 60 seconds. Team
+  standings/winners render host data. UI uses containers and 64-unit targets.
+- Build clean, zero warnings/errors. Final local tests: 252 Core + 100
+  Infrastructure + 7 Godot = 359 passed, none failed/skipped. Existing tests kept.
+  New coverage includes 2–8 combinations, aggregation/ties, per-slot ownership,
+  privacy/deadlines/removal,30-question 8-player wire play beyond 256 requests,
+  cache bounds and team packet size. Actual Godot UI handoff/ready/answer/recap/
+  session-reset actions passed. Deferred-node cleanup warnings fixed by awaiting
+  frame deletion; checker was not disabled. Canonical/CLI content gates passed.
+- Source 20-question team+strategy full matches passed: 2 local+3 remote slots;
+  8 local (team A 290820/ B 0,21 cards);2 local+2/4 remote slots (A290709/ B 0,21 cards).
+  Packaged5-player team+strategy passed (A212816/ B 0,16 cards); packaged8-player
+  individual/base also passed. Every owner finished with matching public finals.
+- Packaged base-preview regression passed Host994/Anna993/Maria0. Discovery/PIN
+  regression passed actual broadcast/custom ports, admission/rate limits, manual
+  IP, fresh rejoin, started metadata, host exit and safe match departure. Explicit
+  startup smoke observed C# ready and clean runtime stderr.
+- Windows/Android debug exports, APK signature verification, physical install
+  Success/launcher Status:ok passed. Physical Android15/23013PC75G and Windows
+  completed 20-question5-player team+strategy matches with both hosting roles.
+  Windows host2/phone client3: A212833/ B 0, public-final digest6A677E39...56E9A08;
+  Android host2/Windows client3: A212757/ B 0, digestD7B99967...CE9BDBB.
+  Scores/team membership/winners/individual stats/missions/cards matched fully.
+  SHA256 public-state comparisons avoid logcat line truncation. Greek desktop,
+  phone handoff curtain and final team/score screens inspected; runtime clean.
+- Phone runs sequential, fixtures/captures cleaned, normal app restored and
+  Windows peers stopped. No network tunnel/touch injection/lock bypass/settings/
+  permission/firewall change. Automated physical execution, not human touch QA.
+  MCP bridge offline; runtime/GdUnit/captures used. Known Godot export teardown
+  diagnostic retained. No other known blocking error.
+- Logs/captures: artifacts/phase09-*.log and phase09-*/; exact commands/decisions
+  in harness/context/phase-09-mixed-teams-context.md. Docs/protocol updated; no
+  production questions changed. Generated platform-lock churn restored; diff
+  whitespace check passes. Stop before Phase 10 UI/accessibility/content scale;
+  separate user approval is required to begin it. No commit/push performed.
+
 ## 2026-10-18 — Phase 08 — strategy mechanics complete
 
 - Started from pushed Phase 07 f6fe343; this phase stays local/uncommitted.

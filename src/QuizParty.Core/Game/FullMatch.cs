@@ -44,6 +44,10 @@ public sealed class FullMatch
     private readonly HashSet<PlayerId> _connected;
     private bool _selectionSwapped;
     private string[]? _swapCategories;
+    private readonly TeamRoster? _teams;
+    private TeamId[] _winningTeams = [];
+    public IReadOnlyList<TeamScore> TeamScores => _teams?.Scores(Snapshot.Scores) ?? [];
+    public IReadOnlyList<TeamId> WinningTeams => Array.AsReadOnly(_winningTeams.ToArray());
     public StrategyRules? Strategy => _settings.Strategy;
     public IReadOnlyList<StrategyFinal> FinalStrategy => Snapshot.Phase == GamePhase.GameOver ? _strategy?.Final() ?? [] : [];
     public long Revision { get; private set; } = 1;
@@ -60,7 +64,8 @@ public sealed class FullMatch
 
     public FullMatch(IEnumerable<Player> players, IGameClock clock, IRandomSource random,
         IEnumerable<QuestionDefinition> questions, MatchSettings settings,
-        IReadOnlyCollection<string>? categories = null, Func<QuestionInstanceId>? nextInstance = null, Func<Guid>? nextCard = null)
+        IReadOnlyCollection<string>? categories = null, Func<QuestionInstanceId>? nextInstance = null, Func<Guid>? nextCard = null,
+        TeamRoster? teams = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
@@ -69,6 +74,8 @@ public sealed class FullMatch
         _nextInstance = nextInstance ?? (() => new(Guid.NewGuid()));
         _clock = clock;
         var roster = players.ToArray();
+        _teams = teams;
+        teams?.ValidateRoster(roster.Select(p => p.Id));
         _connected = roster.Select(p => p.Id).ToHashSet();
         _strategy = settings.Strategy is null ? null : new StrategySession(roster.Select(p => p.Id), random, _deck.Upcoming(settings.QuestionCount), settings.Strategy, nextCard);
         _game = new(GameAuthority.Host, roster, clock, random, strategy: _strategy);
@@ -152,6 +159,7 @@ public sealed class FullMatch
         if (_strategy?.Rules.AllowSteal != true) return CardError.Disabled;
         if (!recap) return CardError.InvalidWindow;
         if (intent.Target is not { } target || target == intent.Player || !_connected.Contains(target)) return CardError.InvalidTarget;
+        if (_teams is not null && _teams.TeamOf(target) == _teams.TeamOf(intent.Player)) return CardError.InvalidTarget;
         if (_strategy.WasTargeted(target)) return CardError.AlreadyTargeted;
         if (Snapshot.Scores.Single(p => p.PlayerId == target).Total == 0) return CardError.NoEffect;
         if (_strategy.BlockSteal(target)) _strategy.Notice(intent.Player, "StealBlocked");
@@ -212,8 +220,16 @@ public sealed class FullMatch
         if (!IsTieBreaker)
         {
             if (_strategy is not null && !_strategy.BonusesApplied) _game.ApplyBonuses(_strategy.ApplyBonuses());
-            var top = Snapshot.Scores.Max(s => s.Total);
-            _eligible = Snapshot.Scores.Where(s => s.Total == top).Select(s => s.PlayerId).ToArray();
+            if (_teams is null)
+            {
+                var top = Snapshot.Scores.Max(s => s.Total);
+                _eligible = Snapshot.Scores.Where(s => s.Total == top).Select(s => s.PlayerId).ToArray();
+            }
+            else
+            {
+                var scores = TeamScores; var top = scores.Max(s => s.Total);
+                _eligible = _teams.PlayersIn(scores.Where(s => s.Total == top).Select(s => s.TeamId)).ToArray();
+            }
         }
         else
         {
@@ -221,13 +237,16 @@ public sealed class FullMatch
             if (correct.Length > 0)
             {
                 var fastest = correct.Min(p => p.ResponseTime!.Value);
-                _eligible = correct.Where(p => p.ResponseTime == fastest).Select(p => p.PlayerId).ToArray();
+                var fastestPlayers = correct.Where(p => p.ResponseTime == fastest).Select(p => p.PlayerId).ToArray();
+                _eligible = _teams is null ? fastestPlayers : _teams.PlayersIn(fastestPlayers.Select(_teams.TeamOf)).ToArray();
             }
         }
-        if (_eligible.Length == 1 || _deck.Remaining == 0)
+        var finalistCount = _teams is null ? _eligible.Length : _eligible.Select(_teams.TeamOf).Distinct().Count();
+        if (finalistCount == 1 || _deck.Remaining == 0)
         {
             _winners = _eligible.ToArray();
-            ContentExhausted = _eligible.Length > 1;
+            _winningTeams = _teams is null ? [] : _eligible.Select(_teams.TeamOf).Distinct().Order().ToArray();
+            ContentExhausted = finalistCount > 1;
             Require(_game.EndRound()); Require(_game.FinishGame());
             _strategy?.EndGame();
         }

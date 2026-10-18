@@ -6,7 +6,7 @@ namespace QuizParty.Infrastructure.Networking;
 
 public sealed record LobbyEnvelope(int ProtocolVersion, string MessageType, Guid MessageId,
     Guid SessionId, Guid? CorrelationId, JsonElement Payload);
-public sealed record ClientHelloDto(string AppVersion, string DisplayName, string Platform);
+public sealed record ClientHelloDto(string AppVersion, string DisplayName, string Platform, string Pin = "");
 public sealed record ReadyRequestDto([property: JsonRequired] bool Ready);
 public sealed record StartRequestDto;
 public sealed record LobbyPlayerDto(Guid PlayerId, string DisplayName, bool IsHost, bool Ready);
@@ -18,10 +18,10 @@ public sealed record LobbyDispatch(IReadOnlyList<LobbyOutbound> Messages, bool D
 
 public static class LobbyProtocol
 {
-    public const int Version = 3;
+    public const int Version = 4;
     public const int MaxPacketBytes = 16384;
     public const int MaxNameLength = 32;
-    public const string AppVersion = "0.3.0";
+    public const string AppVersion = "0.4.0";
     private static readonly JsonSerializerOptions Options = new()
     {
         MaxDepth = 8,

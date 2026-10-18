@@ -99,7 +99,7 @@ public class FullMatchProtocolTests
     public void ProtocolTwoIsExplicitlyRejectedAndCapacityCanBeCheckedBeforeLobbyStart()
     {
         var f = new Fixture(10);
-        var json = f.Client.BeginHello("Old", "Android").Replace("\"ProtocolVersion\":3", "\"ProtocolVersion\":2", StringComparison.Ordinal);
+        var json = f.Client.BeginHello("Old", "Android").Replace($"\"ProtocolVersion\":{LobbyProtocol.Version}", "\"ProtocolVersion\":2", StringComparison.Ordinal);
         var rejected = f.Host.Handle(3, json);
         Assert.True(rejected.DisconnectSender); Assert.Contains("IncompatibleVersion", rejected.Messages[0].Json);
         var host = new LobbyHost("Room", "Host", new Clock(), [new("one", "Question", ["a", "b", "c", "d"], 0, "test", 1, "Explanation")], new(1));
@@ -168,8 +168,8 @@ public class FullMatchProtocolTests
         host.PollMatch(); Deliver(host.BroadcastMatch()); host.AdvanceMatch(); Deliver(host.BroadcastMatch());
         host.AdvanceMatch(); Deliver(host.BroadcastMatch());
         Assert.Equal("GameOver", clients[0].Match.Snapshot!.Phase);
-        Assert.Equal(clients[0].PlayerId, Assert.Single(clients[0].Match.Snapshot.Winners));
-        Assert.Equal(1000, clients[0].Match.Snapshot.Scores.Single(s => s.PlayerId == clients[0].PlayerId).Total);
+        Assert.Equal(clients[0].PlayerId, Assert.Single(clients[0].Match.Snapshot!.Winners));
+        Assert.Equal(1000, clients[0].Match.Snapshot!.Scores.Single(s => s.PlayerId == clients[0].PlayerId).Total);
         Assert.Equal(1, clients[1].Match.Snapshot!.Statistics.Single(s => s.PlayerId == clients[1].PlayerId).Wrong);
     }
 }

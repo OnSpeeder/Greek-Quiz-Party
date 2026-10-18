@@ -41,7 +41,7 @@ remain intentional until the art/polish phase.
 ./scripts/smoke.ps1
 ```
 
-Production protocol is now 3, intentionally incompatible with versions 1/2.
+Production protocol is now 4, intentionally incompatible with versions 1/2/3.
 The old lobby-only regression opts out of starting a match; normal menu Start
 always enters gameplay. This preserves the lobby checks without skipping tests.
 

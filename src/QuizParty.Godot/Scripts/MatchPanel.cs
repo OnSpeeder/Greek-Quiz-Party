@@ -13,6 +13,7 @@ public partial class MatchPanel : VBoxContainer
     private string _reason = "None";
     private Label _progress = null!;
     private Label _statistics = null!;
+    private Label _departures = null!;
 
     public override void _Ready()
     {
@@ -21,6 +22,9 @@ public partial class MatchPanel : VBoxContainer
         MoveChild(_progress, 1);
         _statistics = new Label { Name = "Statistics", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_statistics);
+        _departures = new Label { Name = "Departures", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        AddChild(_departures);
+        MoveChild(_departures, 2);
         for (var index = 0; index < 4; index++)
         {
             var choice = index;
@@ -38,6 +42,14 @@ public partial class MatchPanel : VBoxContainer
         _transport = transport;
         transport.MatchChanged += Render;
         transport.MatchInputChanged += OnInputChanged;
+        transport.SnapshotChanged += OnLobbyChanged;
+    }
+
+    private void OnLobbyChanged(LobbySnapshotDto lobby)
+    {
+        if (_snapshot is null) return;
+        var departed = _snapshot.Scores.Where(s => !lobby.Players.Any(p => p.PlayerId == s.PlayerId)).Select(s => s.DisplayName).ToArray();
+        _departures.Text = departed.Length == 0 ? "" : string.Format(Tr("MATCH_DEPARTED"), string.Join(", ", departed));
     }
 
     private void OnInputChanged(string reason)
@@ -51,6 +63,7 @@ public partial class MatchPanel : VBoxContainer
         Visible = true;
         if (_snapshot?.Question.InstanceId != snapshot.Question.InstanceId) _reason = "None";
         _snapshot = snapshot;
+        if (_transport?.Snapshot is { } lobby) OnLobbyChanged(lobby);
         _receivedAtMs = global::Godot.Time.GetTicksMsec();
         GetNode<Label>("Question").Text = snapshot.Question.Text;
         GetNode<Label>("Heading").Text = Tr(snapshot.Phase == "GameOver" ? "MATCH_FINAL" : "MATCH_TITLE");
@@ -110,5 +123,6 @@ public partial class MatchPanel : VBoxContainer
         if (_transport is null) return;
         _transport.MatchChanged -= Render;
         _transport.MatchInputChanged -= OnInputChanged;
+        _transport.SnapshotChanged -= OnLobbyChanged;
     }
 }

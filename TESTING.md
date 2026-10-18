@@ -55,6 +55,14 @@ The implemented lobby regression is `./scripts/test-network-lobby.ps1` (host + t
 clients). After Windows export, also run with `-Packaged` to check normal packaged
 startup. `./scripts/test-network-spike.ps1` preserves the earlier disposable probe.
 
+Phase 07 adds `./scripts/test-network-discovery.ps1` (also `-Packaged -Capture`)
+for actual UDP broadcast/custom port, PIN rejection/admission/reconnect limits,
+manual IP, fresh lobby identity, started metadata, host exit and safe match
+departure. `./scripts/test-android-discovery.ps1 -HostAddress <LAN-IP>` tests both
+host roles over actual Wi-Fi/Ethernet, observes phone browser/error screens and
+cleans up its opt-in debug argument fixture. Keep phone awake/unlocked. No tunnel
+or injected touch input substitutes for LAN discovery evidence.
+
 Phase 04 adds `./scripts/test-network-match.ps1` (also `-Packaged` and `-TimeoutCase`)
 and the real-device helper `./scripts/test-android-match.ps1 -HostAddress <LAN-IP>`.
 Verify full phase/score agreement, duplicate answers, wrong/unanswered outcomes,
@@ -111,6 +119,16 @@ Use at least one physical Android device and preferably multiple hardware profil
 - stale question rejected,
 - late answer rejected,
 - invalid confidence rejected.
+
+### Discovery and admission
+
+- strict bounded UTF-8/JSON, exact fields/types, version and nonce rejection;
+- observed source address, deduplication, 32-room cap and injected-clock expiry;
+- reply rate limits, missing/wrong/malformed PIN and success without PIN leakage;
+- per-address/global PIN limits across reconnects, duplicate receipts not charged;
+- fresh lobby rejoin, active-match re-entry rejection and old-answer replay;
+- confirmed score retained after departure, unanswered seats expire normally;
+- host loss clearly closes clients; match resumption is not enabled.
 
 ### Cards
 

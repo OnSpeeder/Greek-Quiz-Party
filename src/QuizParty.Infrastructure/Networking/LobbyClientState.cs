@@ -14,7 +14,7 @@ public sealed class LobbyClientState
     public MatchClientState Match { get; private set; } = new();
     public LobbySnapshotDto? Snapshot => _snapshot is null ? null : _snapshot with { Players = _snapshot.Players.ToArray() };
 
-    public string BeginHello(string name, string platform)
+    public string BeginHello(string name, string platform, string pin = "")
     {
         _helloId = Guid.NewGuid();
         _snapshot = null;
@@ -23,7 +23,7 @@ public sealed class LobbyClientState
         Match = new();
         LastReason = "None";
         return LobbyProtocol.Encode("ClientHello", Guid.Empty,
-            new ClientHelloDto(LobbyProtocol.AppVersion, name, platform), messageId: _helloId);
+            new ClientHelloDto(LobbyProtocol.AppVersion, name, platform, pin), messageId: _helloId);
     }
 
     public string? CreateReady(bool ready) => CreateRequest("SetReady", new ReadyRequestDto(ready));

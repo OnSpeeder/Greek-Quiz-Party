@@ -23,6 +23,11 @@ public class FoundationSceneTests
         AssertThat(length.GetSelectedId()).IsEqual(1);
         AssertThat(length.CustomMinimumSize.Y >= 64).IsTrue();
         AssertThat(root.GetNode<OptionButton>(path + "Duration").GetSelectedId()).IsEqual(20);
+        var pin = root.GetNode<LineEdit>("Margin/Scroll/Content/RoomPin");
+        AssertThat(pin.Secret).IsTrue(); AssertThat(pin.MaxLength).IsEqual(6);
+        AssertThat(pin.CustomMinimumSize.Y >= 64).IsTrue();
+        AssertThat(root.GetNode<Button>("Margin/Scroll/Content/RoomBrowser/Refresh").CustomMinimumSize.Y >= 64).IsTrue();
+        AssertThat(root.GetNodeOrNull<Networking.LanDiscovery>("Transport/Discovery")).IsNotNull();
         root.Free();
         AssertThat(multiplayer.ServerRelay).IsEqual(previousRelay);
     }

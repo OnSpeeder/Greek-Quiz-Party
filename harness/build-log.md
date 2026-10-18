@@ -2,6 +2,50 @@
 
 Append observed implementation and verification evidence here. Plans are not evidence.
 
+## 2026-10-18 — Phase 07 — discovery, PIN and graceful disconnect complete
+- Baseline Phase 06 pushed as 153c835 before this approved phase. New changes
+  remain local/uncommitted. No GitHub CI, dependencies or external services added.
+- Implemented strict discovery codec/catalog/reply limiter, independent Godot
+  UDP adapter, responsive room browser and optional masked PIN input. Protocol 4/
+  app 0.4.0 intentionally rejects older versions. Host gate validates PIN and
+  limits failed attempts by actual source IP across new transport connections;
+  discovery broadcasts no PIN/hash/token. Manual IP uses the same admission gate.
+- Selected the phase's allowed graceful-disconnect baseline: new lobby joins get
+  fresh unready identity; started matches reject re-entry, preserve confirmed
+  scores and expire missing answers. UI shows departed names and host-loss
+  guidance. No token reclaim, match resumption or host migration is claimed.
+- Build clean (zero warnings/errors). 208 Core + 79 Infrastructure + 5 Godot =
+  292 tests passed, none failed/skipped. Full test script plus final extra
+  confirmed-answer departure/replay test passed. Strict content/CLI gates pass;
+  no content/schema changes. Logs: phase07-tests-final.log and
+  phase07-integration-final.log. No failing check deleted/skipped/weakened.
+- Source and packaged test-network-discovery.ps1 passed actual broadcast/custom
+  game port, wrong/missing/correct PIN, limits across connections, manual IP,
+  fresh lobby rejoin, started metadata, host exit, empty scan guidance and safe
+  match departure. Departed Phone timed out unanswered; Host994/Phone0 at rev6.
+- Packaged lobby regression passed. Source 20-question and packaged 30-question
+  matches passed with identical results on host/two clients. Final packaged30:
+  rev184, Host29911/Anna29818/Maria0. Root startup smoke passed.
+- Windows/Android debug exports, APK signature verification, install Success and
+  launch succeeded. scripts/test-android-discovery.ps1 passed physical Android
+  15/23013PC75G Wi-Fi192.168.68.106 ↔ Windows Ethernet192.168.68.105 on real LAN
+  game17789/discovery17790, with both devices hosting. Each broadcast-discovered
+  the other, rejected wrong PIN and admitted correct PIN. Phone manual-IP rejoin
+  got a new ID, then host exit was observed. No network tunnel/forwarding, input
+  injection, firewall/device settings or Android permission change. Private debug
+  arguments removed (run-as ls checked), temporary screen capture removed and
+  normal app restored. Automated physical runtime, not human touch acceptance.
+- Final screenshots inspected: Greek browser/PIN flag and departed-player
+  message, readable phone wrong-PIN feedback beside input and Android host lobby.
+  Evidence: artifacts/phase07-network*, phase07-android/, phase07-export-*.log
+  and phase07-smoke.log. Runtime error scans clean. Known editor/export
+  shutdown_adb_on_exit teardown diagnostic remains retained in logs.
+- Production pack still contains one human-reviewed question; long regression
+  content remains synthetic. LAN broadcast varies by router/device policy; manual
+  IP remains available. No safe match resumption is enabled in this baseline.
+- git diff --check and untracked-source whitespace checks passed; generated lock
+  churn restored. Stop at Phase 07; Phase 08 strategy needs separate user approval.
+
 ## 2026-10-18 — Phase 06 — full game loop and selection complete
 - Prior Phase 05 committed/pushed as 4b3d310 on origin/main. Phase 06 remains an
   ordinary uncommitted diff. GitHub CI remains disabled; no dependencies added.

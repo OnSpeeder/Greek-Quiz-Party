@@ -1,20 +1,32 @@
-# Phase 03 lobby
+# LAN lobby, discovery and PIN
 
 From the main menu choose **Παιχνίδι στο τοπικό δίκτυο / LAN party lobby**.
 
-1. Host enters their name and a room name, then creates the room (UDP 7777).
-2. Other players on the same LAN enter their name and the host's LAN IP, then join.
+1. Host enters their name/room name and optionally a 4–6 digit PIN, then creates
+   the room (game UDP 7777; discovery UDP 7778).
+2. Other players enter their name, choose **Find rooms**, enter the room PIN if
+   required, and select a room. Full/started rooms are disabled. If discovery
+   finds nothing or fails, enter the host's LAN IP and use **Join by IP**.
    The host shows local addresses; select the actual LAN interface, not a VPN.
 3. Remote players choose ready. The host can also change their ready state.
 4. With at least two players and everyone ready, only the host can start.
-5. Phase 04 now continues into the one-question match. See [Match guide](MATCH.md).
+5. Start continues into the configured match. See [Match guide](MATCH.md).
    The retained lobby-only regression explicitly stops at GameStarting.
 
 Disconnect closes the current session on that device. Back returns to the main
 menu and closes its peer. A host exit disconnects everyone. A departing client
-is removed from the roster. Joining a started/full room and incompatible protocol
-versions show rejection. Discovery/PIN/reconnect and mixed local/team UI are later
-phases; manual IP remains supported.
+is removed from the lobby roster. A lobby rejoin gets a fresh identity and must
+set ready again. Active matches cannot be resumed: departed names are shown,
+confirmed answers/scores stay, and missing answers expire normally. Host loss
+shows room-closed guidance. This is Phase 07's graceful-disconnect baseline;
+no reconnect token, seat reclaim or host migration is enabled.
+
+PIN input is masked and optional. Both browser and manual joins use the same
+host admission gate. Wrong/missing PIN is rejected; after five failed guesses
+from one source within 30 seconds, wait up to 30 seconds before trying again.
+PINs are not encryption. Discovery advertises only whether a PIN is required.
+The browser searches for five seconds, expires stale rooms, and can be refreshed.
+Discovery never replaces host-side capacity, state or compatibility checks.
 
 Setup fields hide after connection so the roster and ready/start controls stay
 visible. Containers/scrolling and orientation-aware logical canvases support
@@ -27,6 +39,7 @@ units. Plain visuals are intentional until the later UI/art phase.
 ./scripts/build.ps1
 ./scripts/test.ps1 -IncludeGodot
 ./scripts/test-network-lobby.ps1
+./scripts/test-network-discovery.ps1 -Capture
 ./scripts/test-network-spike.ps1
 ./scripts/smoke.ps1
 ```
@@ -35,9 +48,26 @@ For exported Windows builds: `./scripts/export.ps1 -Platform Windows`, then
 `./scripts/test-network-lobby.ps1 -Packaged`. This uses normal exported startup,
 without scene-path overrides disallowed by official templates.
 
+Also run `./scripts/test-network-discovery.ps1 -Packaged -Capture`. It checks real
+UDP broadcast/custom port, wrong/missing/correct PIN, limits across reconnects,
+manual fallback, fresh lobby identity, started metadata, host exit and a departed
+match seat's timeout. No relay or Internet service is involved.
+
+For actual awake/unlocked Android hardware after export/install:
+
+```powershell
+./scripts/test-android-discovery.ps1 -HostAddress <actual-Windows-LAN-IPv4>
+```
+
+The phone and Windows each host, broadcast-discover the other, reject wrong PIN
+and admit correct PIN. Phone manual IP, fresh lobby rejoin and host exit are
+checked. ADB only installs/launches, supplies app-private debug arguments and
+observes logs/screenshots; no network tunnel, touch injection or settings changes.
+The helper removes its private arguments/screenshots and restores normal startup.
+
 The lobby regression uses UDP 17778 and checks a host/two actual ENet client
-processes on loopback. It does not substitute for a future physical Android lobby
-test. Logs live in ignored `artifacts/phase03-network/`. Scene tests check bounded
+processes on loopback. Discovery evidence is in `artifacts/phase07-network*` and
+actual phone evidence in `artifacts/phase07-android/`. Scene tests check bounded
 inputs and touch-sized controls; protocol tests exercise JSON, session/ownership,
 duplicates, rate/cache limits and client snapshots.
 
@@ -48,6 +78,13 @@ Pass flags after Godot's `--`. Test-only flags `--lobby-auto`,
 `--lobby-cancel-join` verifies a freed transport outlives no stale timeout callback;
 they are never selected during normal menu navigation. `--lobby-capture=PATH`
 captures a rendered viewport for visual inspection; use a graphical renderer.
+
+Phase 07 debug-only flags: --lan-host / --lan-find / --lan-join=IP,
+--lan-port=7777, --lan-discovery-port=7778, --lan-pin=TESTPIN,
+--lan-scan-only, --lan-name=Name, --lan-stay, --lan-start-players=2,
+--lan-match, --lan-leave-question, --lan-expect-empty, --lan-capture=PATH.
+They route through normal AppRoot and the existing debug-only private argument
+file on Android (12 flags/4096 bytes). Release builds ignore --lan-* automation.
 
 See [protocol contract](../NETWORK_PROTOCOL.md) and the Phase 03 context/build log
 for exact observed evidence and platform limits.

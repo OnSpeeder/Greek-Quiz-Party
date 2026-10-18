@@ -20,6 +20,8 @@ public partial class LobbyScreen : Control
     private Label _capacity = null!;
     private OptionButton _length = null!;
     private VBoxContainer _categories = null!;
+    private LineEdit _pin = null!;
+    private RoomBrowser _browser = null!;
 
     public override void _Ready()
     {
@@ -35,6 +37,20 @@ public partial class LobbyScreen : Control
         _start = GetNode<Button>(path + "Start");
         _roster = GetNode<Label>(path + "Roster");
         _status = GetNode<Label>(path + "Status");
+        var content = GetNode<VBoxContainer>(path.TrimEnd('/'));
+        _pin = new LineEdit { Name = "RoomPin", MaxLength = 6, Secret = true, PlaceholderText = Tr("LOBBY_PIN"),
+            CustomMinimumSize = new Vector2(0, 64), VirtualKeyboardType = LineEdit.VirtualKeyboardTypeEnum.Number };
+        content.AddChild(_pin); content.MoveChild(_pin, _host.GetIndex());
+        content.MoveChild(_status, _pin.GetIndex() + 1);
+        _browser = new RoomBrowser { Name = "RoomBrowser" };
+        content.AddChild(_browser); content.MoveChild(_browser, _address.GetIndex());
+        _browser.Bind(_transport.Discovery, room =>
+        {
+            if (room.Room.RequiresPin && _pin.Text.Length == 0)
+            { _status.Text = Tr("LOBBY_STATUS_PinRequired"); _pin.GrabFocus(); RevealStatus(); return; }
+            _address.Text = room.Address;
+            ShowError(_transport.Join(room.Address, _name.Text.Trim(), room.Room.GamePort, _pin.Text));
+        });
         _settings = new VBoxContainer { Name = "MatchSettings" };
         GetNode<VBoxContainer>(path.TrimEnd('/')).AddChild(_settings);
         GetNode<VBoxContainer>(path.TrimEnd('/')).MoveChild(_settings, _start.GetIndex());
@@ -53,8 +69,8 @@ public partial class LobbyScreen : Control
         _settings.AddChild(timer);
         _categories = new VBoxContainer { Name = "Categories" };
         _settings.AddChild(_categories);
-        _host.Pressed += () => ShowError(_transport.Host(_room.Text.Trim(), _name.Text.Trim()));
-        _join.Pressed += () => ShowError(_transport.Join(_address.Text.Trim(), _name.Text.Trim()));
+        _host.Pressed += () => ShowError(_transport.Host(_room.Text.Trim(), _name.Text.Trim(), pin: _pin.Text));
+        _join.Pressed += () => ShowError(_transport.Join(_address.Text.Trim(), _name.Text.Trim(), pin: _pin.Text));
         _ready.Pressed += () =>
         {
             var local = _transport.Snapshot?.Players.FirstOrDefault(player => player.PlayerId == _transport.LocalPlayerId);
@@ -67,8 +83,9 @@ public partial class LobbyScreen : Control
         _transport.StatusChanged += reason =>
         {
             if (_transport.Snapshot is null && reason != "Connecting") Reset();
-            if (reason == "Connecting") { _host.Disabled = true; _join.Disabled = true; }
+            if (reason == "Connecting") { _host.Disabled = true; _join.Disabled = true; _browser.Visible = false; _pin.Editable = false; }
             _status.Text = Tr("LOBBY_STATUS_" + reason);
+            RevealStatus();
         };
         GetNode<MatchPanel>(path + "MatchPanel").Bind(_transport);
         _transport.MatchChanged += _ =>
@@ -80,6 +97,7 @@ public partial class LobbyScreen : Control
         GetNode<Label>(path + "Addresses").Text = string.Format(Tr("SPIKE_ADDRESSES"), string.Join(", ",
             IP.GetLocalAddresses().Where(ip => ip.StartsWith("192.168.", StringComparison.Ordinal) || ip.StartsWith("10.", StringComparison.Ordinal))));
         Reset();
+        AddChild(new LanProcessProbe { Name = "LanProbe" });
     }
 
     private void Reset()
@@ -94,6 +112,7 @@ public partial class LobbyScreen : Control
         _name.Editable = true;
         _room.Editable = true;
         _address.Editable = true;
+        _pin.Editable = true;
         ShowSetup(true);
         _roster.Text = "";
         _status.Text = Tr("LOBBY_STATUS_Idle");
@@ -103,12 +122,21 @@ public partial class LobbyScreen : Control
 
     private void ShowError(Error error)
     {
-        if (error != Error.Ok) _status.Text = Tr(error == Error.FileCorrupt ? "LOBBY_STATUS_ContentError" : "LOBBY_STATUS_InvalidInput");
+        if (error != Error.Ok) _status.Text = Tr(!RoomAdmission.ValidPin(_pin.Text) ? "LOBBY_STATUS_PinFormat" :
+            error == Error.FileCorrupt ? "LOBBY_STATUS_ContentError" : "LOBBY_STATUS_InvalidInput");
+        if (error != Error.Ok) RevealStatus();
     }
+
+    private void RevealStatus() => Callable.From(() =>
+    {
+        if (GodotObject.IsInstanceValid(this) && IsInsideTree() && GodotObject.IsInstanceValid(_status))
+            GetNode<ScrollContainer>("Margin/Scroll").EnsureControlVisible(_status);
+    }).CallDeferred();
 
     private void Render(LobbySnapshotDto snapshot)
     {
         if (_transport.MatchSnapshot is not null) return;
+        _pin.Text = "";
         ShowSetup(false);
         _host.Disabled = true;
         _join.Disabled = true;
@@ -143,6 +171,8 @@ public partial class LobbyScreen : Control
     private void ShowSetup(bool visible)
     {
         foreach (var control in new Control[] { _name, _room, _address, _host, _join }) control.Visible = visible;
+        _pin.Visible = visible;
+        _browser.Visible = visible;
         GetNode<Label>("Margin/Scroll/Content/Addresses").Visible = visible || _transport.IsHost;
     }
 }

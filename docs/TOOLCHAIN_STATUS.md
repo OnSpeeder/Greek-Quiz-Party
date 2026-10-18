@@ -75,12 +75,17 @@ raw logs are in ignored `artifacts/`.
   runtime verification, not human touch play. See [match evidence](MATCH_EVIDENCE.md).
   Phase 06 adds four-round 10/20/30-question scheduling, selection and final
   statistics. Long-loop verification uses explicitly synthetic debug fixtures;
-  the reviewed production pack still contains one question. Discovery and
-  broader device coverage remain later work.
+  the reviewed production pack still contains one question. Broader device
+  coverage remains later work.
   Phase 06 physical Android also completed 20 distinct questions/all four rounds
   with matching final scores/winner/stats after user unlock. New APK export,
   signature verification, installation and launch succeeded. Evidence is under
   artifacts/phase06-android-20/; the earlier asleep-device attempt is retained.
+  Phase 07 actual LAN broadcast discovery/PIN admission passed with both Windows
+  and the physical phone hosting. Phone manual-IP rejoin and host exit also
+  passed; no new Android permissions/device settings or network tunnel needed.
+  See artifacts/phase07-android and the Lobby guide. Match resumption is disabled
+  under the documented graceful-disconnect baseline.
 - Reload the Codex client/chat to load the replacement MCP tool catalog. The
   configured stdio server starts with Codex; open this Godot project so its addon
   can connect. Never run the optional HTTP diagnostic server at the same time.

@@ -13,6 +13,9 @@ public partial class LobbyTransport : Node
     private LobbyHost? _host;
     private LobbyClientState _client = new();
     private string _clientName = "";
+    private string _clientPin = "";
+    public LanDiscovery Discovery { get; private set; } = null!;
+    public int DiscoveryPort { get; set; } = DiscoveryProtocol.DefaultPort;
     private int _generation;
     private readonly HashSet<long> _handshaken = new();
     private readonly HashSet<long> _closing = new();
@@ -53,6 +56,8 @@ public partial class LobbyTransport : Node
 
     public override void _Ready()
     {
+        Discovery = new LanDiscovery { Name = "Discovery" };
+        AddChild(Discovery);
         if (Multiplayer is SceneMultiplayer sceneMultiplayer)
         {
             _previousRelay = sceneMultiplayer.ServerRelay;
@@ -70,9 +75,9 @@ public partial class LobbyTransport : Node
         AddChild(poll);
     }
 
-    public Error Host(string roomName, string playerName, int port = DefaultPort)
+    public Error Host(string roomName, string playerName, int port = DefaultPort, string pin = "")
     {
-        if (!LobbyProtocol.ValidName(roomName) || !LobbyProtocol.ValidName(playerName) || port is < 1024 or > 65535)
+        if (!LobbyProtocol.ValidName(roomName) || !LobbyProtocol.ValidName(playerName) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin))
             return Error.InvalidParameter;
         Core.Questions.QuestionPack pack;
         try { pack = Presentation.QuestionPackContent.Load(); }
@@ -87,20 +92,23 @@ public partial class LobbyTransport : Node
         AvailableQuestions = questions.Count;
         EnabledCategories = null;
         QuestionCategories = _debugQuestions is null ? pack.Categories : [new("fixture", "MATCH_TEST_CATEGORY")];
-        _host = new(roomName, playerName, new MonotonicGameClock(), questions, new(1));
+        _host = new(roomName, playerName, new MonotonicGameClock(), questions, new(1), pin);
         _peer = peer;
         Multiplayer.MultiplayerPeer = peer;
+        var host = _host;
+        Discovery.Advertise(host.Snapshot, port, host.RequiresPin, DiscoveryPort);
         Emit("HostListening");
         Publish();
         return Error.Ok;
     }
 
-    public Error Join(string address, string playerName, int port = DefaultPort)
+    public Error Join(string address, string playerName, int port = DefaultPort, string pin = "")
     {
         if (!LobbyProtocol.ValidName(playerName) || string.IsNullOrWhiteSpace(address) || address.Length > 253 ||
-            address.Any(char.IsWhiteSpace) || port is < 1024 or > 65535) return Error.InvalidParameter;
+            address.Any(char.IsWhiteSpace) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin)) return Error.InvalidParameter;
         Stop();
         _clientName = playerName;
+        _clientPin = pin;
         var peer = new ENetMultiplayerPeer();
         var error = peer.CreateClient(address, port);
         if (error != Error.Ok) { peer.Dispose(); return error; }
@@ -182,6 +190,8 @@ public partial class LobbyTransport : Node
     {
         _generation++;
         _host = null;
+        _clientPin = "";
+        if (GodotObject.IsInstanceValid(Discovery)) Discovery.Stop();
         _client = new();
         _handshaken.Clear();
         _closing.Clear();
@@ -212,7 +222,8 @@ public partial class LobbyTransport : Node
 
     private void OnConnected()
     {
-        var json = _client.BeginHello(_clientName, OS.GetName());
+        var json = _client.BeginHello(_clientName, OS.GetName(), _clientPin);
+        _clientPin = "";
         // Explicit incompatible header is only selected by the process test flag.
         if (ClientProtocol != LobbyProtocol.Version) json = json.Replace($"\"ProtocolVersion\":{LobbyProtocol.Version}", $"\"ProtocolVersion\":{ClientProtocol}", StringComparison.Ordinal);
         RpcId(1, MethodName.ClientMessage, json);
@@ -304,7 +315,8 @@ public partial class LobbyTransport : Node
         if (_host is null) return;
         var sender = Multiplayer.GetRemoteSenderId();
         if (_closing.Contains(sender)) return;
-        var dispatch = _host.Handle(sender, json);
+        var address = _peer?.GetPeer((int)sender).GetRemoteAddress() ?? "unknown";
+        var dispatch = _host.Handle(sender, json, address);
         foreach (var message in dispatch.Messages) SendToConnectedPeer(message);
         if (_host.GetPlayers().Any(player => player.ConnectionId?.Value == sender)) _handshaken.Add(sender);
         Publish();

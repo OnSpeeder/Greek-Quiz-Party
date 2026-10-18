@@ -23,14 +23,15 @@ public partial class MatchProcessProbe : Node
     public static string[] LaunchArguments()
     {
         var original = OS.GetCmdlineUserArgs();
-        if (original.Any(value => value.StartsWith("--match-", StringComparison.Ordinal)) ||
+        if (original.Any(value => value.StartsWith("--match-", StringComparison.Ordinal) || value.StartsWith("--lan-", StringComparison.Ordinal)) ||
             !OS.IsDebugBuild() || !FileAccess.FileExists(DeviceArgumentsPath)) return original;
         using var file = FileAccess.Open(DeviceArgumentsPath, FileAccess.ModeFlags.Read);
         if (file is null || file.GetLength() > 4096) { GD.PushWarning("Invalid device test arguments file."); return original; }
         try
         {
             var values = JsonSerializer.Deserialize<string[]>(file.GetAsText());
-            if (values is { Length: > 0 and <= 12 } && values.All(value => value is { Length: > 0 and <= 253 } && value.StartsWith("--match-", StringComparison.Ordinal)))
+            if (values is { Length: > 0 and <= 12 } && values.All(value => value is { Length: > 0 and <= 253 } &&
+                (value.StartsWith("--match-", StringComparison.Ordinal) || value.StartsWith("--lan-", StringComparison.Ordinal))))
                 return values;
         }
         catch (JsonException error) { GD.PushWarning($"Invalid device test arguments: {error.Message}"); }

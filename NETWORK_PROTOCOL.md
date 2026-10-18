@@ -55,13 +55,14 @@ Client input is a request, never truth.
 
 ## 4. Protocol version
 
-Current production version (Phase 06):
+Current production version (Phase 07):
 
-`ProtocolVersion = 3`
+`ProtocolVersion = 4`
 
-Phase 03 used version 1; Phases 04–05 used version 2. Version 3 adds progress,
-eligibility, winners and final statistics. Strict unknown-field handling makes
-this intentionally incompatible; versions 1/2 are rejected at hello. The
+Phase 03 used version 1; Phases 04–05 used version 2; Phase 06 used version 3.
+Version 4 adds the optional PIN field to ClientHello and LAN discovery. Strict
+unknown-field handling makes this intentionally incompatible; versions 1/2/3
+are rejected at hello and ignored by discovery. The
 disposable probe stays version 1.
 
 Version is included in hello/discovery and preferably packet envelope.
@@ -210,9 +211,9 @@ Example logical request:
 
 ```json
 {
-  "type": "quiz-discover",
-  "protocol": 1,
-  "nonce": "..."
+  "Type": "quiz-discover",
+  "Protocol": 4,
+  "Nonce": "00000000-0000-0000-0000-000000000001"
 }
 ```
 
@@ -220,14 +221,17 @@ Host responds directly to requester with bounded metadata:
 
 ```json
 {
-  "type": "quiz-host",
-  "protocol": 1,
-  "roomName": "Fil's Party",
-  "gamePort": 7777,
-  "players": 3,
-  "maxPlayers": 8,
-  "requiresPin": true,
-  "appVersion": "0.1.0"
+  "Type": "quiz-host",
+  "Protocol": 4,
+  "Nonce": "00000000-0000-0000-0000-000000000001",
+  "SessionId": "00000000-0000-0000-0000-000000000002",
+  "RoomName": "Fil's Party",
+  "GamePort": 7777,
+  "Players": 3,
+  "MaxPlayers": 8,
+  "RequiresPin": true,
+  "AppVersion": "0.4.0",
+  "State": "Lobby"
 }
 ```
 
@@ -257,6 +261,10 @@ PIN is an admission convenience, not strong cryptographic security.
 ## 14. Reconnect
 
 Optional v1 flow:
+
+Phase 07 currently uses the permitted graceful-disconnect strategy instead of
+enabling this optional token flow. See its implemented contract below. Do not
+send or accept reconnect tokens until an explicitly reviewed implementation exists.
 
 1. Host marks player disconnected, keeps slot for grace period.
 2. Client reconnects with opaque token.
@@ -304,7 +312,62 @@ Required before release:
 - Wrong protocol version.
 - Discovery unavailable + manual IP succeeds.
 
-## Phase 06 full-match additions (production v3)
+## Phase 07 implemented LAN admission/disconnect (production v4)
+
+Gameplay transport/RPC paths and Phase 06 match DTOs remain unchanged. Envelope
+version 4/app 0.4.0 requires matching builds. ClientHello adds `Pin` (empty by
+default); null, oversized, non-ASCII/non-digit or 1–3/7+ digit PINs are malformed.
+Host optionally sets a 4–6 ASCII-digit PIN or leaves it empty. ServerHello remains
+the correlated admission receipt. No PIN, hash or token is sent in snapshots,
+discovery or diagnostic logs; the admission request itself is not encrypted.
+
+`RoomAdmission` hashes the configured PIN in memory and compares fixed-size
+hashes. Five wrong/missing guesses per source IP per 30-second monotonic window
+block further attempts (`PinRateLimited`, including correct PIN) until reset;
+100 failures globally bound guesses/state across new source addresses. The
+ENet adapter supplies actual remote address to LobbyHost.Handle; never use a
+packet field or connection ID as the address. Disconnecting does not reset this
+gate. Exact duplicate request receipts do not count guesses twice. Other existing
+message/rate/cache bounds remain. Wrong/missing valid-format PIN yields WrongPin.
+Full/started/version checks reject before admission, and a PIN is a LAN admission
+convenience, not encryption or a substitute for a trusted network.
+
+Discovery uses a separate IPv4 PacketPeerUdp socket, host bound to UDP 7778,
+browser bound to an ephemeral port. Broadcast to 255.255.255.255 once per second
+for five seconds, then stop probing; manual-IP joining remains independent.
+Hosts unicast replies to the observed source endpoint with current lobby metadata.
+Host and scan ports are internally overridable; joining a row uses its advertised
+game port. Discovery bind/send failure does not stop ENet hosting/manual joining.
+
+The exact JSON fields above are required, case sensitive, with no extra/duplicate
+fields. Limit 1024 bytes, strict UTF-8/escaped strings, JSON depth 4, matching
+protocol, nonempty GUID nonce/session, valid room name (32), appVersion length
+1–32, port 1024–65535, players 1–8, maxPlayers exactly 8, state Lobby/GameStarting.
+Host replies at most four per source IP/second and 32 total/second; poll consumes
+at most 16 packets per 100ms tick. No unbounded per-source state or packet work.
+
+Browser accepts replies only for its active five-second nonce. Use the observed
+IPv4 source, never a payload-provided address. Catalog holds at most 32 room/
+source pairs, deduplicates updates, expires entries six seconds after last seen,
+and clears on refresh/stop/scene exit. Incompatible, malformed or unsolicited
+messages are ignored. Full/started entries are visible but disabled. Metadata is
+untrusted; host handshake still validates PIN/capacity/state. No latency/ping
+claim or Internet discovery is implemented.
+
+Graceful-disconnect policy: lobby departure removes seat/readiness/cache; a new
+join gets a new PlayerId and starts unready, even with the same name/address.
+Once started, every re-entry is rejected GameStarted. A departed match player's
+confirmed answer/score remains, and unsubmitted answers expire under the original
+host deadline. MatchPanel labels departed names from authoritative lobby vs fixed
+match roster. Replayed old answers cannot mutate a disconnected seat. Host loss
+closes the match locally with explicit non-resumable-room guidance. No reservation,
+identity reclaim, reconnect token, auto-reconnect or host migration is claimed.
+
+Verification: DiscoveryAndAdmissionTests plus existing protocol/Core/Godot gates;
+scripts/test-network-discovery.ps1 (also -Packaged -Capture) and actual hardware
+scripts/test-android-discovery.ps1. See docs/LOBBY.md and its evidence/context.
+
+## Phase 06 full-match additions (historical production v3)
 
 All Phase 04 request types, receipt/ownership/deadline rules and RPC signatures
 below are retained. MatchSnapshot additionally requires `QuestionNumber`,

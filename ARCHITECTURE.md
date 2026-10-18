@@ -67,6 +67,16 @@ toward question completion. Sudden death keeps normal totals and compares host
 receipt durations. `OneQuestionMatch` remains a tested legacy Phase 04 API;
 production uses `FullMatch`. No Godot reference was added to Core.
 
+Phase 07 adds Infrastructure `DiscoveryProtocol`/`DiscoveryCatalog` with injected
+clock and bounded reply limiter. Godot `LanDiscovery` owns only UDP socket/timer
+lifecycle, independently of ENet; composable `RoomBrowser` renders validated
+metadata and sends join intents. `RoomAdmission` hashes the optional PIN in memory
+and limits wrong attempts by transport-derived source address across connections.
+Protocol 4 adds PIN to ClientHello. Discovery never authorizes admission or owns
+game rules. The selected disconnect strategy preserves the fixed match roster,
+shows departed players and expires missing answers; only lobby joins get fresh
+identities. No reconnect token or match-state recovery is implemented.
+
 Suggested namespaces:
 
 ```text

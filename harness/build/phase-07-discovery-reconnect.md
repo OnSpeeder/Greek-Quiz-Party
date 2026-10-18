@@ -1,5 +1,13 @@
 # Phase 07 — LAN Discovery, PIN and Reconnect
 
+## Status — complete locally, 2026-10-18
+
+LAN broadcast/browser, optional PIN, manual-IP fallback and documented graceful
+disconnect implemented. Match resumption/token reclaim is not enabled. 292 tests
+pass; source/packaged network regressions and actual Android/Windows discovery
+with either device hosting passed. See context/build log for exact evidence.
+New work remains uncommitted; stop before Phase 08 without separate approval.
+
 ## Goal
 
 Add UDP discovery, room browser, room PIN, keep manual-IP fallback, and implement safe reconnect or documented graceful disconnect strategy.

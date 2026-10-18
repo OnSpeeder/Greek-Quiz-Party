@@ -15,6 +15,8 @@ public sealed class LobbyHost
     public const int MaxTransportConnections = 12;
     private readonly LobbySession _lobby;
     private readonly IGameClock _clock;
+    private readonly RoomAdmission _admission;
+    public bool RequiresPin => _admission.RequiresPin;
     private readonly Dictionary<long, PeerRequests> _peers = new();
     private FullMatch? _match;
     private readonly IReadOnlyList<QuestionDefinition> _questions;
@@ -23,19 +25,20 @@ public sealed class LobbyHost
     public Guid SessionId { get; } = Guid.NewGuid();
     public string RoomName { get; }
 
-    public LobbyHost(string roomName, string hostName, IGameClock clock, QuestionDefinition? question = null)
+    public LobbyHost(string roomName, string hostName, IGameClock clock, QuestionDefinition? question = null, string pin = "")
     {
         if (!LobbyProtocol.ValidName(roomName)) throw new ArgumentException("Invalid room name.", nameof(roomName));
         if (!LobbyProtocol.ValidName(hostName)) throw new ArgumentException("Invalid host name.", nameof(hostName));
         ArgumentNullException.ThrowIfNull(clock);
         RoomName = roomName;
         _clock = clock;
+        _admission = new(pin, clock);
         _questions = question is null ? [] : [question];
         _lobby = new(new(new(Guid.NewGuid()), hostName, LobbySession.HostConnection, new(0)));
     }
 
     public LobbyHost(string roomName, string hostName, IGameClock clock, IReadOnlyList<QuestionDefinition> questions,
-        MatchSettings settings) : this(roomName, hostName, clock)
+        MatchSettings settings, string pin = "") : this(roomName, hostName, clock, pin: pin)
     {
         _questions = Array.AsReadOnly(questions.ToArray());
         _settings = settings;
@@ -114,7 +117,7 @@ public sealed class LobbyHost
         return _lobby.Disconnect(new(connection));
     }
 
-    public LobbyDispatch Handle(long connection, string json)
+    public LobbyDispatch Handle(long connection, string json, string sourceAddress = "local-adapter")
     {
         var receivedAt = _clock.Now;
         if (connection <= 1) return new([], true);
@@ -144,7 +147,7 @@ public sealed class LobbyHost
         string reply;
         if (packet.MessageType == "ClientHello")
         {
-            var reason = Join(connection, packet, out var playerId);
+            var reason = Join(connection, packet, sourceAddress, out var playerId);
             reply = LobbyProtocol.Encode("ServerHello", SessionId,
                 new ServerHelloDto(reason == "None", reason, playerId, reason == "None" ? Snapshot() : null), packet.MessageId);
         }
@@ -166,13 +169,18 @@ public sealed class LobbyHost
         return new(messages, false);
     }
 
-    private string Join(long connection, LobbyEnvelope packet, out Guid? playerId)
+    private string Join(long connection, LobbyEnvelope packet, string sourceAddress, out Guid? playerId)
     {
         playerId = null;
         if (packet.SessionId != Guid.Empty || !LobbyProtocol.TryPayload<ClientHelloDto>(packet, out var hello) || hello is null ||
             !LobbyProtocol.ValidName(hello.DisplayName) || hello.AppVersion is not { Length: > 0 and <= 32 } ||
-            hello.Platform is not ("Windows" or "Android" or "Linux" or "macOS")) return "MalformedRequest";
+            hello.Platform is not ("Windows" or "Android" or "Linux" or "macOS") || !RoomAdmission.ValidPin(hello.Pin)) return "MalformedRequest";
         if (_lobby.FindPlayer(new(connection)) is not null) return "AlreadyJoined";
+        var snapshot = _lobby.GetSnapshot();
+        if (snapshot.Phase != GamePhase.Lobby) return "GameStarted";
+        if (snapshot.Players.Count >= LobbySession.MaxPlayers) return "RoomFull";
+        var admission = _admission.Admit(hello.Pin, sourceAddress);
+        if (admission != "None") return admission;
         var player = new Player(new(Guid.NewGuid()), hello.DisplayName, new(connection), new(0));
         var error = _lobby.Join(player);
         if (error == LobbyError.None) playerId = player.Id.Value;

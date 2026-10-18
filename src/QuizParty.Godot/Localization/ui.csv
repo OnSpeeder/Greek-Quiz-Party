@@ -57,7 +57,7 @@ LOBBY_STATUS_UnknownConnection,Η σύνδεση δεν είναι ενεργή,
 LOBBY_STATUS_InvalidPlayer,Μη έγκυρος παίκτης,Invalid player
 LOBBY_STATUS_ConnectionTimeout,Η σύνδεση έληξε — έλεγξε IP και δίκτυο,Connection timed out — check IP and network
 LOBBY_STATUS_ConnectionFailed,Αποτυχία σύνδεσης — έλεγξε IP και δίκτυο,Connection failed — check IP and network
-LOBBY_STATUS_ServerDisconnected,Ο οικοδεσπότης αποσυνδέθηκε,Host disconnected
+LOBBY_STATUS_ServerDisconnected,Η αίθουσα έκλεισε — δημιούργησε ή βρες νέα αίθουσα. Το παιχνίδι δεν συνεχίζεται μετά την αποσύνδεση.,Room closed — create or find a new room. This match cannot be resumed after disconnect.
 MATCH_TITLE,Δοκιμαστικός γύρος,Practice round
 MATCH_FINAL,Τελικά αποτελέσματα,Final results
 MATCH_TIME,Χρόνος: {0} δευτ.,Time: {0} sec.
@@ -91,6 +91,24 @@ MATCH_PREVIEW,Προεπισκόπηση μίας ερώτησης,One-question 
 MATCH_LENGTH,{0} ερωτήσεις,{0} questions
 MATCH_DURATION,{0} δευτερόλεπτα ανά ερώτηση,{0} seconds per question
 MATCH_TEST_CATEGORY,Συνθετικές δοκιμές,Synthetic test fixtures
+LOBBY_PIN,Προαιρετικό PIN αίθουσας (4–6 ψηφία),Optional room PIN (4–6 digits)
+LOBBY_STATUS_PinFormat,Το PIN πρέπει να είναι κενό ή 4–6 ψηφία,PIN must be empty or 4–6 digits
+LOBBY_STATUS_PinRequired,Πληκτρολόγησε το PIN της αίθουσας και πάτησε ξανά την αίθουσα,Enter the room PIN then select the room again
+LOBBY_STATUS_WrongPin,Λάθος PIN — έλεγξε τον κωδικό με τον οικοδεσπότη,Wrong PIN — check with the host
+LOBBY_STATUS_PinRateLimited,Πολλές προσπάθειες PIN — περίμενε έως 30 δευτερόλεπτα,Too many PIN attempts — wait up to 30 seconds
+DISCOVERY_TITLE,Αίθουσες στο τοπικό δίκτυο,Rooms on your local network
+DISCOVERY_REFRESH,Αναζήτηση αιθουσών,Find rooms
+DISCOVERY_HELP,Βρες αίθουσες στο ίδιο δίκτυο ή σύνδεσε με IP παρακάτω,Find rooms on the same network or join by IP below
+DISCOVERY_STATUS_Scanning,Αναζήτηση στο δίκτυο…,Searching the local network…
+DISCOVERY_STATUS_Finished,Επίλεξε αίθουσα ή ανανέωσε την αναζήτηση,Select a room or refresh the search
+DISCOVERY_STATUS_NoRooms,Δεν βρέθηκαν αίθουσες — έλεγξε το ίδιο Wi-Fi ή σύνδεσε με IP παρακάτω,No rooms found — check the same Wi-Fi or join by IP below
+DISCOVERY_STATUS_Unavailable,Η αναζήτηση δεν είναι διαθέσιμη — χρησιμοποίησε IP,Discovery is unavailable — join by IP
+DISCOVERY_ROOM,{0} · {1}/{2} · {3},{0} · {1}/{2} · {3}
+DISCOVERY_STARTED,Παιχνίδι σε εξέλιξη,Match in progress
+DISCOVERY_FULL,Γεμάτη αίθουσα,Room full
+DISCOVERY_PIN,Απαιτείται PIN,PIN required
+DISCOVERY_OPEN,Ανοιχτή αίθουσα,Open room
+MATCH_DEPARTED,Αποσυνδέθηκαν: {0}. Οι αναπάντητες ερωτήσεις λήγουν στον χρόνο τους. Δεν επιτρέπεται επανείσοδος σε αυτό το παιχνίδι.,Disconnected: {0}. Missing answers time out normally. Rejoining this match is unavailable.
 MATCH_CAPACITY,Διαθέσιμες ελεγμένες ερωτήσεις: {0},Available reviewed questions: {0}
 LOBBY_STATUS_InsufficientContent,Δεν υπάρχουν αρκετές μοναδικές ελεγμένες ερωτήσεις για αυτή τη διάρκεια,Not enough unique reviewed questions for this length
 MATCH_WINNER,Νικητής: {0},Winner: {0}

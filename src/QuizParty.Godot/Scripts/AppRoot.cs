@@ -8,6 +8,8 @@ public partial class AppRoot : Control
     public override void _Ready()
     {
         AddChild(new ResponsiveCanvas());
+        if (OS.IsDebugBuild() && MatchProcessProbe.LaunchArguments().Any(a => a.StartsWith("--lan-", StringComparison.Ordinal)))
+            Callable.From(() => GetTree().ChangeSceneToFile("res://Scenes/Lobby.tscn")).CallDeferred();
         if (MatchProcessProbe.LaunchArguments().Any(argument => argument == "--match-host" ||
             argument.StartsWith("--match-join=", StringComparison.Ordinal)))
             Callable.From(() => GetTree().ChangeSceneToFile("res://Scenes/Lobby.tscn")).CallDeferred();

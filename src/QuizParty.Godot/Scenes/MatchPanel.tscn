@@ -23,23 +23,38 @@ autowrap_mode = 2
 [node name="Countdown" type="Label" parent="."]
 layout_mode = 2
 
-[node name="Answer0" type="Button" parent="."]
+[node name="Answers" type="GridContainer" parent="."]
 layout_mode = 2
+size_flags_horizontal = 3
+columns = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
+
+[node name="Answer0" type="Button" parent="Answers"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 64)
 autowrap_mode = 2
 
-[node name="Answer1" type="Button" parent="."]
+[node name="Answer1" type="Button" parent="Answers"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 64)
 autowrap_mode = 2
 
-[node name="Answer2" type="Button" parent="."]
+[node name="Answer2" type="Button" parent="Answers"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 64)
 autowrap_mode = 2
 
-[node name="Answer3" type="Button" parent="."]
+[node name="Answer3" type="Button" parent="Answers"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 64)
 autowrap_mode = 2
 

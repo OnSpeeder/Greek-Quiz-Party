@@ -18,6 +18,7 @@ public partial class MatchProcessProbe : Node
     private int _players = 2;
     private readonly HashSet<Guid> _attemptedCards = new();
     private string _cardReason = "None";
+    private bool _captured;
     private bool Live => GodotObject.IsInstanceValid(this) && IsInsideTree();
 
     // Android's exported launcher deliberately strips CLI extras. A debug-only,
@@ -113,8 +114,9 @@ public partial class MatchProcessProbe : Node
             if (!_args.Contains("--match-keep-open")) GetTree().CreateTimer(_transport.IsHost ? 4 : 2).Timeout += () => { if (Live) GetTree().Quit(); };
         }
         var capture = Argument("--match-capture=");
-        if (capture is not null && snapshot.Phase == (Argument("--match-capture-phase=") ?? "GameOver") &&
-            (!int.TryParse(Argument("--match-capture-number="), out var number) || snapshot.QuestionNumber == number)) Capture(capture);
+        if (!_captured && capture is not null && snapshot.Phase == (Argument("--match-capture-phase=") ?? "GameOver") &&
+            (!int.TryParse(Argument("--match-capture-number="), out var number) || snapshot.QuestionNumber == number))
+        { _captured = true; Capture(capture); }
     }
 
     private async void AnswerWithStrategy(Guid question, int index)

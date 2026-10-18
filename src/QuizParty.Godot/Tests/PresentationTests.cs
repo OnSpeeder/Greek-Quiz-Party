@@ -1,0 +1,192 @@
+using GdUnit4;
+using Godot;
+using QuizParty.Presentation;
+using static GdUnit4.Assertions;
+
+namespace QuizParty.Godot.Tests;
+
+[TestSuite]
+public class PresentationTests
+{
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task LobbyUsesFocusedCreateAndJoinFlowsWithManualIpPreserved()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<LobbyScreen>();
+        tree.Root.AddChild(root);
+        const string path = "Margin/Scroll/Content/";
+        try
+        {
+            AssertThat(root.GetNode<Control>(path + "PartyChoice").Visible).IsTrue();
+            AssertThat(root.GetNode<LineEdit>(path + "PlayerName").Visible).IsFalse();
+            root.ShowSetupPage("create");
+            AssertThat(root.GetNode<LineEdit>(path + "RoomName").Visible).IsTrue();
+            AssertThat(root.GetNode<Button>(path + "Host").Visible).IsTrue();
+            AssertThat(root.GetNode<RoomBrowser>(path + "RoomBrowser").Visible).IsFalse();
+            AssertThat(root.GetNode<LineEdit>(path + "RoomPin").Visible).IsFalse();
+            root.GetNode<Button>(path + "PinOptions").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(root.GetNode<LineEdit>(path + "RoomPin").Visible).IsTrue();
+            root.ShowSetupPage("join");
+            AssertThat(root.GetNode<LineEdit>(path + "RoomName").Visible).IsFalse();
+            AssertThat(root.GetNode<Button>(path + "Host").Visible).IsFalse();
+            AssertThat(root.GetNode<RoomBrowser>(path + "RoomBrowser").Visible).IsTrue();
+            AssertThat(root.GetNode<LineEdit>(path + "Address").Visible).IsFalse();
+            root.GetNode<Button>(path + "ManualIp").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(root.GetNode<LineEdit>(path + "Address").Visible).IsTrue();
+            AssertThat(root.GetNode<Button>(path + "Join").Visible).IsTrue();
+        }
+        finally { root.Free(); await Frames(tree); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void DensePhoneTargetsRetain48DpAcrossOrientations()
+    {
+        var portrait = ResponsiveCanvas.PixelsPerUnit(new(1440, 3200), new(480, 1066.6666f));
+        var landscape = ResponsiveCanvas.PixelsPerUnit(new(3200, 1440), new(1440, 648));
+        AssertThat(Math.Abs(portrait - 3) < .01f).IsTrue();
+        AssertThat(Math.Abs(landscape - 2.222222f) < .01f).IsTrue();
+        AssertThat(ResponsiveCanvas.MinimumLogicalTarget(533, portrait)).IsEqual(64);
+        AssertThat(ResponsiveCanvas.MinimumLogicalTarget(533, landscape)).IsEqual(72);
+        foreach (var (dpi, scale) in new[] { (533f, 1440f / 648), (560f, 1440f / 648), (640f, 1440f / 648),
+            (533f, 1440f / 480), (320f, 1080f / 648), (160f, 800f / 648) })
+        {
+            var minimum = ResponsiveCanvas.MinimumLogicalTarget(dpi, scale);
+            AssertThat(minimum >= 64).IsTrue();
+            AssertThat(minimum * scale * 160 / dpi >= 48).IsTrue();
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task SettingsKeyboardCycleStaysInsideModalAndBackRestoresFocus()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Main.tscn").Instantiate<Control>();
+        tree.Root.AddChild(root);
+        try
+        {
+            var shell = root.GetNode<PresentationShell>("PresentationShell");
+            shell.OpenSettings();
+            var overlay = shell.GetNode<Control>("SettingsOverlay");
+            for (var i = 0; i < 16; i++)
+            {
+                using var next = new InputEventKey { Keycode = Key.Tab, PhysicalKeycode = Key.Tab, Pressed = true };
+                root.GetViewport().PushInput(next, true);
+                using var release = new InputEventKey { Keycode = Key.Tab, PhysicalKeycode = Key.Tab };
+                root.GetViewport().PushInput(release, true);
+                await Frames(tree);
+                var focus = root.GetViewport().GuiGetFocusOwner();
+                AssertThat(focus is not null && overlay.IsAncestorOf(focus)).IsTrue();
+            }
+            shell.Notification((int)Node.NotificationWMGoBackRequest);
+            AssertThat(shell.SettingsOpen).IsFalse();
+            AssertThat(shell.GetNode<Button>("Settings").HasFocus()).IsTrue();
+            shell.OpenSettings();
+            using var escape = new InputEventKey { Keycode = Key.Escape, PhysicalKeycode = Key.Escape, Pressed = true };
+            root.GetViewport().PushInput(escape, true);
+            await Frames(tree);
+            AssertThat(shell.SettingsOpen).IsFalse();
+            AssertThat(shell.GetNode<Button>("Settings").HasFocus()).IsTrue();
+        }
+        finally { root.Free(); await Frames(tree); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void PreferencesRoundTripAndRejectInvalidStoredTypes()
+    {
+        var path = $"user://presentation-test-{Guid.NewGuid():N}.cfg";
+        try
+        {
+            var expected = new PresentationPreferences(false, .35f, true, true, true);
+            AssertThat(expected.Save(path)).IsEqual(Error.Ok);
+            AssertThat(PresentationPreferences.Load(path)).IsEqual(expected);
+            using var invalid = new ConfigFile();
+            invalid.SetValue("ui", "volume", "loud");
+            AssertThat(invalid.Save(path)).IsEqual(Error.Ok);
+            AssertThat(PresentationPreferences.Load(path)).IsEqual(new PresentationPreferences());
+            invalid.SetValue("ui", "volume", 7.0);
+            invalid.Save(path);
+            AssertThat(PresentationPreferences.Load(path)).IsEqual(new PresentationPreferences());
+        }
+        finally { DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(path)); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task SettingsIsolateFocusPersistAndCancelActiveMotion()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Main.tscn").Instantiate<Control>();
+        tree.Root.AddChild(root);
+        var shell = root.GetNode<PresentationShell>("PresentationShell");
+        var path = $"user://presentation-ui-test-{Guid.NewGuid():N}.cfg";
+        shell.SettingsPath = path;
+        try
+        {
+            shell.OpenSettings();
+            AssertThat(shell.SettingsOpen).IsTrue();
+            AssertThat(root.GetNode<Control>("Center").Visible).IsFalse();
+            var slider = (HSlider)shell.FindChild("Volume", true, false);
+            AssertThat(slider.AccessibilityName.Length > 0).IsTrue();
+            AssertThat(slider.CustomMinimumSize.Y >= 64).IsTrue();
+            var label = root.GetNode<Label>("Center/Frame/Content/Title");
+            shell.Apply(new(Sound: false));
+            shell.Fade(label);
+            AssertThat(label.Modulate.A < 1).IsTrue();
+            shell.Apply(new(Sound: false, ReducedMotion: true, LargeText: true, HighContrast: true));
+            AssertThat(label.Modulate.A).IsEqual(1f);
+            AssertThat(root.Theme.DefaultFontSize).IsEqual(27);
+            AssertThat(PresentationPreferences.Load(path)).IsEqual(shell.Preferences);
+            shell.PlayCue("final");
+            AssertThat(shell.GetNode<AudioStreamPlayer>("FeedbackAudio").Playing).IsFalse();
+            shell.CloseSettings();
+            AssertThat(root.GetNode<Control>("Center").Visible).IsTrue();
+            AssertThat(shell.GetNode<Button>("Settings").HasFocus()).IsTrue();
+            shell.Fade(label);
+            AssertThat(label.Modulate.A).IsEqual(1f);
+        }
+        finally
+        {
+            root.Free(); DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(path));
+            await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task AnswerGridAdaptsAndDynamicLongGreekButtonsStayTouchSized()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<Control>();
+        tree.Root.AddChild(root);
+        try
+        {
+            var shell = root.GetNode<PresentationShell>("PresentationShell");
+            var panel = root.GetNode<MatchPanel>("Margin/Scroll/Content/MatchPanel");
+            panel.Visible = true;
+            root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopLeft);
+            // Exercise actual container layout at phone and TV widths, independent of headless window limits.
+            root.Size = new(480, 800);
+            await Frames(tree);
+            AssertThat(panel.GetNode<GridContainer>("Answers").Columns).IsEqual(1);
+            var button = new Button { Text = "Μεγάλο ελληνικό κείμενο με τόνους και επεξήγηση για τη δοκιμή αναδίπλωσης" };
+            root.GetNode<VBoxContainer>("Margin/Scroll/Content").AddChild(button);
+            AssertThat(button.CustomMinimumSize.Y >= 64).IsTrue();
+            AssertThat(button.AutowrapMode).IsEqual(TextServer.AutowrapMode.WordSmart);
+            AssertThat(root.GetNode<ScrollContainer>("Margin/Scroll").FollowFocus).IsTrue();
+            root.Size = new(1152, 648);
+            await Frames(tree);
+            AssertThat(panel.GetNode<GridContainer>("Answers").Columns).IsEqual(2);
+            AssertThat(shell.GetNode<Button>("Settings").CustomMinimumSize.Y >= 64).IsTrue();
+        }
+        finally { root.Free(); await Frames(tree); }
+    }
+
+    private static async Task Frames(SceneTree tree)
+    {
+        for (var i = 0; i < 4; i++) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+    }
+}

@@ -463,3 +463,72 @@ Append observed implementation and verification evidence here. Plans are not evi
   nonzero placeholder until Phase 05; no gameplay/content/networking implemented.
 - Stop boundary: toolchain/foundation only. Next separately approved phase is
   Phase 01 LAN technical spike; device export/launch evidence may be reused.
+
+## 2026-10-18 — Phase 10 — approved presentation subset delivered
+
+- Commit/worktree: main; local, uncommitted presentation changes. No push/publication.
+- Scope: user deferred manual TV/mobile layout QA, accessibility/touch blocker
+  certification and 1,000+ reviewed questions. Full Phase 10 remains open.
+- Implemented: Showtime theme/vector crew, responsive answer grid, safe margins,
+  field labels, keyboard/touch controls, text countdown/reveal cues, clearer
+  results, saved volume/mute/reduced-motion/large-text/high-contrast settings,
+  original synthesized feedback and nonblocking 160ms fades. Cards/missions start
+  collapsed on every device; host authority and local handoff/privacy stay intact.
+- Verification: restore/build -> success, zero warnings/errors; test.ps1
+  -IncludeGodot -> 252 Core +100 infrastructure +10 GdUnit passed, none skipped.
+  Existing tests preserved; new runtime coverage for settings, focus, cancellation,
+  mute and container resizing. Expected invalid-config warnings and established
+  Godot EditorSettings shutdown_adb_on_exit diagnostic retained in raw logs.
+- Source 20-question host/two-client strategy match -> pass, totals agree.
+  Windows/Android debug exports -> success; APK v2 signature -> verifies.
+  Packaged Windows startup -> observed marker/clean stderr. Packaged five-player
+  mixed local/LAN team+strategy match -> 20 questions, both peers agree, A212846/B0.
+- Runtime evidence: inspected desktop/portrait menus, lobby, large-text/high-contrast
+  settings, active client answers and final individual/team screens. Actual engine
+  mixed audio -> cue peak276887552, mute peak0 (signed 32-bit). No human touch,
+  screen-reader, real-speaker listening or new physical Android QA is claimed.
+- Evidence: artifacts/phase10-build-final.log, phase10-tests-final.log,
+  phase10-network-final.log and phase10-network/, phase10-packaged-mixed.log and
+  phase10-packaged-mixed/, phase10-export-*.log, phase10-apk-verification.log,
+  phase10-packaged-startup*.log, phase10-audio-verification.log and phase10-*/preview.png.
+- git diff --check -> pass. Desktop build restored after Android export; unrelated
+  generated Core/infrastructure lockfile changes removed. Production content still
+  exactly one reviewed question; automated existing content gates remain green.
+- Context/guide: harness/context/phase-10-polish-content-context.md and
+  docs/PRESENTATION.md. Stop at this approved subset; deferred gates stay open.
+  Phase 11 requires separate approval. No remote CI/workflow changes.
+
+## 2026-10-18 — Phase 10 visual QA rejection and replacement
+
+- User rejected the first installed mobile presentation and requested a graphics/UI
+  overhaul. No visual/accessibility sign-off was granted.
+- Rebuilt home, focused create/join/waiting, framed answers/confidence chips and
+  character standings with illustrated portrait/wide Showtime stages. Live controls
+  remain native Godot. Built-in artwork provenance/prompts: Art/README.md.
+- Fixed physical Android target scaling using actual window/viewport dimensions;
+  observed 533dpi portrait minimum64 and landscape72, satisfying48dp. All preferences
+  retained; no Core/protocol/content change or dependency addition.
+- Final test.ps1 -IncludeGodot: 252 Core +100 integration +13 Godot passed, no skips.
+  Desktop restore/build passed with zero warnings/errors. Expected invalid-config
+  warnings and existing editor teardown diagnostics retained in raw logs.
+- Windows and Android debug exports succeeded; APK v2 signature verifies. Installed
+  on physical Android15. Inspected actual portrait/landscape home/settings captures.
+- Packaged Windows and physical Android mixed LAN runs passed: 5 players, teams,
+  strategy,20 synthetic questions; all scores/teams/missions/statistics agree.
+  Android digest: 1F6A17558A7F2BDAC291C850E928661DF02AF8671F2DA8FDC309CC0E59AEE0FC.
+- Real exported Greek QuestionActive/GameOver screenshots passed capture helpers.
+  Evidence: artifacts/phase10-redesign-*.log and docs/PHASE10_QA.md.
+- Windows capture timed out twice; Android injected input denied; no permission
+  bypass. Human touch/audio/TV approval pending. Android Godot accessibility backend
+  reports unsupported; TalkBack/full accessibility certification not established.
+- Replacement awaits visual review. Phase10 open; content remains one reviewed
+  question, expansion deferred. No Phase11, publication, push or remote CI change.
+- Final git diff --check passed; generated Core/infrastructure lockfile churn removed.
+
+## 2026-10-18 — Pre-commit verification
+
+- User requested commit and push of the current Phase 10 presentation changes.
+- scripts/build.ps1 passed; build completed with zero warnings/errors.
+- scripts/test.ps1 -IncludeGodot passed: 252 Core, 100 integration and 13 Godot tests; production rebuild passed.
+- Content validation/CLI gates passed as part of the scripts. Logs: artifacts/commit-build.log and artifacts/commit-tests.log (ignored local evidence).
+- git diff --check passed. Outstanding Phase 10 manual acceptance/content gates remain documented above.

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="88" viewBox="0 0 360 88">
+  <!-- Original QuizParty vector stage crew. Decorative; never conveys game state. -->
+  <g stroke="#101329" stroke-width="4" stroke-linejoin="round">
+    <path d="M35 28 Q35 13 51 13H78Q94 13 94 29V61Q94 77 78 77H51Q35 77 35 61Z" fill="#71e3ef" transform="rotate(-8 65 44)"/>
+    <path d="M111 60L131 16Q138 4 148 17L173 59Q181 75 164 78H125Q106 77 111 60Z" fill="#c8a1ef"/>
+    <circle cx="220" cy="45" r="34" fill="#ffd580"/>
+    <path d="M279 15H307Q326 15 326 34V61Q326 78 310 78H282Q264 78 264 60V32Q264 15 279 15Z" fill="#ec9cc1" transform="rotate(8 295 46)"/>
+  </g>
+  <g fill="#101329">
+    <ellipse cx="55" cy="40" rx="4" ry="6"/><ellipse cx="77" cy="39" rx="4" ry="6"/>
+    <ellipse cx="133" cy="47" rx="4" ry="6"/><ellipse cx="151" cy="47" rx="4" ry="6"/>
+    <ellipse cx="210" cy="39" rx="4" ry="6"/><ellipse cx="230" cy="39" rx="4" ry="6"/>
+    <ellipse cx="285" cy="41" rx="4" ry="6"/>
+  </g>
+  <g fill="none" stroke="#101329" stroke-width="4" stroke-linecap="round">
+    <path d="M55 55Q65 64 77 53M133 62Q142 69 152 60M210 55Q220 67 232 54M303 40L311 44M285 58Q296 68 307 57"/>
+  </g>
+  <g fill="#ffd580"><path d="M13 18L16 26L24 29L16 32L13 40L10 32L2 29L10 26Z"/><path d="M346 46L349 54L357 57L349 60L346 68L343 60L335 57L343 54Z"/></g>
+</svg>

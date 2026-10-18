@@ -19,19 +19,44 @@ public partial class StrategyPanel : VBoxContainer
     private Button _privacy = null!;
     private VBoxContainer _private = null!;
     private Label _status = null!;
+    private HBoxContainer _bets = null!;
+    private Label _betHint = null!;
+    private readonly List<Button> _betButtons = [];
     public int Confidence => _snapshot?.Strategy?.Confidence == true && !_snapshot.IsTieBreaker ? _confidence.GetSelectedId() : 1;
 
     public override void _Ready()
     {
-        _confidence = new OptionButton { Name = "Confidence", CustomMinimumSize = new(0, 64) };
-        foreach (var value in new[] { 1, 2, 3 }) _confidence.AddItem(Tr("STRATEGY_CONFIDENCE_" + value), value);
-        AddChild(_confidence);
+        _confidence = new OptionButton { Name = "Confidence", CustomMinimumSize = new(0, 64), FitToLongestItem = false };
+        foreach (var value in new[] { 1, 2, 3 })
+        {
+            _confidence.AddItem(Tr("UI_BET_" + value), value);
+            _confidence.GetPopup().SetItemTooltip(value - 1, Tr("STRATEGY_CONFIDENCE_" + value));
+        }
+        var top = new HBoxContainer { Name = "Top" }; AddChild(top);
+        _confidence.Visible = false; top.AddChild(_confidence);
+        _bets = new HBoxContainer { Name = "Bets", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        top.AddChild(_bets);
+        foreach (var value in new[] { 1, 2, 3 })
+        {
+            var index = value - 1;
+            var bet = new Button { Name = "Bet" + value, Text = "×" + value,
+                AccessibilityName = Tr("STRATEGY_CONFIDENCE_" + value), TooltipText = Tr("STRATEGY_CONFIDENCE_" + value),
+                CustomMinimumSize = new(64, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            bet.SetMeta("presentation_no_wrap", true);
+            bet.AutowrapMode = TextServer.AutowrapMode.Off;
+            bet.Pressed += () => { _confidence.Select(index); UpdateBetButtons(); };
+            _betButtons.Add(bet); _bets.AddChild(bet);
+        }
         _privacy = new Button { Name = "Privacy", Text = Tr("STRATEGY_PRIVATE"), CustomMinimumSize = new(0, 64),
             AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        AddChild(_privacy);
+        _privacy.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        top.AddChild(_privacy);
         _private = new VBoxContainer { Name = "Private", Visible = false };
+        _betHint = new Label { Name = "BetHint", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        _betHint.AddThemeFontSizeOverride("font_size", 18); AddChild(_betHint);
         AddChild(_private);
-        _privacy.Pressed += () => _private.Visible = !_private.Visible;
+        _privacy.Pressed += () => { _private.Visible = !_private.Visible; UpdatePrivacyLabel(); };
+        UpdatePrivacyLabel();
         _status = new Label { Name = "CardStatus", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_status);
     }
@@ -50,14 +75,19 @@ public partial class StrategyPanel : VBoxContainer
         if (_transport is null || !Visible || snapshot.Private is not { } own) return;
         if (_session != snapshot.SessionId)
         { _session = snapshot.SessionId; _initialized = false; _owner = Guid.Empty; _question = Guid.Empty; }
-        if (!_initialized) { _private.Visible = !_transport.IsHost; _initialized = true; }
+        if (!_initialized) { _private.Visible = false; _initialized = true; }
+        UpdatePrivacyLabel();
         if (_question != snapshot.Question.InstanceId || _owner != own.PlayerId)
         { _question = snapshot.Question.InstanceId; _owner = own.PlayerId; _confidence.Select(0); _reason = "None"; }
-        _confidence.Visible = snapshot.Strategy!.Confidence && !snapshot.IsTieBreaker;
+        _confidence.Visible = false;
+        _bets.Visible = snapshot.Strategy!.Confidence && !snapshot.IsTieBreaker;
+        _betHint.Visible = _bets.Visible;
         _confidence.Disabled = snapshot.Phase != "QuestionActive" || _transport.OwnAnswerIndex is not null ||
             _transport.AnswerPending || _transport.CardPending || !snapshot.EligiblePlayers.Contains(own.PlayerId);
+        UpdateBetButtons();
         _status.Text = _reason == "None" ? (own.Notice == "None" ? "" : Tr("STRATEGY_NOTICE_" + own.Notice)) :
             Tr("STRATEGY_CARD_" + _reason);
+        _status.Visible = _status.Text.Length > 0;
         foreach (var child in _private.GetChildren()) { _private.RemoveChild(child); child.QueueFree(); }
         AddText(string.Format(Tr("STRATEGY_PROGRESS"), own.Streak, own.Meter));
         if (own.Shield) AddText(Tr("STRATEGY_SHIELD_ACTIVE"));
@@ -114,5 +144,19 @@ public partial class StrategyPanel : VBoxContainer
         return translated == key ? id : translated;
     }
     private void AddText(string text) => _private.AddChild(new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+    private void UpdatePrivacyLabel()
+    {
+        _privacy.Text = Tr(_private.Visible ? "UI_CLOSE_CARDS" : "UI_CARDS");
+        _privacy.AccessibilityName = Tr(_private.Visible ? "UI_HIDE_PRIVATE" : "UI_SHOW_PRIVATE");
+    }
+    private void UpdateBetButtons()
+    {
+        for (var index = 0; index < _betButtons.Count; index++)
+        {
+            _betButtons[index].ThemeTypeVariation = _confidence.Selected == index ? "PrimaryAction" : "";
+            _betButtons[index].Disabled = _confidence.Disabled;
+        }
+        _betHint.Text = Tr("STRATEGY_CONFIDENCE_" + _confidence.GetSelectedId());
+    }
     public override void _ExitTree() { if (_transport is not null) _transport.CardInputChanged -= OnCardInput; }
 }

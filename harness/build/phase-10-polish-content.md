@@ -4,6 +4,23 @@
 
 Finalize responsive visual system, audio, transitions, reduced-motion/accessibility basics and scale reviewed Greek question content.
 
+## User-approved subset — 2026-10-18
+
+Implement presentation only: responsive TV/mobile layouts, audio, transitions,
+reduced motion and touch-friendly/accessibility controls. Explicitly defer manual
+layout QA, certifying no critical accessibility/touch blockers and the 1,000+
+reviewed-question criterion. Keep the original acceptance criteria below as
+outstanding gates; do not mark the entire phase complete. Plan:
+`harness/phase-10-plan.md`. Presentation guide: `docs/PRESENTATION.md`.
+
+## Current QA status — 2026-10-18
+
+User reopened manual/accessibility QA, then rejected the mobile visuals and
+authorized a graphics/UI overhaul. The illustrated replacement has passed local
+technical checks and is installed on Android for review. No visual/accessibility
+sign-off is claimed. Evidence and remaining checks: `docs/PHASE10_QA.md`.
+The 1,000+ reviewed-question criterion remains explicitly deferred.
+
 ## Read before implementation
 
 - `AGENTS.md`

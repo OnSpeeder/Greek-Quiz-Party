@@ -13,6 +13,9 @@ public partial class RosterEditor : VBoxContainer
     private CheckButton _teams = null!;
     private Label _hint = null!;
     private VBoxContainer _rows = null!;
+    private bool _hostOptions;
+    private bool _editing;
+    private Button _addToggle = null!;
     public override void _Ready()
     {
         Visible = false;
@@ -21,7 +24,10 @@ public partial class RosterEditor : VBoxContainer
         _teams = new CheckButton { Name = "Teams", Text = Tr("TEAM_ENABLE"), CustomMinimumSize = new(0, 64) };
         _hint = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
         _rows = new VBoxContainer { Name = "Players" };
-        AddChild(_name); AddChild(_add); AddChild(_teams); AddChild(_hint); AddChild(_rows);
+        _addToggle = new Button { Name = "AddController", Text = Tr("UI_ADD_CONTROLLER") };
+        _addToggle.Pressed += () => { _editing = !_editing; _name.Visible = _editing; _add.Visible = _editing; };
+        AddChild(_hint); AddChild(_rows); AddChild(_addToggle); AddChild(_name); AddChild(_add); AddChild(_teams);
+        _name.Visible = false; _add.Visible = false;
         _name.TextChanged += _ => UpdateAdd();
         _add.Pressed += () =>
         {
@@ -40,14 +46,18 @@ public partial class RosterEditor : VBoxContainer
     {
         Visible = snapshot.Phase == "Lobby";
         if (!Visible || _transport is null) return;
-        UpdateAdd(); _teams.Visible = _transport.IsHost; _teams.SetPressedNoSignal(snapshot.TeamMode);
-        _hint.Text = !snapshot.TeamMode ? Tr("LOCAL_HINT") : Tr(snapshot.Players.Select(p => p.TeamId).Distinct().Count() == 2 ? "TEAM_HINT" : "TEAM_NEED_TWO");
+        UpdateAdd(); _teams.Visible = _transport.IsHost && _hostOptions; _teams.SetPressedNoSignal(snapshot.TeamMode);
+        _hint.Text = string.Format(Tr("UI_WAITING_COUNT"), snapshot.Players.Length);
+        if (snapshot.TeamMode) _hint.Text += "\n" + Tr(snapshot.Players.Select(p => p.TeamId).Distinct().Count() == 2 ? "TEAM_HINT" : "TEAM_NEED_TWO");
         foreach (var child in _rows.GetChildren()) { _rows.RemoveChild(child); child.QueueFree(); }
         var owned = _transport.OwnedPlayers.Select(p => p.PlayerId).ToHashSet();
+        var avatar = 0;
         foreach (var player in snapshot.Players)
         {
-            var row = new VBoxContainer(); _rows.AddChild(row);
-            row.AddChild(new Label { Text = player.DisplayName + (owned.Contains(player.PlayerId) ? " — " + Tr("LOCAL_THIS_DEVICE") : "") +
+            var frame = new PanelContainer(); _rows.AddChild(frame);
+            var card = new HBoxContainer(); frame.AddChild(card); card.AddChild(GameArt.Avatar(avatar++));
+            var row = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; card.AddChild(row);
+            row.AddChild(new Label { Text = player.DisplayName +
                 (snapshot.TeamMode ? " — " + Tr("TEAM_" + player.TeamId) : ""), AutowrapMode = TextServer.AutowrapMode.WordSmart });
             if (owned.Contains(player.PlayerId))
             {
@@ -56,10 +66,11 @@ public partial class RosterEditor : VBoxContainer
                 ready.Pressed += () => _transport.SetReady(!player.Ready, localSlot: player.LocalSlot); actions.AddChild(ready);
                 if (player.LocalSlot != 0)
                 {
-                    var remove = new Button { Text = Tr("LOCAL_REMOVE"), CustomMinimumSize = new(0, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                    var remove = new Button { Text = "×", AccessibilityName = Tr("LOCAL_REMOVE"), TooltipText = Tr("LOCAL_REMOVE"), CustomMinimumSize = new(64, 64) };
                     remove.Pressed += () => _transport.RemoveLocalPlayer(player.LocalSlot); actions.AddChild(remove);
                 }
             }
+            else row.AddChild(new Label { Text = Tr(player.Ready ? "LOBBY_READY_YES" : "LOBBY_READY_NO"), AutowrapMode = TextServer.AutowrapMode.WordSmart });
             if (_transport.IsHost && snapshot.TeamMode)
             {
                 var team = new OptionButton { CustomMinimumSize = new(0, 64) };
@@ -68,5 +79,6 @@ public partial class RosterEditor : VBoxContainer
             }
         }
     }
+    public void ShowHostOptions(bool visible) { _hostOptions = visible; _teams.Visible = visible && _transport?.IsHost == true; }
     public override void _ExitTree() { if (_transport is not null) _transport.SnapshotChanged -= Render; }
 }

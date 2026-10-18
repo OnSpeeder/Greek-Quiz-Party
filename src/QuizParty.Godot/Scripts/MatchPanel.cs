@@ -17,34 +17,81 @@ public partial class MatchPanel : VBoxContainer
     private StrategyPanel _strategy = null!;
     private LocalControllerPanel _controllers = null!;
     private Label _teams = null!;
+    private ProgressBar _timeBar = null!;
+    private Label _winner = null!;
+    private StandingsPanel _standings = null!;
+    private Button _statisticsToggle = null!;
+    private Button _newParty = null!;
+    private bool _showStatistics;
 
     public override void _Ready()
     {
+        AddThemeConstantOverride("separation", 8);
         _progress = new Label { Name = "Progress", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_progress);
         MoveChild(_progress, 1);
+        _winner = new Label { Name = "Winner", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        _winner.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
+        _winner.AddThemeFontSizeOverride("font_size", 32);
+        AddChild(_winner); MoveChild(_winner, 2);
         _statistics = new Label { Name = "Statistics", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_statistics);
+        _statisticsToggle = new Button { Name = "StatisticsToggle", Text = Tr("UI_STATS_DETAILS"), Flat = true };
+        _statisticsToggle.Pressed += () => { _showStatistics = !_showStatistics; _statistics.Visible = _showStatistics; };
+        AddChild(_statisticsToggle); MoveChild(_statisticsToggle, _statistics.GetIndex());
+        _newParty = new Button { Name = "NewParty", Text = Tr("UI_NEW_PARTY"), ThemeTypeVariation = "PrimaryAction" };
+        _newParty.Pressed += () =>
+        {
+            for (Node? node = GetParent(); node is not null; node = node.GetParent())
+                if (node is LobbyScreen lobby) { lobby.ReturnHome(); return; }
+        };
+        AddChild(_newParty); MoveChild(_newParty, _statisticsToggle.GetIndex());
         _departures = new Label { Name = "Departures", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_departures);
         MoveChild(_departures, 2);
         _strategy = new StrategyPanel { Name = "Strategy" };
-        AddChild(_strategy); MoveChild(_strategy, GetNode<Button>("Answer0").GetIndex());
+        AddChild(_strategy); MoveChild(_strategy, GetNode<GridContainer>("Answers").GetIndex());
         _controllers = new LocalControllerPanel { Name = "LocalControllers" };
         AddChild(_controllers); MoveChild(_controllers, _strategy.GetIndex());
         _teams = new Label { Name = "TeamScores", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_teams); MoveChild(_teams, GetNode<Label>("Scores").GetIndex());
+        _standings = new StandingsPanel { Name = "Standings" };
+        AddChild(_standings); MoveChild(_standings, GetNode<Label>("Scores").GetIndex());
         for (var index = 0; index < 4; index++)
         {
             var choice = index;
-            _answers[index] = GetNode<Button>($"Answer{index}");
+            _answers[index] = GetNode<Button>($"Answers/Answer{index}");
+            _answers[index].ThemeTypeVariation = "Answer" + index;
+            _answers[index].CustomMinimumSize = new(0, 80);
+            _answers[index].AddThemeFontSizeOverride("font_size", 26);
             _answers[index].Pressed += () => _transport?.SubmitAnswer(choice, confidence: _snapshot?.IsTieBreaker == true ? 1 : _strategy.Confidence);
         }
         GetNode<Button>("Continue").Pressed += () => _transport?.AdvanceMatch();
+        GetNode<Button>("Continue").ThemeTypeVariation = "PrimaryAction";
         var timer = new global::Godot.Timer { WaitTime = 0.1, Autostart = true };
         timer.Timeout += UpdateCountdown;
         AddChild(timer);
+        _timeBar = new ProgressBar { Name = "TimeBar", ShowPercentage = false, CustomMinimumSize = new(0, 12), MaxValue = 60 };
+        AddChild(_timeBar); MoveChild(_timeBar, GetNode<Label>("Countdown").GetIndex() + 1);
+        Resized += UpdateAnswerLayout;
+        UpdateAnswerLayout();
+        GetNode<Label>("Question").AddThemeStyleboxOverride("normal", ShowtimeTheme.Panel(new("211235"), ShowtimeTheme.Gold, 3));
+        GetNode<Label>("Question").AddThemeFontSizeOverride("font_size", 30);
+        GetNode<Label>("Question").HorizontalAlignment = HorizontalAlignment.Center;
+        var meta = new HBoxContainer { Name = "Meta" }; AddChild(meta); MoveChild(meta, 0);
+        _progress.Reparent(meta); _progress.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        _progress.AddThemeColorOverride("font_color", ShowtimeTheme.Cyan);
+        GetNode<Label>("Countdown").Reparent(meta);
+        GetNode<Label>("Meta/Countdown").SetMeta("presentation_no_wrap", true);
+        GetNode<Label>("Meta/Countdown").AutowrapMode = TextServer.AutowrapMode.Off;
+        GetNode<Label>("Meta/Countdown").AddThemeStyleboxOverride("normal", ShowtimeTheme.Panel(new("291d35"), ShowtimeTheme.Gold));
+        var clockStyle = (StyleBoxFlat)GetNode<Label>("Meta/Countdown").GetThemeStylebox("normal").Duplicate();
+        clockStyle.ContentMarginTop = 4; clockStyle.ContentMarginBottom = 4;
+        GetNode<Label>("Meta/Countdown").AddThemeStyleboxOverride("normal", clockStyle);
+        GetNode<Label>("Meta/Countdown").AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
     }
+
+    private void UpdateAnswerLayout() => GetNode<GridContainer>("Answers").Columns = Size.X >= 700 ? 2 : 1;
 
     public void Bind(LobbyTransport transport)
     {
@@ -56,7 +103,11 @@ public partial class MatchPanel : VBoxContainer
         _controllers.Bind(transport); _controllers.Changed += OnControllerChanged;
         transport.CardInputChanged += OnCardInput;
     }
-    private void OnCardInput(string reason) => UpdateControls();
+    private void OnCardInput(string reason)
+    {
+        UpdateControls();
+        if (reason == "None") PresentationShell.For(this)?.PlayCue("card");
+    }
     private void OnControllerChanged()
     { _reason = "None"; if (_transport?.MatchSnapshot is { } snapshot) Render(snapshot); }
 
@@ -65,6 +116,7 @@ public partial class MatchPanel : VBoxContainer
         if (_snapshot is null) return;
         var departed = _snapshot.Scores.Where(s => !lobby.Players.Any(p => p.PlayerId == s.PlayerId)).Select(s => s.DisplayName).ToArray();
         _departures.Text = departed.Length == 0 ? "" : string.Format(Tr("MATCH_DEPARTED"), string.Join(", ", departed));
+        _departures.Visible = departed.Length > 0;
     }
 
     private void OnInputChanged(string reason)
@@ -77,6 +129,7 @@ public partial class MatchPanel : VBoxContainer
     private void Render(MatchSnapshotDto snapshot)
     {
         Visible = true;
+        var phaseChanged = _snapshot?.Phase != snapshot.Phase || _snapshot.Question.InstanceId != snapshot.Question.InstanceId;
         if (_snapshot?.Question.InstanceId != snapshot.Question.InstanceId) _reason = "None";
         _snapshot = snapshot;
         _controllers.Refresh();
@@ -84,7 +137,8 @@ public partial class MatchPanel : VBoxContainer
         if (_transport?.Snapshot is { } lobby) OnLobbyChanged(lobby);
         _receivedAtMs = global::Godot.Time.GetTicksMsec();
         GetNode<Label>("Question").Text = snapshot.Question.Text;
-        GetNode<Label>("Heading").Text = Tr(snapshot.Phase == "GameOver" ? "MATCH_FINAL" : "MATCH_TITLE");
+        GetNode<Label>("Heading").Text = Tr(snapshot.Phase == "GameOver" ? "MATCH_FINAL" : "UI_QUESTION");
+        GetNode<Label>("Heading").Visible = snapshot.Phase is not ("QuestionActive" or "QuestionLocked");
         _progress.Text = snapshot.IsTieBreaker ? Tr("MATCH_TIE") : string.Format(Tr("MATCH_PROGRESS"),
             snapshot.RoundNumber, snapshot.QuestionNumber, snapshot.TotalQuestions);
         var teamMode = snapshot.Teams is { Length: > 0 };
@@ -93,9 +147,10 @@ public partial class MatchPanel : VBoxContainer
         _teams.Text = snapshot.Reveal is null || !teamMode ? "" : string.Join("\n", snapshot.Teams!.Select(team =>
             string.Format(Tr("TEAM_SCORE"), Tr("TEAM_" + team.TeamId), team.Total, string.Join(", ",
                 snapshot.Scores.Where(s => team.Members.Contains(s.PlayerId)).Select(s => s.DisplayName)))));
-        _statistics.Text = snapshot.Phase != "GameOver" ? "" :
+        _winner.Text = snapshot.Phase != "GameOver" ? "" :
             string.Format(Tr(teamMode ? snapshot.ContentExhausted ? "TEAM_SHARED" : "TEAM_WINNER" :
-                snapshot.ContentExhausted ? "MATCH_SHARED" : "MATCH_WINNER"), string.Join(", ", winnerNames)) + "\n" +
+                snapshot.ContentExhausted ? "MATCH_SHARED" : "MATCH_WINNER"), string.Join(", ", winnerNames));
+        _statistics.Text = snapshot.Phase != "GameOver" ? "" :
             string.Join("\n", snapshot.Statistics.Select(s => string.Format(Tr("MATCH_STATS"),
                 snapshot.Scores.Single(p => p.PlayerId == s.PlayerId).DisplayName, s.Correct, s.Wrong, s.Unanswered,
                 s.Correct + s.Wrong + s.Unanswered == 0 ? 0 : 100.0 * s.Correct / (s.Correct + s.Wrong + s.Unanswered),
@@ -108,7 +163,7 @@ public partial class MatchPanel : VBoxContainer
                 s.ConfidentCorrect, s.ConfidentWrong, s.AllInCorrect, s.AllInWrong,
                 s.ConfidentCorrect + s.ConfidentWrong == 0 ? 0 : 100.0 * s.ConfidentCorrect / (s.ConfidentCorrect + s.ConfidentWrong),
                 s.AllInCorrect + s.AllInWrong == 0 ? 0 : 100.0 * s.AllInCorrect / (s.AllInCorrect + s.AllInWrong))));
-        for (var i = 0; i < 4; i++) _answers[i].Text = $"{(char)('A' + i)}. {snapshot.Question.Answers[i]}";
+        for (var i = 0; i < 4; i++) _answers[i].Text = $"{Tr("UI_ANSWER_" + i)}   {snapshot.Question.Answers[i]}";
         GetNode<Label>("Reveal").Text = snapshot.Reveal is null ? "" :
             string.Format(Tr("MATCH_CORRECT"), snapshot.Question.Answers[snapshot.Reveal.CorrectAnswerIndex]) + "\n" + snapshot.Reveal.Explanation;
         GetNode<Label>("Scores").Text = snapshot.Reveal is null ? "" : Tr("MATCH_SCORES") + "\n" +
@@ -116,6 +171,28 @@ public partial class MatchPanel : VBoxContainer
                 string.Format(Tr("MATCH_PLAYER_SCORE"), score.DisplayName, score.Total)));
         UpdateControls();
         UpdateCountdown();
+        foreach (var label in new[] { _winner, _statistics, _departures, _teams, GetNode<Label>("Reveal"), GetNode<Label>("Scores") })
+            label.Visible = !string.IsNullOrWhiteSpace(label.Text);
+        GetNode<Label>("Question").Visible = snapshot.Phase is "QuestionActive" or "QuestionLocked" or "AnswerReveal";
+        GetNode<Label>("Reveal").Visible = snapshot.Phase == "AnswerReveal";
+        GetNode<Label>("Scores").Visible = false;
+        _standings.Visible = snapshot.Reveal is not null;
+        if (_standings.Visible) _standings.Render(snapshot.Scores);
+        _statistics.Visible = _showStatistics && snapshot.Phase == "GameOver";
+        _statisticsToggle.Visible = snapshot.Phase == "GameOver";
+        _newParty.Visible = snapshot.Phase == "GameOver";
+        if (snapshot.Phase == "GameOver") GetNode<Label>("Status").Visible = false;
+        if (phaseChanged && PresentationShell.For(this) is { } shell)
+        {
+            // Only animate public text. Private panel hiding and answer input remain immediate.
+            shell.Fade(snapshot.Phase == "GameOver" ? _winner : GetNode<Label>(snapshot.Reveal is null ? "Question" : "Reveal"));
+            if (snapshot.Phase is "AnswerReveal" or "GameOver") shell.PlayCue(snapshot.Phase == "GameOver" ? "final" : "reveal");
+            Callable.From(() =>
+            {
+                if (GodotObject.IsInstanceValid(this) && IsInsideTree() && IsVisibleInTree() &&
+                    GetParent().GetParent() is ScrollContainer scroll) scroll.ScrollVertical = 0;
+            }).CallDeferred();
+        }
     }
 
     private void UpdateControls()
@@ -131,7 +208,14 @@ public partial class MatchPanel : VBoxContainer
                 _transport.AnswerPending || _transport.CardPending || _transport.OwnAnswerIndex is not null ||
                 _snapshot.Private?.HiddenAnswers.Contains(i) == true;
             _answers[i].Text = _snapshot.Private?.HiddenAnswers.Contains(i) == true && _snapshot.Reveal is null
-                ? Tr("STRATEGY_HIDDEN").ToString() : $"{(char)('A' + i)}. {_snapshot.Question.Answers[i]}";
+                ? Tr("STRATEGY_HIDDEN").ToString() : $"{Tr("UI_ANSWER_" + i)}   {_snapshot.Question.Answers[i]}";
+            if (_snapshot.Reveal?.CorrectAnswerIndex == i)
+                _answers[i].Text = string.Format(Tr("UI_CORRECT_CHOICE"), _answers[i].Text);
+            else if (_controllers.Open && _transport.OwnAnswerIndex == i)
+                _answers[i].Text = string.Format(Tr("UI_CHOSEN"), _answers[i].Text);
+            _answers[i].RemoveThemeStyleboxOverride("disabled");
+            if (_snapshot.Reveal?.CorrectAnswerIndex == i)
+                _answers[i].AddThemeStyleboxOverride("disabled", ShowtimeTheme.Panel(new("203e40"), ShowtimeTheme.Cyan, 3));
         }
         var next = GetNode<Button>("Continue");
         next.Visible = _transport.IsHost && _snapshot.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd";
@@ -144,6 +228,7 @@ public partial class MatchPanel : VBoxContainer
                 _transport.OwnAnswerIndex is not null ? "MATCH_ACCEPTED" : _reason is "None" or "Pending" ? "MATCH_CHOOSE" : "MATCH_ERROR_" + _reason
         };
         GetNode<Label>("Status").Text = Tr(key);
+        GetNode<Label>("Status").Visible = !active || _transport.AnswerPending || _transport.OwnAnswerIndex is not null || _reason is not ("None" or "Pending");
     }
 
     private void UpdateCountdown()
@@ -151,8 +236,15 @@ public partial class MatchPanel : VBoxContainer
         if (_snapshot is null || !Visible) return;
         var seconds = Math.Max(0, TimeSpan.FromTicks((_controllers.Open ? _snapshot.Private?.DeadlineTicks ?? _snapshot.Question.DeadlineTicks : _snapshot.Question.DeadlineTicks) - _snapshot.HostNowTicks).TotalSeconds -
             (global::Godot.Time.GetTicksMsec() - _receivedAtMs) / 1000.0);
-        GetNode<Label>("Countdown").Text = _snapshot.Phase == "QuestionActive"
-            ? string.Format(Tr("MATCH_TIME"), (int)Math.Ceiling(seconds)) : "";
+        var active = _snapshot.Phase == "QuestionActive";
+        GetNode<Label>("Meta/Countdown").Text = active
+            ? string.Format(Tr(seconds <= 5 ? "UI_CLOCK_URGENT" : "UI_CLOCK"), (int)Math.Ceiling(seconds)) : "";
+        GetNode<Label>("Meta/Countdown").AccessibilityName = string.Format(Tr("MATCH_TIME"), (int)Math.Ceiling(seconds));
+        _timeBar.Visible = active;
+        GetNode<Label>("Meta/Countdown").Visible = active;
+        var deadline = _controllers.Open ? _snapshot.Private?.DeadlineTicks ?? _snapshot.Question.DeadlineTicks : _snapshot.Question.DeadlineTicks;
+        _timeBar.MaxValue = Math.Max(1, TimeSpan.FromTicks(deadline - _snapshot.Question.StartedAtTicks).TotalSeconds);
+        _timeBar.Value = Math.Max(0, seconds);
     }
 
     public override void _ExitTree()

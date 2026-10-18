@@ -23,7 +23,12 @@ six host-validated cards and five feasible private missions. Optional Steal is
 off by default. See [strategy rules](GAME_DESIGN.md#phase-08-implemented-strategy-balance).
 Mixed local/LAN parties now support 2–8 players, including multiple players on
 each device, with private handoff controls and host-assigned Team Mode.
-Next is Phase 10: UI polish, accessibility and reviewed content scale.
+Phase 10 adds illustrated Showtime stages and characters, focused create/join
+screens, game-style answers and standings, saved audio/accessibility settings,
+reduced-motion transitions and density-aware touch controls. The first mobile
+visual pass failed user QA; its replacement is installed and awaits review.
+See [Presentation guide](docs/PRESENTATION.md) and [QA evidence](docs/PHASE10_QA.md).
+Accessibility sign-off remains open; reviewed-content expansion stays deferred.
 
 This repository is intended to become a polished Greek-first party trivia game for **Windows and Android**, built with **Godot 4.7.2 .NET / C#**.
 

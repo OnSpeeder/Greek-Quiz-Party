@@ -24,7 +24,7 @@ SPIKE_FAILED,Αποτυχία σύνδεσης,Connection failed
 SPIKE_SERVER_LEFT,Ο διακομιστής αποσυνδέθηκε,Host disconnected
 SPIKE_REJECTED,Η δοκιμαστική έκδοση δεν είναι συμβατή,Incompatible probe version or platform
 SPIKE_START_ERROR,Αδυναμία εκκίνησης: {0},Could not start: {0}
-LOBBY_OPEN,Παιχνίδι στο τοπικό δίκτυο,LAN party lobby
+LOBBY_OPEN,Πάμε για παιχνίδι,Start a party
 LOBBY_TITLE,QuizParty — Αίθουσα παιχνιδιού,QuizParty — Party lobby
 LOBBY_PLAYER_NAME,Το όνομά σου,Your name
 LOBBY_ROOM_NAME,Όνομα αίθουσας (για δημιουργία),Room name (when hosting)
@@ -195,3 +195,53 @@ TEAM_SCORE,{0}: {1} πόντοι — {2},{0}: {1} points — {2}
 TEAM_WINNER,Νικήτρια: {0},Winning team: {0}
 TEAM_SHARED,Κοινή νίκη: {0} — εξαντλήθηκαν οι ερωτήσεις,Shared team victory: {0} — question pack exhausted
 LOBBY_STATUS_InvalidTeam,Ελέγξτε ότι και οι δύο ομάδες έχουν παίκτες,Check that both teams have players
+UI_WELCOME,Η παρέα σου. Η σκηνή σας. Πάμε για παιχνίδι!,Your friends. Your stage. Let’s play!
+UI_SETTINGS,Ρυθμίσεις,Settings
+UI_SETTINGS_HINT,Οι ρυθμίσεις αφορούν αυτή τη συσκευή. Το παιχνίδι και ο χρόνος συνεχίζονται.,Settings apply to this device. The game and timer keep running.
+UI_SOUND,Ηχητικά εφέ,Sound effects
+UI_VOLUME,Ένταση ήχου,Sound volume
+UI_SOUND_PREVIEW,Δοκιμή ήχου,Preview sound
+UI_REDUCED_MOTION,Μειωμένη κίνηση,Reduced motion
+UI_LARGE_TEXT,Μεγαλύτερο κείμενο,Larger text
+UI_HIGH_CONTRAST,Υψηλή αντίθεση,High contrast
+UI_CLOSE,Επιστροφή στο παιχνίδι,Return to game
+UI_SAVED,Οι ρυθμίσεις αποθηκεύτηκαν,Settings saved
+UI_SAVE_FAILED,Δεν ήταν δυνατή η αποθήκευση. Οι ρυθμίσεις ισχύουν για τώρα.,Could not save. Settings apply for now.
+UI_TIME_URGENT,Λίγος χρόνος — {0} δευτερόλεπτα,Time is running out — {0} seconds
+UI_CORRECT_CHOICE,✓ Σωστή απάντηση: {0},✓ Correct answer: {0}
+UI_CHOSEN,Η επιλογή σου: {0},Your choice: {0}
+UI_SHOW_PRIVATE,Οι κάρτες και η αποστολή μου,My cards and mission
+UI_HIDE_PRIVATE,Απόκρυψη καρτών και αποστολής,Hide cards and mission
+UI_PARTY_BADGE,2–8 ΠΑΙΚΤΕΣ  ·  ΧΩΡΙΣ INTERNET,2–8 PLAYERS  ·  OFFLINE
+UI_HOME_TAGLINE,Γνώσεις • Ρίσκο • Ανατροπές,Knowledge • Risk • Comebacks
+UI_CREATE_PARTY,Δημιουργώ παρέα,Create a party
+UI_JOIN_PARTY,Μπαίνω στην παρέα,Join the party
+UI_PICK_PATH,Πάρε θέση στη σκηνή!,Take your place on stage!
+UI_CREATE_TITLE,Η δική σου παρέα,Your party
+UI_JOIN_TITLE,Βρες την παρέα σου,Find your party
+UI_LOBBY_HINT,Μαζευόμαστε και ξεκινάμε!,Gather your friends and let’s play!
+UI_RULES,Κανόνες παιχνιδιού,Game rules
+UI_ADD_CONTROLLER,Προσθήκη παίκτη στη συσκευή,Add a player on this device
+UI_MANUAL_IP,Σύνδεση με διεύθυνση IP,Join with an IP address
+UI_ROOM_DEFAULT,Η παρέα μας,Our party
+UI_PIN_OPTIONS,Προαιρετικό PIN αίθουσας,Optional room PIN
+UI_LEAVE_PARTY,Αποχώρηση από την παρέα,Leave the party
+UI_CARDS,Κάρτες,Cards
+UI_QUESTION,Ώρα για απαντήσεις!,Time for answers!
+UI_CLOCK,{0}″,{0}″
+UI_CLOCK_URGENT,{0}″ — ΛΙΓΟΣ ΧΡΟΝΟΣ,{0}″ — HURRY
+UI_ANSWER_0,Α,A
+UI_ANSWER_1,Β,B
+UI_ANSWER_2,Γ,C
+UI_ANSWER_3,Δ,D
+UI_BET_1,x1 · Ασφαλές,x1 · Safe
+UI_BET_2,x2 · Τολμηρό,x2 · Bold
+UI_BET_3,x3 · Όλα μέσα,x3 · All in
+UI_OTHER_PATH,‹ Αλλαγή τρόπου συμμετοχής,‹ Choose another way to play
+UI_WAITING_COUNT,{0} / 8 παίκτες στη σκηνή,{0} / 8 players on stage
+UI_CLOSE_CARDS,Κλείσιμο καρτών,Close cards
+UI_NAME_LABEL,Το όνομά σου,Your name
+UI_ROOM_LABEL,Όνομα παρέας,Party name
+UI_PIN_LABEL,PIN παρέας,Party PIN
+UI_STATS_DETAILS,Στατιστικά αγώνα,Match statistics
+UI_NEW_PARTY,Νέα παρέα,New party

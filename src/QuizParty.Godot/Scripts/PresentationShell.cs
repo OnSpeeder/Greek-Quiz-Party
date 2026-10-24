@@ -8,16 +8,13 @@ public partial class PresentationShell : Control
     public string SettingsPath { get; set; } = "user://presentation.cfg";
     public PresentationPreferences Preferences { get; private set; } = new();
     private Control _root = null!;
-    private Control _overlay = null!;
+    private SettingsPanel _overlay = null!;
     private Button _settings = null!;
-    private Label _saveStatus = null!;
     private AudioStreamPlayer _audio = null!;
     private readonly Dictionary<string, AudioStreamWav> _sounds = [];
     private readonly Dictionary<Control, Tween> _fades = [];
     private readonly List<Control> _hidden = [];
     private bool _previousQuitOnBack;
-    private Button _leave = null!;
-    private Action? _leaveAction;
     public bool SettingsOpen => _overlay.Visible;
     public int MinimumTarget { get; private set; } = 64;
 
@@ -37,6 +34,10 @@ public partial class PresentationShell : Control
         MouseFilter = MouseFilterEnum.Ignore;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Preferences = PresentationPreferences.Load(SettingsPath);
+        if (previewArgs.Contains("--ui-preview")) Preferences = new();
+        if (previewArgs.Contains("--ui-english")) Preferences = Preferences with { Language = "en" };
+        if (previewArgs.Contains("--ui-greek")) Preferences = Preferences with { Language = "el_GR" };
+        TranslationServer.SetLocale(Preferences.Language);
         _root.Theme = ShowtimeTheme.Create(Preferences);
         if (OS.IsDebugBuild() && OS.HasFeature("android")) GetTree().CreateTimer(.6).Timeout += () =>
         {
@@ -77,7 +78,12 @@ public partial class PresentationShell : Control
                     ReducedMotion = args.Contains("--ui-reduced-motion") || Preferences.ReducedMotion,
                     Sound = !args.Contains("--ui-mute") && Preferences.Sound }, persist: false);
                 if (args.Contains("--ui-settings")) Callable.From(() =>
-                { if (GodotObject.IsInstanceValid(this) && IsInsideTree()) OpenSettings(); }).CallDeferred();
+                {
+                    if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
+                    OpenSettings();
+                    if (args.Contains("--ui-gameplay")) _overlay.SelectSection(1);
+                    if (args.Contains("--ui-help")) _overlay.SelectSection(2);
+                }).CallDeferred();
                 if (args.Contains("--ui-sound-preview")) GetTree().CreateTimer(.1).Timeout += () =>
                 { if (GodotObject.IsInstanceValid(this) && IsInsideTree()) PlayCue("reveal"); };
                 if (args.FirstOrDefault(a => a.StartsWith("--ui-capture=", StringComparison.Ordinal)) is { } capture)
@@ -95,6 +101,7 @@ public partial class PresentationShell : Control
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
             if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
             using var image = GetViewport().GetTexture().GetImage();
+            if (SettingsOpen) GD.Print($"SETTINGS layout={_overlay.LandscapeLayout} size={_overlay.Size} min={_overlay.GetCombinedMinimumSize()} frameMin={_overlay.GetNode<Control>("SafeMargin/Composition/Frame").GetCombinedMinimumSize()}");
             var error = image.SavePng(path);
             GD.Print($"PRESENTATION CAPTURE {error} {image.GetWidth()}x{image.GetHeight()}");
             GetTree().Quit(error == Error.Ok ? 0 : 1);
@@ -156,46 +163,21 @@ public partial class PresentationShell : Control
 
     private void BuildSettings()
     {
-        _overlay = new PanelContainer { Name = "SettingsOverlay", Visible = false };
-        AddChild(_overlay); _overlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        var margin = new MarginContainer();
-        foreach (var edge in new[] { "left", "right", "top", "bottom" }) margin.AddThemeConstantOverride("margin_" + edge, 24);
-        _overlay.AddChild(margin);
-        var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, FollowFocus = true };
-        margin.AddChild(scroll);
-        var content = new VBoxContainer { Name = "Options", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        scroll.AddChild(content);
-        content.AddChild(new Label { Text = Tr("UI_SETTINGS"), AutowrapMode = TextServer.AutowrapMode.WordSmart });
-        content.AddChild(new Label { Text = Tr("UI_SETTINGS_HINT"), AutowrapMode = TextServer.AutowrapMode.WordSmart });
-        AddToggle(content, "Sound", "UI_SOUND", Preferences.Sound, value => Apply(Preferences with { Sound = value }));
-        content.AddChild(new Label { Text = Tr("UI_VOLUME") });
-        var volume = new HSlider { Name = "Volume", MinValue = 0, MaxValue = 100, Step = 5, Value = Preferences.Volume * 100,
-            CustomMinimumSize = new(0, 64), FocusMode = FocusModeEnum.All, AccessibilityName = Tr("UI_VOLUME") };
-        content.AddChild(volume);
-        var volumeText = new Label { Name = "VolumeValue", Text = $"{volume.Value:0}%" };
-        content.AddChild(volumeText);
-        volume.ValueChanged += value => { volumeText.Text = $"{value:0}%"; Apply(Preferences with { Volume = (float)value / 100 }); };
-        var preview = new Button { Name = "Preview", Text = Tr("UI_SOUND_PREVIEW") };
-        preview.Pressed += () => PlayCue("reveal"); content.AddChild(preview);
-        AddToggle(content, "ReducedMotion", "UI_REDUCED_MOTION", Preferences.ReducedMotion, value => Apply(Preferences with { ReducedMotion = value }));
-        AddToggle(content, "LargeText", "UI_LARGE_TEXT", Preferences.LargeText, value => Apply(Preferences with { LargeText = value }));
-        AddToggle(content, "HighContrast", "UI_HIGH_CONTRAST", Preferences.HighContrast, value => Apply(Preferences with { HighContrast = value }));
-        _saveStatus = new Label { Name = "SaveStatus", AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        content.AddChild(_saveStatus);
-        var close = new Button { Name = "Close", Text = Tr("UI_CLOSE") };
-        close.Pressed += CloseSettings; content.AddChild(close);
-        _leave = new Button { Name = "LeaveParty", Text = Tr("UI_LEAVE_PARTY"), Visible = false };
-        _leave.Pressed += () => _leaveAction?.Invoke(); content.AddChild(_leave);
+        _overlay = GD.Load<PackedScene>("res://Scenes/SettingsPanel.tscn").Instantiate<SettingsPanel>();
+        _overlay.Name = "SettingsOverlay";
+        _overlay.Visible = false;
+        AddChild(_overlay);
+        _overlay.PreferencesChanged += preferences => Apply(preferences);
+        _overlay.CloseRequested += CloseSettings;
+        _overlay.PreviewRequested += () => PlayCue("reveal");
+        _overlay.Render(Preferences, MinimumTarget);
     }
 
-    public void SetLeaveAction(Action action) { _leaveAction = action; _leave.Visible = true; }
-
-    private void AddToggle(VBoxContainer parent, string name, string key, bool value, Action<bool> changed)
+    public void SetLeaveAction(Action action)
     {
-        var toggle = new CheckButton { Name = name, Text = Tr(key), ButtonPressed = value };
-        toggle.Toggled += value => changed(value); parent.AddChild(toggle);
+        _overlay.LeaveRequested += action;
+        _overlay.SetLeaveAvailable();
     }
-
     public void OpenSettings()
     {
         if (SettingsOpen) return;
@@ -203,14 +185,13 @@ public partial class PresentationShell : Control
         // Hidden scene content cannot receive keyboard focus or reveal private panels behind settings.
         foreach (var control in _root.GetChildren().OfType<Control>().Where(c => c != this && c is not StageBackdrop && c.Visible))
         { _hidden.Add(control); control.Hide(); }
-        _settings.Hide(); _overlay.Show();
-        ((CheckButton)_overlay.FindChild("Sound", true, false)).GrabFocus();
+        _settings.Hide(); _overlay.Open();
     }
 
     public void CloseSettings()
     {
         if (!SettingsOpen) return;
-        _overlay.Hide();
+        _overlay.Dismiss();
         foreach (var control in _hidden.Where(GodotObject.IsInstanceValid)) control.Show();
         _hidden.Clear(); _settings.Show(); _settings.GrabFocus();
     }
@@ -222,7 +203,10 @@ public partial class PresentationShell : Control
             var scale = ResponsiveCanvas.PixelsPerUnit(GetWindow().Size, _root.GetViewportRect().Size);
             var minimum = ResponsiveCanvas.MinimumLogicalTarget(DisplayServer.ScreenGetDpi(), scale);
             if (minimum != MinimumTarget)
-            { MinimumTarget = minimum; _root.Theme = ShowtimeTheme.Create(Preferences, MinimumTarget); StyleTree(_root); }
+            {
+                MinimumTarget = minimum; _root.Theme = ShowtimeTheme.Create(Preferences, MinimumTarget);
+                StyleTree(_root); _overlay.Render(Preferences, MinimumTarget);
+            }
         }
         _settings.OffsetLeft = -20 - MinimumTarget - inset.Z; _settings.OffsetRight = -20 - inset.Z;
         _settings.OffsetTop = 12 + inset.Y; _settings.OffsetBottom = 12 + MinimumTarget + inset.Y;
@@ -233,9 +217,8 @@ public partial class PresentationShell : Control
     public void Apply(PresentationPreferences preferences, bool persist = true)
     {
         Preferences = preferences;
-        foreach (var (name, value) in new[] { ("Sound", preferences.Sound), ("ReducedMotion", preferences.ReducedMotion),
-            ("LargeText", preferences.LargeText), ("HighContrast", preferences.HighContrast) })
-            ((CheckButton)_overlay.FindChild(name, true, false)).SetPressedNoSignal(value);
+        TranslationServer.SetLocale(preferences.Language);
+        _settings.AccessibilityName = Tr("UI_SETTINGS"); _settings.TooltipText = Tr("UI_SETTINGS");
         _root.Theme = ShowtimeTheme.Create(Preferences, MinimumTarget);
         var backdrop = _root.GetNode<StageBackdrop>("StageBackdrop");
         backdrop.HighContrast = preferences.HighContrast; backdrop.QueueRedraw();
@@ -250,7 +233,7 @@ public partial class PresentationShell : Control
             _fades.Clear();
         }
         var error = persist ? preferences.Save(SettingsPath) : Error.Ok;
-        _saveStatus.Text = !persist ? "" : error == Error.Ok ? Tr("UI_SAVED") : Tr("UI_SAVE_FAILED");
+        _overlay.Render(preferences, MinimumTarget, !persist ? "" : error == Error.Ok ? "UI_SAVED" : "UI_SAVE_FAILED");
         if (error != Error.Ok) GD.PushWarning($"Presentation settings could not save: {error}");
     }
 
@@ -296,13 +279,13 @@ public partial class PresentationShell : Control
     public override void _UnhandledKeyInput(InputEvent @event)
     {
         if (SettingsOpen && @event is InputEventKey { Pressed: true, Keycode: Key.Escape })
-        { CloseSettings(); GetViewport().SetInputAsHandled(); }
+        { if (!_overlay.Back()) CloseSettings(); GetViewport().SetInputAsHandled(); }
     }
 
     public override void _Notification(int what)
     {
         if (what == NotificationWMGoBackRequest && IsInsideTree())
-        { if (SettingsOpen) CloseSettings(); else GetTree().Quit(); }
+        { if (SettingsOpen) { if (!_overlay.Back()) CloseSettings(); } else GetTree().Quit(); }
     }
 
     public override void _ExitTree()

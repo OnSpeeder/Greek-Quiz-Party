@@ -19,12 +19,12 @@ public partial class RosterEditor : VBoxContainer
     public override void _Ready()
     {
         Visible = false;
-        _name = new LineEdit { Name = "LocalName", MaxLength = 32, PlaceholderText = Tr("LOCAL_NAME"), CustomMinimumSize = new(0, 64) };
-        _add = new Button { Name = "AddLocal", Text = Tr("LOCAL_ADD"), CustomMinimumSize = new(0, 64), AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        _teams = new CheckButton { Name = "Teams", Text = Tr("TEAM_ENABLE"), CustomMinimumSize = new(0, 64) };
+        _name = new LineEdit { Name = "LocalName", MaxLength = 32, PlaceholderText = "LOCAL_NAME", CustomMinimumSize = new(0, 64) };
+        _add = new Button { Name = "AddLocal", Text = "LOCAL_ADD", CustomMinimumSize = new(0, 64), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        _teams = new CheckButton { Name = "Teams", Text = "TEAM_ENABLE", CustomMinimumSize = new(0, 64) };
         _hint = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
         _rows = new VBoxContainer { Name = "Players" };
-        _addToggle = new Button { Name = "AddController", Text = Tr("UI_ADD_CONTROLLER") };
+        _addToggle = new Button { Name = "AddController", Text = "UI_ADD_CONTROLLER" };
         _addToggle.Pressed += () => { _editing = !_editing; _name.Visible = _editing; _add.Visible = _editing; };
         AddChild(_hint); AddChild(_rows); AddChild(_addToggle); AddChild(_name); AddChild(_add); AddChild(_teams);
         _name.Visible = false; _add.Visible = false;
@@ -66,7 +66,7 @@ public partial class RosterEditor : VBoxContainer
                 ready.Pressed += () => _transport.SetReady(!player.Ready, localSlot: player.LocalSlot); actions.AddChild(ready);
                 if (player.LocalSlot != 0)
                 {
-                    var remove = new Button { Text = "×", AccessibilityName = Tr("LOCAL_REMOVE"), TooltipText = Tr("LOCAL_REMOVE"), CustomMinimumSize = new(64, 64) };
+                    var remove = new Button { Text = "×", AccessibilityName = Tr("LOCAL_REMOVE"), TooltipText = "LOCAL_REMOVE", CustomMinimumSize = new(64, 64) };
                     remove.Pressed += () => _transport.RemoveLocalPlayer(player.LocalSlot); actions.AddChild(remove);
                 }
             }

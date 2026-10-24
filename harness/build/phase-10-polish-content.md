@@ -23,6 +23,18 @@ The 1,000+ reviewed-question criterion remains explicitly deferred.
 
 ## Read before implementation
 
+Settings review update — 2026-10-19: the user rejected the implemented settings
+visuals and requested an Inkscape mockup sheet following a new prompt. Current
+visual candidate: `docs/design/settings-study-02/`. It is an editable visual
+study, not a replacement runtime implementation or acceptance sign-off.
+
+The subsequent user instruction authorized integrating this study into the live
+settings page. Its derived skins and native composition are implemented; latest
+verification is recorded in the QA document/build log. Human usability and final
+visual approval remain open.
+
+- For settings redesign: `docs/design/SETTINGS_PAGE.md` (integrated reference,
+  implemented UI/asset review candidate and remaining acceptance checks).
 - `AGENTS.md`
 - relevant design documents only
 - prior material phase context if present

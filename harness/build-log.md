@@ -532,3 +532,98 @@ Append observed implementation and verification evidence here. Plans are not evi
 - scripts/test.ps1 -IncludeGodot passed: 252 Core, 100 integration and 13 Godot tests; production rebuild passed.
 - Content validation/CLI gates passed as part of the scripts. Logs: artifacts/commit-build.log and artifacts/commit-tests.log (ignored local evidence).
 - git diff --check passed. Outstanding Phase 10 manual acceptance/content gates remain documented above.
+
+## 2026-10-18 — Settings specification and asset-plan integration
+
+- Integrated the user's additional prompt and attached image into
+  docs/design/SETTINGS_PAGE.md; linked the spec from the visual direction,
+  presentation guide, active Phase 10 file and plan/context.
+- Preserved the supplied reference under docs/design/concepts, outside runtime
+  assets. Spec covers Greek-first native text, landscape navigation / portrait
+  cards, density-aware targets, original sliced assets, mascot poses, accessible
+  motion/input, existing preference compatibility and pending service dependencies.
+- Documentation/reference change only; no game code, preferences, content,
+  protocol or production UI assets changed. No build/runtime tests rerun.
+- Verification: local spec/reference links and git diff --check passed. Settings
+  implementation and original Phase 10 acceptance gates remain pending.
+
+## 2026-10-18 — Settings UI implementation and original asset production
+
+- User authorized implementing the integrated settings specification. Delivered
+  SettingsPanel.tscn/C# view with landscape tabs, portrait cards, safe areas,
+  gold/purple native UI skin and separate blue/orange mascot bays. Shell retains
+  local persistence, audio and privacy; no Core/protocol/content change.
+- Produced 29 editable SVG masters via scripts/build-settings-vectors.ps1 and
+  two original transparent four-pose atlases using built-in imagegen. Final
+  prompts/provenance/dimensions: Art/Settings/README.md. Both atlas central seams
+  are clear; blue registration repaired before use. All SVGs parse as XML.
+- Existing preferences preserved. Added validated Greek/English language field,
+  native translation keys, offline help/credits/engine notices/privacy/About,
+  real version metadata and Cancel-first presentation-only reset. Unsupported
+  music/narration/haptic/shake controls are omitted. No new dependency added.
+- Final scripts/test.ps1 -IncludeGodot: 252 Core +100 integration +17 Godot =369
+  passed, zero failures/skips. Tests include old configs, invalid locale, save
+  failure, confirmed/cancelled reset, nested Back, mute, motion cancellation,
+  96-unit target propagation and focused-section retention across rotation.
+- scripts/build.ps1 passed with zero warnings/errors and strict content/CLI gates
+  passed. Production content remains one reviewed question. Earlier iteration
+  resource-cleanup/reparent errors were fixed; final test process exits cleanly.
+  Existing EditorSettings shutdown_adb_on_exit export/import diagnostic and
+  deliberate invalid-config/save-failure test warnings remain in the logs.
+- Windows/Android debug exports passed; final APK v2 signature verified and APK
+  installed/launched on physical Android. Inspected standard and high-contrast/
+  larger-text portrait/landscape settings captures. At533dpi targets remain
+  64/72 logical units (>=48dp). Source captures cover Greek desktop Audio/Gameplay,
+  English Help, portrait, larger text/high contrast and short landscape.
+- Packaged Windows mixed local/LAN regression: 5 players, teams +strategy,
+  20 synthetic questions, matching final scores/team sums/missions/statistics;
+  runtime stderr clean. The outer shell initially inherited a stale native exit
+  code despite the helper's PASS; inspected its complete PASS and both empty
+  runtime error logs. No networking failure was hidden or test weakened.
+- Declared text/surface contrast checks: body13.65:1, normal brightest4.98:1,
+  hover8.02:1, active6.54:1, high contrast18.23:1. These do not confer human
+  readability or accessibility certification.
+- Evidence: artifacts/settings-{tests,build}-final.log,
+  settings-export-{windows,android}-final.log, settings-apk-verification.log,
+  settings-android-{standard,contrast}-final.log, settings-network-final.log,
+  phase10-settings-*/preview.png and phase10-qa/android{,-standard}/.
+- Desktop build restored after Android export; generated Core/infrastructure
+  lockfile churn removed. git diff --check passed. No push or Phase11 work.
+- Human touch/listening/TV review, full combination/assistive-technology QA,
+  release review of credits/privacy and reviewed-content expansion remain open.
+  Android accessibility backend reports unsupported. Phase10 remains open.
+
+## 2026-10-19 — Rejected settings candidate; Inkscape visual study 02
+
+- User rejected the prior settings UI and requested a new 16:9 side-by-side
+  landscape/portrait mockup using Inkscape and its newly configured MCP.
+- Delivered docs/design/settings-study-02/: editable 3200x1800 SVG, portable
+  outlined SVG and full-size PNG. Reused stage/crew illustrations and existing
+  orange wave pose; new vector frame/control layers, confetti and pedestal.
+- Actual Inkscape MCP validate, gradient-stop edit and PNG convert succeeded via
+  a local FastMCP stdio client. Inkscape1.4.4 rendered/outlined the SVG. Evidence:
+  artifacts/settings-inkscape/mcp-finish.log and review.png. Corrected malformed
+  tab paths, mascot viewport clipping and text encoding during visual iteration.
+- XML/PNG dimensions and actual rendered composition inspected; git diff --check
+  passed. No new game code/assets were installed into the runtime and no game
+  tests were rerun for this visual-only deliverable. Phase10 remains open and
+  neither the prior runtime visuals nor the new study has user sign-off.
+
+
+## 2026-10-19 — Settings vector recreation / study 03
+
+- Created docs/design/settings-study-03/ as a separate visual deliverable;
+  preserved previous studies, runtime integration and unrelated local edits.
+- Entire stage, controls, flags, pedestal and both mascots use vectors.
+  Editable/outlined master plus exact 1920x1080 and 675x1200 SVG/PNG exports.
+- Inkscape 1.4.4 rendered all three canvases; visually inspected composition
+  and portable sheet. Corrected shadow blur, flag clipping and reset overlap.
+- All six SVGs parsed: unique IDs, resolved local references, zero images,
+  no external links; outlined versions contain zero text elements. Exact
+  aspect ratios/PNG dimensions verified. Portable render differs only by
+  minor outline antialiasing (mean channel difference below 0.001/255).
+- Independently exported reset button and music thumb as transparent PNGs.
+  Structural/render evidence: study folder validation.json. Generator:
+  scripts/create-settings-vector-study.py. git diff --check passed.
+- Art-only follow-up: no game code, content or protocol changes; game tests
+  and runtime import were not rerun. Phase10 and human approval remain open.

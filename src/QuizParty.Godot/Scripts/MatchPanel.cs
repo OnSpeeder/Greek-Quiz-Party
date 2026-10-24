@@ -36,10 +36,10 @@ public partial class MatchPanel : VBoxContainer
         AddChild(_winner); MoveChild(_winner, 2);
         _statistics = new Label { Name = "Statistics", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_statistics);
-        _statisticsToggle = new Button { Name = "StatisticsToggle", Text = Tr("UI_STATS_DETAILS"), Flat = true };
+        _statisticsToggle = new Button { Name = "StatisticsToggle", Text = "UI_STATS_DETAILS", Flat = true };
         _statisticsToggle.Pressed += () => { _showStatistics = !_showStatistics; _statistics.Visible = _showStatistics; };
         AddChild(_statisticsToggle); MoveChild(_statisticsToggle, _statistics.GetIndex());
-        _newParty = new Button { Name = "NewParty", Text = Tr("UI_NEW_PARTY"), ThemeTypeVariation = "PrimaryAction" };
+        _newParty = new Button { Name = "NewParty", Text = "UI_NEW_PARTY", ThemeTypeVariation = "PrimaryAction" };
         _newParty.Pressed += () =>
         {
             for (Node? node = GetParent(); node is not null; node = node.GetParent())

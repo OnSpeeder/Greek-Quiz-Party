@@ -53,7 +53,7 @@ public partial class LobbyScreen : Control
         var content = GetNode<VBoxContainer>(path.TrimEnd('/'));
         _players = new RosterEditor { Name = "RosterEditor" };
         content.AddChild(_players); content.MoveChild(_players, _ready.GetIndex()); _players.Bind(_transport);
-        _pin = new LineEdit { Name = "RoomPin", MaxLength = 6, Secret = true, PlaceholderText = Tr("LOBBY_PIN"),
+        _pin = new LineEdit { Name = "RoomPin", MaxLength = 6, Secret = true, PlaceholderText = "LOBBY_PIN",
             CustomMinimumSize = new Vector2(0, 64), VirtualKeyboardType = LineEdit.VirtualKeyboardTypeEnum.Number };
         content.AddChild(_pin); content.MoveChild(_pin, _host.GetIndex());
         foreach (var field in new[] { _name, _room, _pin, _address })
@@ -89,9 +89,9 @@ public partial class LobbyScreen : Control
         timer.Select(1);
         timer.ItemSelected += index => _transport.QuestionSeconds = timer.GetItemId((int)index);
         _settings.AddChild(timer);
-        var strategy = new CheckButton { Name = "Strategy", Text = Tr("STRATEGY_ENABLED"), ButtonPressed = true,
+        var strategy = new CheckButton { Name = "Strategy", Text = "STRATEGY_ENABLED", ButtonPressed = true,
             CustomMinimumSize = new(0, 64) };
-        var steal = new CheckButton { Name = "AllowSteal", Text = Tr("STRATEGY_ALLOW_STEAL"), CustomMinimumSize = new(0, 64) };
+        var steal = new CheckButton { Name = "AllowSteal", Text = "STRATEGY_ALLOW_STEAL", CustomMinimumSize = new(0, 64) };
         strategy.Toggled += enabled => { _transport.StrategyEnabled = enabled; steal.Disabled = !enabled; };
         steal.Toggled += enabled => _transport.AllowSteal = enabled;
         _settings.AddChild(strategy); _settings.AddChild(steal);
@@ -109,17 +109,17 @@ public partial class LobbyScreen : Control
                 CustomMinimumSize = new(0, 88), ThemeTypeVariation = mode == "create" ? "PrimaryAction" : "" };
             button.Pressed += () => ShowSetupPage(mode); _chooser.AddChild(button);
         }
-        _switchPage = new Button { Name = "ChangePath", Text = Tr("SPIKE_BACK"), Flat = true, Alignment = HorizontalAlignment.Left };
+        _switchPage = new Button { Name = "ChangePath", Text = "SPIKE_BACK", Flat = true, Alignment = HorizontalAlignment.Left };
         _switchPage.AddThemeFontSizeOverride("font_size", 18);
         content.AddChild(_switchPage); content.MoveChild(_switchPage, _chooser.GetIndex() + 1);
         _switchPage.Pressed += () => ShowSetupPage("choose");
-        _manualIp = new Button { Name = "ManualIp", Text = Tr("UI_MANUAL_IP") };
+        _manualIp = new Button { Name = "ManualIp", Text = "UI_MANUAL_IP" };
         content.AddChild(_manualIp); content.MoveChild(_manualIp, _address.GetIndex());
         _manualIp.Pressed += () => { _manualOpen = !_manualOpen; ShowSetup(true); };
-        _pinOptions = new Button { Name = "PinOptions", Text = Tr("UI_PIN_OPTIONS"), Flat = true };
+        _pinOptions = new Button { Name = "PinOptions", Text = "UI_PIN_OPTIONS", Flat = true };
         content.AddChild(_pinOptions); content.MoveChild(_pinOptions, _pin.GetIndex());
         _pinOptions.Pressed += () => { _pinOpen = !_pinOpen; ShowSetup(true); };
-        _ruleOptions = new Button { Name = "RuleOptions", Text = Tr("UI_RULES") };
+        _ruleOptions = new Button { Name = "RuleOptions", Text = "UI_RULES" };
         content.AddChild(_ruleOptions); content.MoveChild(_ruleOptions, _settings.GetIndex());
         _ruleOptions.Pressed += () =>
         {

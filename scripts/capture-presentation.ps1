@@ -1,14 +1,20 @@
 param([ValidateSet('Menu','Lobby','Create','Join','Settings')][string]$View = 'Menu',
     [ValidateRange(320,7680)][int]$Width = 1152, [ValidateRange(320,7680)][int]$Height = 648, [switch]$LargeText,
-    [switch]$HighContrast, [switch]$ReducedMotion, [switch]$SoundPreview, [switch]$Mute)
+    [switch]$HighContrast, [switch]$ReducedMotion, [switch]$SoundPreview, [switch]$Mute,
+    [ValidateSet('Audio','Gameplay','Help')][string]$SettingsSection = 'Audio',
+    [ValidateSet('el_GR','en')][string]$Locale = 'el_GR')
 . "$PSScriptRoot/common.ps1"
 $output = Join-Path $RepoRoot "artifacts/phase10-$($View.ToLower())-${Width}x$Height$(if ($LargeText) { '-large' })$(if ($HighContrast) { '-contrast' })$(if ($Mute) { '-muted' })"
+if ($View -eq 'Settings') { $output += "-$($SettingsSection.ToLower())-$Locale" }
 New-Item -ItemType Directory -Force $output | Out-Null
 $binary = (Get-Godot) -replace '_console\.exe$', '.exe'
 $scene = if ($View -in @('Lobby','Create','Join')) { 'res://Scenes/Lobby.tscn' } else { 'res://Scenes/Main.tscn' }
 $flags = @('--ui-preview')
 if ($ReducedMotion) { $flags += '--ui-reduced-motion' }
 if ($View -eq 'Settings') { $flags += '--ui-settings' }
+if ($View -eq 'Settings' -and $SettingsSection -eq 'Gameplay') { $flags += '--ui-gameplay' }
+if ($View -eq 'Settings' -and $SettingsSection -eq 'Help') { $flags += '--ui-help' }
+if ($Locale -eq 'en') { $flags += '--ui-english' }
 if ($View -eq 'Create') { $flags += '--ui-create' }
 if ($View -eq 'Join') { $flags += '--ui-join' }
 if ($LargeText) { $flags += '--ui-large-text' }

@@ -75,3 +75,41 @@ privacy, networking and accessibility settings. Keep reviewed content deferred.
 Replacement technical verification passed: 365 tests, both exports and real
 Windows/Android mixed LAN regression. See docs/PHASE10_QA.md. Visual approval,
 physical usability and accessibility sign-off remain open; stop at Phase 10.
+
+## Settings reference integration — 2026-10-18
+
+- [x] Integrate the user's additional settings prompt and attached reference into
+  `docs/design/SETTINGS_PAGE.md`; preserve reference under `docs/design/concepts/`.
+- [x] Define responsive composition, localized native UI, asset manifest, motion,
+  input/privacy behavior and verification criteria against the existing build.
+- [x] Implement the settings redesign, produce assets and complete automated
+  verification; physical visual review and human acceptance remain open.
+
+The user subsequently authorized implementation and asset production. The
+composable settings view now has responsive sections, local language selection,
+offline help/legal/About, confirmed presentation-only reset and animated original
+mascots. Its 29 SVG masters and two pose atlases live under Art/Settings. Music, narration,
+haptics and screen shake are not existing features; do not expose inert controls.
+Retain SFX, reduced motion, larger text and high contrast. No phase advancement.
+
+## Settings candidate rejected — Inkscape study, 2026-10-19
+
+- [x] Create a closer landscape/portrait mockup sheet using Inkscape and the
+  configured local Inkscape MCP; preserve the existing stage/mascot identities.
+- [x] Deliver editable SVG, outlined portable SVG and full-size PNG under
+  `docs/design/settings-study-02/`; validate and inspect actual Inkscape renders.
+
+The implemented settings visuals were rejected. This latest request is a visual
+mockup deliverable; no new runtime UI or unsupported setting behavior is implied.
+
+## Inkscape study integration authorized — 2026-10-19
+
+- [x] Derive reusable runtime SVG skins from the Inkscape master.
+- [x] Integrate the dimensional title, sidebar tabs, compact controls, action row
+  and mascot composition into the native settings panel.
+- [x] Preserve one control instance across responsive reparenting, local
+  preferences, privacy/focus, reset confirmation and reduced-motion/high-contrast.
+- [x] Finish local/runtime/export evidence and present the integrated candidate.
+
+Illustrative music/voice/haptic controls remain absent pending real services.
+No game rules, protocol or question content changes; stop at Phase10.

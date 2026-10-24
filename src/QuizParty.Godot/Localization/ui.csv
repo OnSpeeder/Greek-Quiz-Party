@@ -245,3 +245,30 @@ UI_ROOM_LABEL,Όνομα παρέας,Party name
 UI_PIN_LABEL,PIN παρέας,Party PIN
 UI_STATS_DETAILS,Στατιστικά αγώνα,Match statistics
 UI_NEW_PARTY,Νέα παρέα,New party
+UI_SETTINGS_BANNER,ΡΥΘΜΙΣΕΙΣ,SETTINGS
+UI_SETTINGS_AUDIO,Ήχος,Audio
+UI_SETTINGS_GAMEPLAY,Παιχνίδι,Gameplay
+UI_SETTINGS_HELP,Βοήθεια & πληροφορίες,Help & Legal
+UI_SETTINGS_BACK,Πίσω,Back
+UI_SETTINGS_ON,ΕΝΕΡΓΟ,ON
+UI_SETTINGS_OFF,ΑΝΕΝΕΡΓΟ,OFF
+UI_SETTINGS_AUDIO_HINT,Δοκίμασε τον ήχο πριν ανέβεις στη σκηνή!,Test the sound before taking the stage!
+UI_SETTINGS_MUTED,Ο ήχος είναι κλειστός. Ενεργοποίησε τα εφέ και αύξησε την ένταση για δοκιμή.,Sound is muted. Enable effects and raise the volume to test.
+UI_SETTINGS_LANGUAGE,Γλώσσα μενού,Menu language
+UI_SETTINGS_LANGUAGE_HINT,Η γλώσσα των ερωτήσεων ορίζεται από το πακέτο του οικοδεσπότη.,Question language follows the host’s question pack.
+UI_SETTINGS_CREDITS,Συντελεστές,Credits
+UI_SETTINGS_PRIVACY,Πολιτική απορρήτου,Privacy policy
+UI_SETTINGS_ABOUT,Σχετικά με το QuizParty,About QuizParty
+UI_SETTINGS_RESET,Επαναφορά προεπιλογών,Reset to defaults
+UI_SETTINGS_CANCEL,Ακύρωση,Cancel
+UI_SETTINGS_CONFIRM_RESET,Επαναφορά ρυθμίσεων,Reset settings
+UI_SETTINGS_RESET_BODY,Επαναφορά μόνο των ρυθμίσεων εμφάνισης και ήχου αυτής της συσκευής; Η γλώσσα επιστρέφει στα Ελληνικά. Δεν αλλάζουν η παρέα και οι κανόνες ή οι ερωτήσεις.,Reset only this device’s presentation and sound preferences? Language returns to Greek. The party and rules and questions stay as they are.
+UI_SETTINGS_VERSION,Έκδοση: {0},Game version: {0}
+UI_SETTINGS_DEVELOPMENT,Υπό ανάπτυξη,Development build
+UI_SETTINGS_CREDITS_BODY,QuizParty · Μια σκηνή για όλη την παρέα. Πρωτότυπη εικονογράφηση μασκότ και σκηνής με το ενσωματωμένο εργαλείο παραγωγής εικόνων. Διανυσματικά στοιχεία UI και συνθετικά ηχητικά εφέ δημιουργήθηκαν για το παιχνίδι. Κινητήρας Godot · .NET. Ακολουθεί η άδεια του Godot.,QuizParty · A stage for your whole party. Original mascot and stage illustrations made with the built-in image generation tool. Vector UI artwork and synthesized sound effects created for the game. Powered by Godot and .NET. Godot license follows.
+UI_SETTINGS_PRIVACY_BODY,Το QuizParty δεν ζητά λογαριασμό και δεν περιλαμβάνει τηλεμετρία. Οι προτιμήσεις εμφάνισης και ήχου αποθηκεύονται τοπικά σε αυτή τη συσκευή. Σε παιχνίδι LAN το όνομα παίκτη και οι ενέργειες παιχνιδιού ανταλλάσσονται με τον οικοδεσπότη και οι δημόσιες πληροφορίες της παρέας με τους συνδεδεμένους παίκτες. Μην χρησιμοποιείτε ευαίσθητα στοιχεία ως όνομα. Η εφαρμογή δεν προσφέρει υπηρεσία λογαριασμών ή συγχρονισμό cloud.,QuizParty requires no account and includes no telemetry. Presentation and sound preferences are saved locally on this device. In LAN play your display name and game actions are exchanged with the host; public party information is shared with connected players. Avoid sensitive information in display names. The app provides no account service or cloud synchronization.
+UI_SETTINGS_ABOUT_BODY,QuizParty · Παιχνίδι γνώσεων για 2–8 παίκτες στην ίδια συσκευή ή στο τοπικό δίκτυο. Ελληνικό περιεχόμενο και επιλογές στρατηγικής για την παρέα. {0},QuizParty · Party trivia for 2–8 players sharing a device or local network. Greek question content and strategic choices for friends and family. {0}
+UI_SETTINGS_HELP_TAB,Βοήθεια,Help & Legal
+UI_SETTINGS_SFX,Εφέ,SFX
+UI_SETTINGS_LEAVE_SHORT,Αποχώρηση,Leave party
+UI_SETTINGS_RESET_SHORT,Επαναφορά,Reset defaults

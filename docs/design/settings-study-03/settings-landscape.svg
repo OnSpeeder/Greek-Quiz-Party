@@ -1,0 +1,748 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="1920" height="1080" viewBox="42 165 1920 1080">
+<title>QuizParty — Settings / dual orientation vector recreation</title>
+<desc>Original path-drawn recreation of the supplied cartoon settings reference. Left: 1920 by 1080. Right: 675 by 1200. All stage art, controls, flags and mascots are vectors. English labels and illustrative states follow the requested study.</desc>
+<defs>
+<linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFF6C2" /><stop offset="0.18" stop-color="#FFE9A0" /><stop offset="0.43" stop-color="#F9C846" /><stop offset="0.7" stop-color="#B87B14" /><stop offset="1" stop-color="#F0B94B" /></linearGradient>
+<linearGradient id="knob" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFF3B3" /><stop offset="0.46" stop-color="#FFE493" /><stop offset="1" stop-color="#F5B340" /></linearGradient>
+<linearGradient id="titleGold" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFF4AE" /><stop offset="0.45" stop-color="#FFDF64" /><stop offset="0.49" stop-color="#FFD553" /><stop offset="1" stop-color="#F3A023" /></linearGradient>
+<linearGradient id="panel" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#9E4FCC" /><stop offset="0.25" stop-color="#813BB3" /><stop offset="1" stop-color="#5E2B97" /></linearGradient>
+<linearGradient id="tab" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#B360DA" /><stop offset="0.45" stop-color="#9B4FC9" /><stop offset="1" stop-color="#8140B5" /></linearGradient>
+<linearGradient id="recess" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#32154E" /><stop offset="0.08" stop-color="#452469" /><stop offset="1" stop-color="#482471" /></linearGradient>
+<linearGradient id="off" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#28103E" /><stop offset="0.35" stop-color="#4B1D73" /><stop offset="1" stop-color="#7A369D" /></linearGradient>
+<linearGradient id="blue" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#82EDFA" /><stop offset="0.2" stop-color="#30BCEB" /><stop offset="0.55" stop-color="#2D82D8" /><stop offset="1" stop-color="#1A57A4" /></linearGradient>
+<linearGradient id="red" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFAD83" /><stop offset="0.22" stop-color="#F25A43" /><stop offset="0.67" stop-color="#C92A2A" /><stop offset="1" stop-color="#9F1A34" /></linearGradient>
+<linearGradient id="spectrum" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0" stop-color="#00F2FE" /><stop offset="0.55" stop-color="#4FACFE" /><stop offset="1" stop-color="#A263E9" /></linearGradient>
+<linearGradient id="column" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0" stop-color="#0E102A" /><stop offset="0.26" stop-color="#2C1944" /><stop offset="0.5" stop-color="#503052" /><stop offset="0.7" stop-color="#1D102E" /><stop offset="1" stop-color="#0B1027" /></linearGradient>
+<linearGradient id="plinth" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0" stop-color="#281444" /><stop offset="0.2" stop-color="#64309B" /><stop offset="0.45" stop-color="#8F45C1" /><stop offset="0.64" stop-color="#51257F" /><stop offset="1" stop-color="#241138" /></linearGradient>
+<linearGradient id="plinthTop" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0" stop-color="#B56C26" /><stop offset="0.3" stop-color="#F4BB59" /><stop offset="0.48" stop-color="#FFF6BB" /><stop offset="0.65" stop-color="#FCD67A" /><stop offset="1" stop-color="#C2792F" /></linearGradient>
+<linearGradient id="blueFur" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#71F7FF" /><stop offset="0.28" stop-color="#31D8EE" /><stop offset="0.65" stop-color="#1EB3DF" /><stop offset="1" stop-color="#087DBB" /></linearGradient>
+<linearGradient id="blueFace" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#9CFBFF" /><stop offset="0.32" stop-color="#3DE7F7" /><stop offset="0.7" stop-color="#21C1E5" /><stop offset="1" stop-color="#139DD0" /></linearGradient>
+<linearGradient id="belly" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#BEF8FF" /><stop offset="0.5" stop-color="#E1FFFF" /><stop offset="1" stop-color="#74D5EB" /></linearGradient>
+<linearGradient id="paw" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFBDD5" /><stop offset="0.4" stop-color="#E89CBF" /><stop offset="1" stop-color="#C573A3" /></linearGradient>
+<linearGradient id="eyeWhite" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#D5E9F8" /><stop offset="0.3" stop-color="#FFFFFF" /><stop offset="1" stop-color="#FCF8F0" /></linearGradient>
+<linearGradient id="orangeFur" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFE276" /><stop offset="0.25" stop-color="#FFBB25" /><stop offset="0.65" stop-color="#FF9911" /><stop offset="1" stop-color="#E57508" /></linearGradient>
+<linearGradient id="orangeFace" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFE985" /><stop offset="0.3" stop-color="#FFD144" /><stop offset="0.65" stop-color="#FFB51D" /><stop offset="1" stop-color="#F2910C" /></linearGradient>
+<linearGradient id="orangeBelly" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FFF0AD" /><stop offset="0.6" stop-color="#FFE4A0" /><stop offset="1" stop-color="#FFC054" /></linearGradient>
+<linearGradient id="tongue" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0" stop-color="#FF9C81" /><stop offset="1" stop-color="#EF4D5D" /></linearGradient>
+<radialGradient id="stage" cx="52%" cy="48%" r="75%"><stop stop-color="#26205B" /><stop offset=".65" stop-color="#12092B" /><stop offset="1" stop-color="#080A20" /></radialGradient><radialGradient id="floor"><stop stop-color="#1955A2" /><stop offset=".5" stop-color="#1B1744" /><stop offset="1" stop-color="#0B081D" /></radialGradient><linearGradient id="beamPurple" x2="0" y2="1"><stop stop-color="#B83AF0" stop-opacity=".8" /><stop offset="1" stop-color="#9D30D4" stop-opacity="0" /></linearGradient><linearGradient id="beamBlue" x2="0" y2="1"><stop stop-color="#3DE4FF" stop-opacity=".9" /><stop offset="1" stop-color="#168CE4" stop-opacity="0" /></linearGradient><filter id="shadow" x="-.12" y="-.2" width="1.3" height="1.5" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="8" /></filter><filter id="smallShadow" x="-.15" y="-.2" width="1.4" height="1.5" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3" /></filter><clipPath id="clip_landscape"><rect width="1920" height="1080" rx="16" /></clipPath><clipPath id="clip_portrait"><rect width="675" height="1200" rx="16" /></clipPath><clipPath id="clip_flag"><rect width="65" height="39" rx="3" /></clipPath></defs>
+<g id="landscape" inkscape:label="01 Landscape — 16:9" inkscape:groupmode="layer" transform="translate(42,165)" clip-path="url(#clip_landscape)">
+<g id="landscape_stage" inkscape:label="Stage / spotlights / columns / confetti" inkscape:groupmode="layer">
+<rect x="0" y="0" width="1920" height="1080" rx="0" ry="0" fill="url(#stage)" />
+<ellipse cx="979.2" cy="1058.4" rx="1305.6000000000001" ry="216.0" fill="url(#floor)" />
+<path d="M-50 -120Q960.0 171.60000000000002 1970 -120" fill="none" stroke="#AC763A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M-50 -81Q960.0 210.60000000000002 1970 -81" fill="none" stroke="#AC763A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M-50 -56Q960.0 235.60000000000002 1970 -56" fill="none" stroke="#AC763A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<g id="landscape_stage_column_-8" inkscape:label="Fluted stage column">
+<rect x="-60" y="105" width="104" height="925" rx="24" ry="24" fill="url(#column)" />
+<path d="M-43 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M-23 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M4 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M26 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<ellipse cx="-8" cy="114" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+<ellipse cx="-8" cy="155" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+<ellipse cx="-8" cy="989" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+<ellipse cx="-8" cy="1022" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+</g>
+<g id="landscape_stage_column_1929" inkscape:label="Fluted stage column">
+<rect x="1877" y="105" width="104" height="925" rx="24" ry="24" fill="url(#column)" />
+<path d="M1894 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M1914 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M1941 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<path d="M1963 144V1008" fill="none" stroke="#A16449" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".18" />
+<ellipse cx="1929" cy="114" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+<ellipse cx="1929" cy="155" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+<ellipse cx="1929" cy="989" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+<ellipse cx="1929" cy="1022" rx="70" ry="18" fill="url(#column)" stroke="#A66A34" stroke-width="3" opacity=".65" />
+</g>
+<g id="landscape_stage_spotlight_0" inkscape:label="Stage spotlight" transform="translate(326.40000000000003,12) rotate(-26)">
+<path d="M-13 0L-180 560Q0 650 180 560L13 0Z" fill="url(#beamPurple)" opacity=".35" />
+<rect x="-23" y="-40" width="46" height="78" rx="18" ry="18" fill="#161127" stroke="#292443" stroke-width="3" />
+<ellipse cx="0" cy="26" rx="21" ry="12" fill="#B04CEA" opacity=".6" />
+</g>
+<g id="landscape_stage_spotlight_1" inkscape:label="Stage spotlight" transform="translate(1593.6,12) rotate(26)">
+<path d="M-13 0L-180 560Q0 650 180 560L13 0Z" fill="url(#beamPurple)" opacity=".35" />
+<rect x="-23" y="-40" width="46" height="78" rx="18" ry="18" fill="#161127" stroke="#292443" stroke-width="3" />
+<ellipse cx="0" cy="26" rx="21" ry="12" fill="#B04CEA" opacity=".6" />
+</g>
+<g id="landscape_stage_spotlight_2" inkscape:label="Stage spotlight" transform="translate(76.8,12) rotate(-30)">
+<path d="M-13 0L-180 560Q0 650 180 560L13 0Z" fill="url(#beamBlue)" opacity=".35" />
+<rect x="-23" y="-40" width="46" height="78" rx="18" ry="18" fill="#161127" stroke="#292443" stroke-width="3" />
+<ellipse cx="0" cy="26" rx="21" ry="12" fill="#26BDEB" opacity=".6" />
+</g>
+<ellipse cx="998.4000000000001" cy="1026.0" rx="998.4000000000001" ry="100" fill="none" stroke="#342057" stroke-width="4" opacity=".32" />
+<ellipse cx="998.4000000000001" cy="1026.0" rx="998.4000000000001" ry="69" fill="none" stroke="#BD8035" stroke-width="4" opacity=".32" />
+<ellipse cx="998.4000000000001" cy="1026.0" rx="998.4000000000001" ry="49" fill="none" stroke="#0EA4D5" stroke-width="4" opacity=".32" />
+<g id="landscape_stage_confetti_0" transform="translate(368.4,714.8) rotate(85)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#FFC657" />
+</g>
+<g id="landscape_stage_confetti_1" transform="translate(476.5,1002.4) rotate(160)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_2" transform="translate(948.9,535.0) rotate(117)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_3" transform="translate(1678.0,254.2) rotate(177)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_4" transform="translate(251.0,576.9) rotate(44)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_5" transform="translate(1639.2,994.6) rotate(60)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_6" transform="translate(345.7,258.2) rotate(93)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#E94DA7" />
+</g>
+<g id="landscape_stage_confetti_7" transform="translate(1100.2,259.9) rotate(173)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_8" transform="translate(1687.1,808.5) rotate(126)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_9" transform="translate(433.1,356.0) rotate(1)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_10" transform="translate(668.1,461.3) rotate(103)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_11" transform="translate(1030.3,647.5) rotate(134)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_12" transform="translate(537.1,326.9) rotate(77)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#FFC657" />
+</g>
+<g id="landscape_stage_confetti_13" transform="translate(1056.2,338.5) rotate(145)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_14" transform="translate(1745.0,203.8) rotate(175)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_15" transform="translate(1505.8,845.4) rotate(48)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_16" transform="translate(415.9,739.4) rotate(111)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_17" transform="translate(275.8,568.3) rotate(146)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_18" transform="translate(219.9,757.6) rotate(150)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#E94DA7" />
+</g>
+<g id="landscape_stage_confetti_19" transform="translate(513.5,895.6) rotate(168)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_20" transform="translate(1043.3,147.8) rotate(37)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_21" transform="translate(918.4,544.6) rotate(63)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_22" transform="translate(1235.3,598.0) rotate(52)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_23" transform="translate(1762.6,835.8) rotate(100)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_24" transform="translate(1502.3,869.9) rotate(174)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#FFC657" />
+</g>
+<g id="landscape_stage_confetti_25" transform="translate(1439.2,66.2) rotate(34)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_26" transform="translate(1466.7,899.0) rotate(22)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_27" transform="translate(919.9,869.0) rotate(46)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_28" transform="translate(747.2,188.0) rotate(101)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_29" transform="translate(1294.0,417.0) rotate(85)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_30" transform="translate(660.2,897.6) rotate(77)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#E94DA7" />
+</g>
+<g id="landscape_stage_confetti_31" transform="translate(1725.6,489.6) rotate(178)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_32" transform="translate(1036.4,77.9) rotate(146)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_33" transform="translate(818.2,820.8) rotate(157)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_34" transform="translate(1403.1,705.7) rotate(109)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_35" transform="translate(42.6,610.7) rotate(117)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_36" transform="translate(1050.0,68.7) rotate(155)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#FFC657" />
+</g>
+<g id="landscape_stage_confetti_37" transform="translate(1461.8,477.8) rotate(103)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_38" transform="translate(922.2,612.8) rotate(106)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_39" transform="translate(1584.0,891.0) rotate(38)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_40" transform="translate(449.7,905.4) rotate(45)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_41" transform="translate(1809.4,783.0) rotate(76)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_42" transform="translate(952.1,832.1) rotate(23)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#E94DA7" />
+</g>
+<g id="landscape_stage_confetti_43" transform="translate(1758.3,811.0) rotate(45)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_44" transform="translate(1837.4,578.5) rotate(54)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_45" transform="translate(518.7,135.6) rotate(146)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_46" transform="translate(1328.7,848.5) rotate(33)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_47" transform="translate(1752.4,165.3) rotate(95)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_48" transform="translate(151.9,385.2) rotate(154)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#FFC657" />
+</g>
+<g id="landscape_stage_confetti_49" transform="translate(527.0,404.1) rotate(43)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_50" transform="translate(768.1,463.8) rotate(131)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#E94DA7" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_51" transform="translate(791.7,576.6) rotate(2)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#9565D9" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_52" transform="translate(539.1,490.0) rotate(11)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#FFC657" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_53" transform="translate(1080.7,458.2) rotate(22)">
+<path d="M-6-5Q0-2 7-5L7 5Q0 9-6 5Z" fill="#36D5ED" opacity=".85" />
+</g>
+<g id="landscape_stage_confetti_54" transform="translate(432.1,220.7) rotate(34)">
+<path d="M0-13Q3-2 13 0Q3 3 0 14Q-3 3-13 0Q-3-3 0-13Z" fill="#E94DA7" />
+</g>
+</g>
+<g id="landscape_main_frame" inkscape:label="Main panel / gold screws" inkscape:groupmode="layer">
+<g id="landscape_frame_outer" inkscape:label="Gold bevel / purple frame">
+<rect x="228" y="218" width="1505" height="712" rx="48" ry="48" fill="#10081F" filter="url(#shadow)" />
+<rect x="225" y="211" width="1505" height="712" rx="48" ry="48" fill="#9B5822" stroke="#48203D" stroke-width="3" />
+<rect x="225" y="206" width="1505" height="712" rx="48" ry="48" fill="url(#gold)" stroke="#B8792C" stroke-width="3" />
+<rect x="232" y="211" width="1491" height="700" rx="43" ry="43" fill="none" stroke="#FFF3B8" stroke-width="3" />
+<rect x="242" y="222" width="1471" height="678" rx="35" ry="35" fill="url(#panel)" stroke="#8E4D24" stroke-width="3" />
+<rect x="248" y="228" width="1459" height="666" rx="31" ry="31" fill="none" stroke="#B96BDD" stroke-width="3" />
+</g>
+<ellipse cx="269" cy="253" rx="17" ry="17" fill="#30102E" opacity=".65" />
+<ellipse cx="268" cy="250" rx="15" ry="15" fill="url(#gold)" stroke="#985120" stroke-width="2" />
+<ellipse cx="266" cy="247" rx="9.9" ry="9.9" fill="none" stroke="#FFF2AF" stroke-width="1.5" />
+<path d="M260.5 257.5l15 -15" fill="none" stroke="#AE752F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M259.5 255.5l15 -15" fill="none" stroke="#FFE7A0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="269" cy="877" rx="17" ry="17" fill="#30102E" opacity=".65" />
+<ellipse cx="268" cy="874" rx="15" ry="15" fill="url(#gold)" stroke="#985120" stroke-width="2" />
+<ellipse cx="266" cy="871" rx="9.9" ry="9.9" fill="none" stroke="#FFF2AF" stroke-width="1.5" />
+<path d="M260.5 881.5l15 -15" fill="none" stroke="#AE752F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M259.5 879.5l15 -15" fill="none" stroke="#FFE7A0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="1688" cy="253" rx="17" ry="17" fill="#30102E" opacity=".65" />
+<ellipse cx="1687" cy="250" rx="15" ry="15" fill="url(#gold)" stroke="#985120" stroke-width="2" />
+<ellipse cx="1685" cy="247" rx="9.9" ry="9.9" fill="none" stroke="#FFF2AF" stroke-width="1.5" />
+<path d="M1679.5 257.5l15 -15" fill="none" stroke="#AE752F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M1678.5 255.5l15 -15" fill="none" stroke="#FFE7A0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="1688" cy="877" rx="17" ry="17" fill="#30102E" opacity=".65" />
+<ellipse cx="1687" cy="874" rx="15" ry="15" fill="url(#gold)" stroke="#985120" stroke-width="2" />
+<ellipse cx="1685" cy="871" rx="9.9" ry="9.9" fill="none" stroke="#FFF2AF" stroke-width="1.5" />
+<path d="M1679.5 881.5l15 -15" fill="none" stroke="#AE752F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M1678.5 879.5l15 -15" fill="none" stroke="#FFE7A0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<g id="landscape_inner_panel" inkscape:label="Recessed settings panel" inkscape:groupmode="layer">
+<g id="landscape_frame_inner" inkscape:label="Gold bevel / purple frame">
+<rect x="352" y="308" width="1280" height="624" rx="42" ry="42" fill="#10081F" filter="url(#shadow)" />
+<rect x="349" y="301" width="1280" height="624" rx="42" ry="42" fill="#9B5822" stroke="#48203D" stroke-width="3" />
+<rect x="349" y="296" width="1280" height="624" rx="42" ry="42" fill="url(#gold)" stroke="#B8792C" stroke-width="3" />
+<rect x="356" y="301" width="1266" height="612" rx="37" ry="37" fill="none" stroke="#FFF3B8" stroke-width="3" />
+<rect x="366" y="312" width="1246" height="590" rx="29" ry="29" fill="url(#panel)" stroke="#8E4D24" stroke-width="3" />
+<rect x="372" y="318" width="1234" height="578" rx="25" ry="25" fill="none" stroke="#B96BDD" stroke-width="3" />
+<rect x="388" y="339" width="1202" height="536" rx="17" ry="17" fill="url(#recess)" stroke="#9F5AC6" stroke-width="3" />
+<path d="M406 345H1569" fill="none" stroke="#28113E" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".5" />
+</g>
+<ellipse cx="391" cy="881" rx="16" ry="16" fill="#30102E" opacity=".65" />
+<ellipse cx="390" cy="878" rx="14" ry="14" fill="url(#gold)" stroke="#985120" stroke-width="2" />
+<ellipse cx="388" cy="875" rx="9.24" ry="9.24" fill="none" stroke="#FFF2AF" stroke-width="1.5" />
+<path d="M383.0 885.0l14 -14" fill="none" stroke="#AE752F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M382.0 883.0l14 -14" fill="none" stroke="#FFE7A0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<g id="landscape_navigation" inkscape:label="Back and sidebar tabs" inkscape:groupmode="layer">
+<g id="btn_back" inkscape:label="Back">
+<rect x="60" y="44" width="250" height="109" rx="27" ry="27" fill="#382046" filter="url(#smallShadow)" />
+<rect x="60" y="37" width="250" height="109" rx="27" ry="27" fill="url(#gold)" stroke="#9B6029" stroke-width="3" />
+<rect x="68" y="44" width="234" height="92" rx="21" ry="21" fill="url(#panel)" stroke="#FFF1B3" stroke-width="2" />
+<path d="M111 63L86 83 111 104V90H126Q150 90 145 108Q140 120 123 121Q154 132 160 109Q166 77 126 75H111Z" fill="url(#gold)" stroke="#7B382C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<text x="181" y="110" text-anchor="start" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="38" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">Back</text>
+</g>
+<g id="tab_audio" inkscape:label="AUDIO — selected">
+<rect x="71" y="324" width="317" height="146" rx="27" ry="27" fill="#291035" filter="url(#smallShadow)" />
+<rect x="69" y="316" width="317" height="146" rx="27" ry="27" fill="url(#gold)" stroke="#AE6E28" stroke-width="3" />
+<rect x="77" y="323" width="301" height="130" rx="21" ry="21" fill="url(#tab)" stroke="#FFF0B2" stroke-width="2" />
+<path d="M343 319Q360 319 371 338L409 380.0Q416 389.0 409 398.0L371 440Q360 459 343 459Z" fill="url(#gold)" stroke="#B7792C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M343 327H352L403 389.0L352 451H343" fill="url(#tab)" stroke="#FFF0B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M166.00 384.00L165.72 388.31L158.50 390.83L157.39 394.10L161.58 400.50L159.18 404.09L151.67 402.67L149.07 404.94L149.50 412.58L145.63 414.49L139.83 409.50L136.45 410.17L133.00 417.00L128.69 416.72L126.17 409.50L122.90 408.39L116.50 412.58L112.91 410.18L114.33 402.67L112.06 400.07L104.42 400.50L102.51 396.63L107.50 390.83L106.83 387.45L100.00 384.00L100.28 379.69L107.50 377.17L108.61 373.90L104.42 367.50L106.82 363.91L114.33 365.33L116.93 363.06L116.50 355.42L120.37 353.51L126.17 358.50L129.55 357.83L133.00 351.00L137.31 351.28L139.83 358.50L143.10 359.61L149.50 355.42L153.09 357.82L151.67 365.33L153.94 367.93L161.58 367.50L163.49 371.37L158.50 377.17L159.17 380.55Z" fill="#2B1336" transform="translate(1,4)" filter="url(#smallShadow)" />
+<path d="M166.00 384.00L165.72 388.31L158.50 390.83L157.39 394.10L161.58 400.50L159.18 404.09L151.67 402.67L149.07 404.94L149.50 412.58L145.63 414.49L139.83 409.50L136.45 410.17L133.00 417.00L128.69 416.72L126.17 409.50L122.90 408.39L116.50 412.58L112.91 410.18L114.33 402.67L112.06 400.07L104.42 400.50L102.51 396.63L107.50 390.83L106.83 387.45L100.00 384.00L100.28 379.69L107.50 377.17L108.61 373.90L104.42 367.50L106.82 363.91L114.33 365.33L116.93 363.06L116.50 355.42L120.37 353.51L126.17 358.50L129.55 357.83L133.00 351.00L137.31 351.28L139.83 358.50L143.10 359.61L149.50 355.42L153.09 357.82L151.67 365.33L153.94 367.93L161.58 367.50L163.49 371.37L158.50 377.17L159.17 380.55Z" fill="url(#gold)" stroke="#72402D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="133" cy="384" rx="14.85" ry="14.85" fill="#7E3BA6" stroke="#FFE09C" stroke-width="3" />
+<ellipse cx="133" cy="386" rx="10.56" ry="10.56" fill="#3B1C62" stroke="#A96834" stroke-width="2" />
+<path d="M195.00 352.00L194.84 354.48L190.68 355.93L190.04 357.82L192.45 361.50L191.07 363.57L186.75 362.75L185.25 364.06L185.50 368.45L183.27 369.55L179.93 366.68L177.98 367.07L176.00 371.00L173.52 370.84L172.07 366.68L170.18 366.04L166.50 368.45L164.43 367.07L165.25 362.75L163.94 361.25L159.55 361.50L158.45 359.27L161.32 355.93L160.93 353.98L157.00 352.00L157.16 349.52L161.32 348.07L161.96 346.18L159.55 342.50L160.93 340.43L165.25 341.25L166.75 339.94L166.50 335.55L168.73 334.45L172.07 337.32L174.02 336.93L176.00 333.00L178.48 333.16L179.93 337.32L181.82 337.96L185.50 335.55L187.57 336.93L186.75 341.25L188.06 342.75L192.45 342.50L193.55 344.73L190.68 348.07L191.07 350.02Z" fill="#2B1336" transform="translate(1,4)" filter="url(#smallShadow)" />
+<path d="M195.00 352.00L194.84 354.48L190.68 355.93L190.04 357.82L192.45 361.50L191.07 363.57L186.75 362.75L185.25 364.06L185.50 368.45L183.27 369.55L179.93 366.68L177.98 367.07L176.00 371.00L173.52 370.84L172.07 366.68L170.18 366.04L166.50 368.45L164.43 367.07L165.25 362.75L163.94 361.25L159.55 361.50L158.45 359.27L161.32 355.93L160.93 353.98L157.00 352.00L157.16 349.52L161.32 348.07L161.96 346.18L159.55 342.50L160.93 340.43L165.25 341.25L166.75 339.94L166.50 335.55L168.73 334.45L172.07 337.32L174.02 336.93L176.00 333.00L178.48 333.16L179.93 337.32L181.82 337.96L185.50 335.55L187.57 336.93L186.75 341.25L188.06 342.75L192.45 342.50L193.55 344.73L190.68 348.07L191.07 350.02Z" fill="url(#gold)" stroke="#72402D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="176" cy="352" rx="8.55" ry="8.55" fill="#7E3BA6" stroke="#FFE09C" stroke-width="3" />
+<ellipse cx="176" cy="354" rx="6.08" ry="6.08" fill="#3B1C62" stroke="#A96834" stroke-width="2" />
+<text x="208" y="399" text-anchor="start" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="34" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">AUDIO</text>
+</g>
+<g id="tab_gameplay" inkscape:label="GAMEPLAY — inactive">
+<rect x="90" y="496" width="260" height="169" rx="27" ry="27" fill="#291035" filter="url(#smallShadow)" />
+<rect x="88" y="488" width="260" height="169" rx="27" ry="27" fill="url(#gold)" stroke="#AE6E28" stroke-width="3" />
+<rect x="96" y="495" width="244" height="153" rx="21" ry="21" fill="url(#panel)" stroke="#FFF0B2" stroke-width="2" />
+<g id="tab_gameplay_speaker" inkscape:label="Gold speaker icon" transform="translate(203.0,538)">
+<path d="M-42-16H-26L0-38Q6-41 6-34V34Q6 41 0 38L-26 16H-42Z" fill="url(#gold)" stroke="#7D402A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M22-22Q43 0 22 22M38-36Q71 0 38 36" fill="none" stroke="#66322D" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M22-24Q43-2 22 20M38-38Q71-2 38 34" fill="none" stroke="#FFDB7A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<text x="218.0" y="633" text-anchor="middle" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="30" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">GAMEPLAY</text>
+</g>
+<g id="tab_help_legal" inkscape:label="HELP &amp; LEGAL — inactive">
+<rect x="90" y="689" width="260" height="169" rx="27" ry="27" fill="#291035" filter="url(#smallShadow)" />
+<rect x="88" y="681" width="260" height="169" rx="27" ry="27" fill="url(#gold)" stroke="#AE6E28" stroke-width="3" />
+<rect x="96" y="688" width="244" height="153" rx="21" ry="21" fill="url(#panel)" stroke="#FFF0B2" stroke-width="2" />
+<path d="M257.00 733.00L256.67 738.09L248.14 741.08L246.83 744.94L251.77 752.50L248.94 756.74L240.06 755.06L236.99 757.75L237.50 766.77L232.92 769.03L226.08 763.14L222.07 763.93L218.00 772.00L212.91 771.67L209.92 763.14L206.06 761.83L198.50 766.77L194.26 763.94L195.94 755.06L193.25 751.99L184.23 752.50L181.97 747.92L187.86 741.08L187.07 737.07L179.00 733.00L179.33 727.91L187.86 724.92L189.17 721.06L184.23 713.50L187.06 709.26L195.94 710.94L199.01 708.25L198.50 699.23L203.08 696.97L209.92 702.86L213.93 702.07L218.00 694.00L223.09 694.33L226.08 702.86L229.94 704.17L237.50 699.23L241.74 702.06L240.06 710.94L242.75 714.01L251.77 713.50L254.03 718.08L248.14 724.92L248.93 728.93Z" fill="#2B1336" transform="translate(1,4)" filter="url(#smallShadow)" />
+<path d="M257.00 733.00L256.67 738.09L248.14 741.08L246.83 744.94L251.77 752.50L248.94 756.74L240.06 755.06L236.99 757.75L237.50 766.77L232.92 769.03L226.08 763.14L222.07 763.93L218.00 772.00L212.91 771.67L209.92 763.14L206.06 761.83L198.50 766.77L194.26 763.94L195.94 755.06L193.25 751.99L184.23 752.50L181.97 747.92L187.86 741.08L187.07 737.07L179.00 733.00L179.33 727.91L187.86 724.92L189.17 721.06L184.23 713.50L187.06 709.26L195.94 710.94L199.01 708.25L198.50 699.23L203.08 696.97L209.92 702.86L213.93 702.07L218.00 694.00L223.09 694.33L226.08 702.86L229.94 704.17L237.50 699.23L241.74 702.06L240.06 710.94L242.75 714.01L251.77 713.50L254.03 718.08L248.14 724.92L248.93 728.93Z" fill="url(#gold)" stroke="#72402D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="218.0" cy="733" rx="17.55" ry="17.55" fill="#7E3BA6" stroke="#FFE09C" stroke-width="3" />
+<ellipse cx="218.0" cy="735" rx="12.48" ry="12.48" fill="#3B1C62" stroke="#A96834" stroke-width="2" />
+<text x="218.0" y="826" text-anchor="middle" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="28" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">HELP &amp; LEGAL</text>
+</g>
+</g>
+<g id="landscape_title" inkscape:label="SETTINGS sign" inkscape:groupmode="layer">
+<g id="landscape_title_letters" inkscape:label="Dimensional gold lettering — editable text">
+<g id="landscape_title_letters_0" inkscape:label="S" transform="rotate(-4.00,599.00,241.00)">
+<text x="599.0" y="253.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="599.0" y="249.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="599.0" y="244.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="599.0" y="240.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="599.0" y="238.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">S</text>
+<text x="599.0" y="236.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">S</text>
+</g>
+<g id="landscape_title_letters_1" inkscape:label="E" transform="rotate(-2.86,705.00,232.67)">
+<text x="705.0" y="244.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">E</text>
+<text x="705.0" y="240.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">E</text>
+<text x="705.0" y="235.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">E</text>
+<text x="705.0" y="231.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">E</text>
+<text x="705.0" y="229.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">E</text>
+<text x="705.0" y="227.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">E</text>
+</g>
+<g id="landscape_title_letters_2" inkscape:label="T" transform="rotate(-1.71,811.00,227.12)">
+<text x="811.0" y="239.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="811.0" y="235.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="811.0" y="230.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="811.0" y="226.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="811.0" y="224.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">T</text>
+<text x="811.0" y="222.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">T</text>
+</g>
+<g id="landscape_title_letters_3" inkscape:label="T" transform="rotate(-0.57,917.00,224.35)">
+<text x="917.0" y="236.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="917.0" y="232.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="917.0" y="227.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="917.0" y="223.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">T</text>
+<text x="917.0" y="221.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">T</text>
+<text x="917.0" y="219.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">T</text>
+</g>
+<g id="landscape_title_letters_4" inkscape:label="I" transform="rotate(0.57,1023.00,224.35)">
+<text x="1023.0" y="236.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">I</text>
+<text x="1023.0" y="232.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">I</text>
+<text x="1023.0" y="227.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">I</text>
+<text x="1023.0" y="223.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">I</text>
+<text x="1023.0" y="221.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">I</text>
+<text x="1023.0" y="219.3469387755102" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">I</text>
+</g>
+<g id="landscape_title_letters_5" inkscape:label="N" transform="rotate(1.71,1129.00,227.12)">
+<text x="1129.0" y="239.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">N</text>
+<text x="1129.0" y="235.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">N</text>
+<text x="1129.0" y="230.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">N</text>
+<text x="1129.0" y="226.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">N</text>
+<text x="1129.0" y="224.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">N</text>
+<text x="1129.0" y="222.12244897959184" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">N</text>
+</g>
+<g id="landscape_title_letters_6" inkscape:label="G" transform="rotate(2.86,1235.00,232.67)">
+<text x="1235.0" y="244.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">G</text>
+<text x="1235.0" y="240.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">G</text>
+<text x="1235.0" y="235.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">G</text>
+<text x="1235.0" y="231.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">G</text>
+<text x="1235.0" y="229.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">G</text>
+<text x="1235.0" y="227.6734693877551" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">G</text>
+</g>
+<g id="landscape_title_letters_7" inkscape:label="S" transform="rotate(4.00,1341.00,241.00)">
+<text x="1341.0" y="253.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#10152D" stroke="#10152D" stroke-width="16" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="1341.0" y="249.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#154574" stroke="#154574" stroke-width="15" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="1341.0" y="244.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#1B6CA8" stroke="#1B6CA8" stroke-width="13" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="1341.0" y="240.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="#5AB5E7" stroke="#5AB5E7" stroke-width="10" paint-order="stroke fill" stroke-linejoin="round" font-stretch="condensed">S</text>
+<text x="1341.0" y="238.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="url(#titleGold)" stroke="#9B5B1D" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">S</text>
+<text x="1341.0" y="236.0" text-anchor="middle" font-family="Impact" font-weight="bold" font-size="182" fill="none" stroke="#FFF3AC" stroke-width="1.2" paint-order="stroke fill" stroke-linejoin="round">S</text>
+</g>
+</g>
+</g>
+<g id="landscape_controls" inkscape:label="Two column controls" inkscape:groupmode="layer">
+<text x="448" y="460" text-anchor="start" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="39" fill="#FFF8E5" stroke="#24102E" stroke-width="5" paint-order="stroke fill" stroke-linejoin="round">MUSIC</text>
+<g id="toggle_music" inkscape:label="Active toggle" data-state="on">
+<g id="toggle_music_track" inkscape:label="Track">
+<rect x="878" y="418" width="136" height="64" rx="32.0" ry="32.0" fill="#23112D" />
+<rect x="877" y="413" width="136" height="64" rx="32.0" ry="32.0" fill="url(#gold)" stroke="#895024" stroke-width="2" />
+<rect x="882" y="418" width="126" height="54" rx="28.0" ry="28.0" fill="url(#blue)" stroke="#5B2C5F" stroke-width="2" />
+<path d="M909.0 421H981.0" fill="none" stroke="#FFF5BE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" />
+</g>
+<g id="toggle_music_thumb" inkscape:label="Gold thumb — movable independently">
+<ellipse cx="983.0" cy="450.0" rx="27.6" ry="27.6" fill="#30152B" opacity=".7" />
+<ellipse cx="981.0" cy="447.0" rx="25.6" ry="25.6" fill="#A56224" stroke="#6B3526" stroke-width="2" />
+<ellipse cx="981.0" cy="444.0" rx="25.6" ry="25.6" fill="url(#gold)" stroke="#FFE5A0" stroke-width="2" />
+<ellipse cx="981.0" cy="443.0" rx="19.200000000000003" ry="19.200000000000003" fill="url(#knob)" stroke="#BA7F2E" stroke-width="2" />
+<path d="M966.664 439.88A15.36 15.36 0 0 1 988.68 430.92" fill="none" stroke="#FFF6C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</g>
+<g id="slider_music" inkscape:label="Slider — 60 percent" data-value="0.6">
+<g id="slider_music_track" inkscape:label="Recessed pill track">
+<rect x="449" y="504" width="564" height="46" rx="23.0" ry="23.0" fill="#24102D" />
+<rect x="448" y="500" width="564" height="46" rx="23.0" ry="23.0" fill="url(#gold)" stroke="#834821" stroke-width="2" />
+<rect x="453" y="505" width="554" height="36" rx="19.0" ry="19.0" fill="url(#off)" stroke="#241035" stroke-width="2" />
+</g>
+<g id="slider_music_fill" inkscape:label="Cyan / periwinkle fill">
+<rect x="454" y="506" width="331.2" height="34" rx="18.0" ry="18.0" fill="url(#spectrum)" />
+<path d="M466 509H779.2" fill="none" stroke="#B6FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".7" />
+</g>
+<g id="slider_music_thumb" inkscape:label="Gold thumb — movable independently">
+<ellipse cx="787.2" cy="528.0" rx="31.44" ry="31.44" fill="#30152B" opacity=".7" />
+<ellipse cx="785.2" cy="525.0" rx="29.44" ry="29.44" fill="#A56224" stroke="#6B3526" stroke-width="2" />
+<ellipse cx="785.2" cy="522.0" rx="29.44" ry="29.44" fill="url(#gold)" stroke="#FFE5A0" stroke-width="2" />
+<ellipse cx="785.2" cy="521.0" rx="22.080000000000002" ry="22.080000000000002" fill="url(#knob)" stroke="#BA7F2E" stroke-width="2" />
+<path d="M768.7136 517.112A17.664 17.664 0 0 1 794.032 506.808" fill="none" stroke="#FFF6C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</g>
+<text x="448" y="660" text-anchor="start" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="39" fill="#FFF8E5" stroke="#24102E" stroke-width="5" paint-order="stroke fill" stroke-linejoin="round">SFX</text>
+<g id="toggle_sfx" inkscape:label="Active toggle" data-state="on">
+<g id="toggle_sfx_track" inkscape:label="Track">
+<rect x="878" y="619" width="136" height="64" rx="32.0" ry="32.0" fill="#23112D" />
+<rect x="877" y="614" width="136" height="64" rx="32.0" ry="32.0" fill="url(#gold)" stroke="#895024" stroke-width="2" />
+<rect x="882" y="619" width="126" height="54" rx="28.0" ry="28.0" fill="url(#blue)" stroke="#5B2C5F" stroke-width="2" />
+<path d="M909.0 622H981.0" fill="none" stroke="#FFF5BE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" />
+</g>
+<g id="toggle_sfx_thumb" inkscape:label="Gold thumb — movable independently">
+<ellipse cx="983.0" cy="651.0" rx="27.6" ry="27.6" fill="#30152B" opacity=".7" />
+<ellipse cx="981.0" cy="648.0" rx="25.6" ry="25.6" fill="#A56224" stroke="#6B3526" stroke-width="2" />
+<ellipse cx="981.0" cy="645.0" rx="25.6" ry="25.6" fill="url(#gold)" stroke="#FFE5A0" stroke-width="2" />
+<ellipse cx="981.0" cy="644.0" rx="19.200000000000003" ry="19.200000000000003" fill="url(#knob)" stroke="#BA7F2E" stroke-width="2" />
+<path d="M966.664 640.88A15.36 15.36 0 0 1 988.68 631.92" fill="none" stroke="#FFF6C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</g>
+<g id="slider_sfx" inkscape:label="Slider — 60 percent" data-value="0.6">
+<g id="slider_sfx_track" inkscape:label="Recessed pill track">
+<rect x="449" y="704" width="564" height="46" rx="23.0" ry="23.0" fill="#24102D" />
+<rect x="448" y="700" width="564" height="46" rx="23.0" ry="23.0" fill="url(#gold)" stroke="#834821" stroke-width="2" />
+<rect x="453" y="705" width="554" height="36" rx="19.0" ry="19.0" fill="url(#off)" stroke="#241035" stroke-width="2" />
+</g>
+<g id="slider_sfx_fill" inkscape:label="Cyan / periwinkle fill">
+<rect x="454" y="706" width="331.2" height="34" rx="18.0" ry="18.0" fill="url(#spectrum)" />
+<path d="M466 709H779.2" fill="none" stroke="#B6FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".7" />
+</g>
+<g id="slider_sfx_thumb" inkscape:label="Gold thumb — movable independently">
+<ellipse cx="787.2" cy="728.0" rx="31.44" ry="31.44" fill="#30152B" opacity=".7" />
+<ellipse cx="785.2" cy="725.0" rx="29.44" ry="29.44" fill="#A56224" stroke="#6B3526" stroke-width="2" />
+<ellipse cx="785.2" cy="722.0" rx="29.44" ry="29.44" fill="url(#gold)" stroke="#FFE5A0" stroke-width="2" />
+<ellipse cx="785.2" cy="721.0" rx="22.080000000000002" ry="22.080000000000002" fill="url(#knob)" stroke="#BA7F2E" stroke-width="2" />
+<path d="M768.7136 717.112A17.664 17.664 0 0 1 794.032 706.808" fill="none" stroke="#FFF6C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</g>
+<text x="1084" y="456" text-anchor="start" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="32" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">VOICE VOICE OVER</text>
+<g id="toggle_voice_over" inkscape:label="Active toggle" data-state="on">
+<g id="toggle_voice_over_track" inkscape:label="Track">
+<rect x="1114" y="498" width="232" height="70" rx="35.0" ry="35.0" fill="#23112D" />
+<rect x="1113" y="493" width="232" height="70" rx="35.0" ry="35.0" fill="url(#gold)" stroke="#895024" stroke-width="2" />
+<rect x="1118" y="498" width="222" height="60" rx="31.0" ry="31.0" fill="url(#blue)" stroke="#5B2C5F" stroke-width="2" />
+<path d="M1148.0 501H1310.0" fill="none" stroke="#FFF5BE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" />
+</g>
+<text x="1135" y="539.2" text-anchor="start" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="32.9" fill="#FFF8E5" stroke="#24102E" stroke-width="3" paint-order="stroke fill" stroke-linejoin="round">English</text>
+<g id="toggle_voice_over_thumb" inkscape:label="Gold thumb — movable independently">
+<ellipse cx="1312.0" cy="533.0" rx="30.0" ry="30.0" fill="#30152B" opacity=".7" />
+<ellipse cx="1310.0" cy="530.0" rx="28.0" ry="28.0" fill="#A56224" stroke="#6B3526" stroke-width="2" />
+<ellipse cx="1310.0" cy="527.0" rx="28.0" ry="28.0" fill="url(#gold)" stroke="#FFE5A0" stroke-width="2" />
+<ellipse cx="1310.0" cy="526.0" rx="21.0" ry="21.0" fill="url(#knob)" stroke="#BA7F2E" stroke-width="2" />
+<path d="M1294.32 522.4A16.8 16.8 0 0 1 1318.4 512.6" fill="none" stroke="#FFF6C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</g>
+<text x="1084" y="656" text-anchor="start" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="32" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">HAPTIC FEEDBACK</text>
+<g id="toggle_haptic_feedback" inkscape:label="Inactive toggle" data-state="off">
+<g id="toggle_haptic_feedback_track" inkscape:label="Track">
+<rect x="1120" y="694" width="142" height="65" rx="32.5" ry="32.5" fill="#23112D" />
+<rect x="1119" y="689" width="142" height="65" rx="32.5" ry="32.5" fill="url(#gold)" stroke="#895024" stroke-width="2" />
+<rect x="1124" y="694" width="132" height="55" rx="28.5" ry="28.5" fill="url(#off)" stroke="#5B2C5F" stroke-width="2" />
+<path d="M1151.5 697H1228.5" fill="none" stroke="#FFF5BE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" />
+</g>
+<g id="toggle_haptic_feedback_thumb" inkscape:label="Gold thumb — movable independently">
+<ellipse cx="1153.5" cy="726.5" rx="28.0" ry="28.0" fill="#30152B" opacity=".7" />
+<ellipse cx="1151.5" cy="723.5" rx="26.0" ry="26.0" fill="#A56224" stroke="#6B3526" stroke-width="2" />
+<ellipse cx="1151.5" cy="720.5" rx="26.0" ry="26.0" fill="url(#gold)" stroke="#FFE5A0" stroke-width="2" />
+<ellipse cx="1151.5" cy="719.5" rx="19.5" ry="19.5" fill="url(#knob)" stroke="#BA7F2E" stroke-width="2" />
+<path d="M1136.94 716.3A15.6 15.6 0 0 1 1159.3 707.2" fill="none" stroke="#FFF6C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</g>
+</g>
+<g id="landscape_actions" inkscape:label="Bottom action buttons" inkscape:groupmode="layer">
+<g id="btn_credits" inkscape:label="CREDITS">
+<rect x="434" y="827" width="259" height="76" rx="20" ry="20" fill="#24102D" filter="url(#smallShadow)" />
+<rect x="432" y="823" width="259" height="76" rx="20" ry="20" fill="#A85B1E" />
+<rect x="432" y="820" width="259" height="76" rx="20" ry="20" fill="url(#gold)" stroke="#834523" stroke-width="2" />
+<rect x="439" y="826" width="245" height="62" rx="15" ry="15" fill="url(#blue)" stroke="#FFF0A5" stroke-width="2" />
+<rect x="444" y="831" width="235" height="52" rx="11" ry="11" fill="none" stroke="#1C67B2" stroke-width="2" />
+<path d="M456 832H667" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".45" />
+<text x="561.5" y="870.92" text-anchor="middle" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="31" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">CREDITS</text>
+</g>
+<g id="btn_privacy_policy" inkscape:label="PRIVACY POLICY">
+<rect x="721" y="827" width="339" height="76" rx="20" ry="20" fill="#24102D" filter="url(#smallShadow)" />
+<rect x="719" y="823" width="339" height="76" rx="20" ry="20" fill="#A85B1E" />
+<rect x="719" y="820" width="339" height="76" rx="20" ry="20" fill="url(#gold)" stroke="#834523" stroke-width="2" />
+<rect x="726" y="826" width="325" height="62" rx="15" ry="15" fill="url(#blue)" stroke="#FFF0A5" stroke-width="2" />
+<rect x="731" y="831" width="315" height="52" rx="11" ry="11" fill="none" stroke="#1C67B2" stroke-width="2" />
+<path d="M743 832H1034" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".45" />
+<text x="888.5" y="870.92" text-anchor="middle" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="30" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">PRIVACY POLICY</text>
+</g>
+<g id="btn_reset_all" inkscape:label="RESET ALL">
+<rect x="1088" y="827" width="267" height="76" rx="20" ry="20" fill="#24102D" filter="url(#smallShadow)" />
+<rect x="1086" y="823" width="267" height="76" rx="20" ry="20" fill="#A85B1E" />
+<rect x="1086" y="820" width="267" height="76" rx="20" ry="20" fill="url(#gold)" stroke="#834523" stroke-width="2" />
+<rect x="1093" y="826" width="253" height="62" rx="15" ry="15" fill="url(#red)" stroke="#FFF0A5" stroke-width="2" />
+<rect x="1098" y="831" width="243" height="52" rx="11" ry="11" fill="none" stroke="#C92A2A" stroke-width="2" />
+<path d="M1110 832H1329" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".45" />
+<text x="1219.5" y="870.92" text-anchor="middle" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="bold" font-size="32" fill="#FFF8E5" stroke="#24102E" stroke-width="4" paint-order="stroke fill" stroke-linejoin="round">RESET ALL</text>
+</g>
+</g>
+<g id="mascot_blue_pedestal" inkscape:label="Purple and gold cylindrical plinth" inkscape:groupmode="layer">
+<path d="M1490 899H1882V1117Q1686.0 1152 1490 1117Z" fill="url(#plinth)" stroke="#9C5E33" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M1512 944Q1553.16 955 1594.32 944L1594.32 1102Q1553.16 1114 1512 1102Z" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M1635.04 944Q1686.0 955 1736.96 944L1736.96 1102Q1686.0 1114 1635.04 1102Z" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M1787.92 944Q1823.2 955 1858.48 944L1858.48 1102Q1823.2 1114 1787.92 1102Z" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M1490 895H1882V919Q1686.0 957 1490 919Z" fill="url(#gold)" stroke="#B06C2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="1686.0" cy="896" rx="196.0" ry="29" fill="url(#plinthTop)" stroke="#FFE8AC" stroke-width="3" />
+</g>
+<g id="mascot_blue" inkscape:label="Blue fluffy thinker / glasses / paws" inkscape:groupmode="layer" transform="translate(1488,344) scale(0.96)">
+<g id="mascot_blue_silhouette" inkscape:label="Body and fluffy silhouette">
+<path d="M133 245C90 253 71 285 75 327L58 317 69 346 54 350 72 370 60 386 77 392C56 435 73 479 102 498L89 510 113 513C146 540 254 537 289 512L310 513 299 497C335 472 338 433 321 392L339 385 325 370 337 347 323 348 330 318 313 328C322 287 293 255 264 246Z" fill="url(#blueFur)" stroke="#0867A5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M159 321Q204 293 248 324L244 346 260 362 249 371 266 390 254 405 265 421C275 460 250 507 207 513C160 517 132 479 137 441L128 424 139 413 130 395L144 384 137 366 154 354Z" fill="url(#belly)" stroke="#69D9E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<g id="mascot_blue_body_fur" inkscape:label="Fine fur locks" fill="none" stroke-linecap="round">
+<path d="M145.3 481.4q-4 2.9 4.0 7.3" fill="none" stroke="#188CC2" stroke-width="1.5763804685542797" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M221.2 309.7q4 4.6 3.1 11.5" fill="none" stroke="#B4FAFF" stroke-width="1.647612234979114" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M172.6 481.7q-4 5.9 3.5 14.8" fill="none" stroke="#B4FAFF" stroke-width="2.327890552578066" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M231.6 474.4q4 3.1 3.1 7.6" fill="none" stroke="#188CC2" stroke-width="2.1843337252434996" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M152.9 348.7q-4 7.2 0.7 18.0" fill="none" stroke="#B4FAFF" stroke-width="2.7069833576182063" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M270.1 443.7q4 5.7 1.6 14.4" fill="none" stroke="#B4FAFF" stroke-width="2.2184869304464736" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M263.9 338.0q4 4.4 2.2 11.1" fill="none" stroke="#188CC2" stroke-width="2.7319515074349914" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M145.6 418.4q-4 7.1 1.3 17.7" fill="none" stroke="#B4FAFF" stroke-width="1.5775425549437445" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M204.5 295.1q4 3.0 3.4 7.4" fill="none" stroke="#B4FAFF" stroke-width="2.059419530081841" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M186.2 391.0q-4 6.2 3.3 15.6" fill="none" stroke="#188CC2" stroke-width="1.7609594519802019" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M212.6 361.6q4 4.3 0.8 10.9" fill="none" stroke="#B4FAFF" stroke-width="2.1146807722054604" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M226.3 373.9q4 5.5 -3.3 13.9" fill="none" stroke="#B4FAFF" stroke-width="2.794726223242312" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M189.6 357.9q-4 4.9 3.4 12.2" fill="none" stroke="#188CC2" stroke-width="2.7282351754264536" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M184.9 390.0q-4 3.3 3.2 8.3" fill="none" stroke="#B4FAFF" stroke-width="1.5570938471349265" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M177.1 397.1q-4 4.5 -1.1 11.3" fill="none" stroke="#B4FAFF" stroke-width="1.586890500525961" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M205.0 292.6q4 6.9 1.2 17.3" fill="none" stroke="#188CC2" stroke-width="1.6022612145793935" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M131.9 427.2q-4 4.9 2.6 12.3" fill="none" stroke="#B4FAFF" stroke-width="2.6815226434217165" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M252.7 379.4q4 5.4 0.2 13.5" fill="none" stroke="#B4FAFF" stroke-width="2.1768147336416455" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M237.0 488.2q4 5.3 1.8 13.1" fill="none" stroke="#188CC2" stroke-width="2.264901578211258" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M243.2 357.5q4 7.1 0.9 17.7" fill="none" stroke="#B4FAFF" stroke-width="2.714091741138867" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M200.0 288.7q4 6.1 -1.3 15.2" fill="none" stroke="#B4FAFF" stroke-width="1.557068182852294" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M190.0 426.9q-4 4.2 -3.7 10.5" fill="none" stroke="#188CC2" stroke-width="2.7507016039331447" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M141.9 357.2q-4 3.9 -2.0 9.8" fill="none" stroke="#B4FAFF" stroke-width="2.5992945805344503" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M168.7 322.0q-4 3.3 -0.2 8.3" fill="none" stroke="#B4FAFF" stroke-width="1.611570041657577" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M235.7 355.5q4 7.6 2.7 19.0" fill="none" stroke="#188CC2" stroke-width="1.3574229348938796" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M253.0 362.4q4 3.0 -2.4 7.4" fill="none" stroke="#B4FAFF" stroke-width="2.0349871244470794" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M238.0 363.4q4 6.5 -0.3 16.3" fill="none" stroke="#B4FAFF" stroke-width="1.6735270636822532" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M167.3 332.3q-4 3.1 1.3 7.8" fill="none" stroke="#188CC2" stroke-width="1.5366898042520567" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M222.2 467.3q4 3.1 -0.0 7.7" fill="none" stroke="#B4FAFF" stroke-width="2.2054983326794577" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M198.1 293.7q-4 3.0 2.1 7.4" fill="none" stroke="#B4FAFF" stroke-width="1.3061033913716635" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M273.8 414.6q4 7.2 -2.1 18.0" fill="none" stroke="#188CC2" stroke-width="2.101819891815627" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M177.9 313.7q-4 7.3 2.5 18.2" fill="none" stroke="#B4FAFF" stroke-width="1.3136484507795412" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M221.3 362.9q4 3.7 2.4 9.3" fill="none" stroke="#B4FAFF" stroke-width="2.6396095181375006" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M179.0 398.0q-4 7.2 0.1 18.0" fill="none" stroke="#188CC2" stroke-width="1.5825212582116808" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M152.3 341.9q-4 7.2 0.1 17.9" fill="none" stroke="#B4FAFF" stroke-width="2.3449956562356347" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M272.0 452.6q4 3.8 -0.8 9.5" fill="none" stroke="#B4FAFF" stroke-width="2.611304158070878" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M182.8 441.1q-4 6.2 -2.4 15.5" fill="none" stroke="#188CC2" stroke-width="1.5426233301201968" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M183.2 295.4q-4 4.0 0.1 10.1" fill="none" stroke="#B4FAFF" stroke-width="2.754258879835022" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M208.1 316.3q4 7.3 0.8 18.2" fill="none" stroke="#B4FAFF" stroke-width="2.0907901777443407" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M127.3 442.4q-4 7.7 1.5 19.3" fill="none" stroke="#188CC2" stroke-width="2.509971081081761" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M139.0 454.2q-4 3.1 -2.6 7.9" fill="none" stroke="#B4FAFF" stroke-width="2.05717199560037" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M262.2 477.4q4 4.9 1.0 12.4" fill="none" stroke="#B4FAFF" stroke-width="2.4097467640306283" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M271.5 353.1q4 7.7 1.8 19.2" fill="none" stroke="#188CC2" stroke-width="2.652146505202934" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M223.1 449.2q4 4.5 -1.7 11.2" fill="none" stroke="#B4FAFF" stroke-width="1.6577167530634478" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M259.6 296.8q4 4.4 -3.8 10.9" fill="none" stroke="#B4FAFF" stroke-width="1.7741496232830565" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M192.3 306.1q-4 4.5 -2.6 11.3" fill="none" stroke="#188CC2" stroke-width="2.015127575596787" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M177.8 370.0q-4 7.0 -1.5 17.6" fill="none" stroke="#B4FAFF" stroke-width="2.1118524018009914" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M269.8 465.0q4 4.7 -3.7 11.9" fill="none" stroke="#B4FAFF" stroke-width="2.7257048250730076" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M157.1 390.4q-4 3.5 -2.1 8.7" fill="none" stroke="#188CC2" stroke-width="1.765724139171129" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M136.9 313.4q-4 8.0 2.6 19.9" fill="none" stroke="#B4FAFF" stroke-width="1.4699803757586423" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M245.8 383.5q4 5.4 -3.4 13.6" fill="none" stroke="#B4FAFF" stroke-width="1.8094711989845567" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M263.0 363.0q4 5.8 -0.3 14.6" fill="none" stroke="#188CC2" stroke-width="2.245999591112169" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M226.1 295.0q4 7.0 1.4 17.5" fill="none" stroke="#B4FAFF" stroke-width="1.8413141162173738" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M131.4 343.6q-4 3.2 -2.8 8.1" fill="none" stroke="#B4FAFF" stroke-width="1.9799052255639822" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M157.0 444.5q-4 5.3 1.1 13.1" fill="none" stroke="#188CC2" stroke-width="2.244227462170686" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M258.9 289.2q4 5.8 -1.6 14.6" fill="none" stroke="#B4FAFF" stroke-width="1.6589736959299333" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M265.8 426.2q4 4.6 -0.8 11.4" fill="none" stroke="#B4FAFF" stroke-width="2.1356719320576967" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M186.8 320.9q-4 7.6 0.5 18.9" fill="none" stroke="#188CC2" stroke-width="2.534548752291687" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M251.6 338.7q4 6.9 -2.2 17.2" fill="none" stroke="#B4FAFF" stroke-width="2.0949930087160054" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M211.1 424.8q4 5.9 -2.1 14.8" fill="none" stroke="#B4FAFF" stroke-width="2.130871331409911" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M245.3 357.7q4 4.7 3.8 11.8" fill="none" stroke="#188CC2" stroke-width="2.1707592719990694" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M188.2 331.7q-4 3.5 1.9 8.7" fill="none" stroke="#B4FAFF" stroke-width="1.3689061345579627" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M170.8 409.0q-4 6.8 -3.0 17.1" fill="none" stroke="#B4FAFF" stroke-width="2.320648429270073" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M159.4 431.4q-4 3.5 -1.0 8.7" fill="none" stroke="#188CC2" stroke-width="2.2734951750362034" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M131.2 338.5q-4 5.1 2.5 12.7" fill="none" stroke="#B4FAFF" stroke-width="1.5367161603670358" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M201.3 477.8q4 3.6 -3.2 9.1" fill="none" stroke="#B4FAFF" stroke-width="1.856191848081135" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M150.7 382.7q-4 3.2 0.0 8.1" fill="none" stroke="#188CC2" stroke-width="1.6810247743808184" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M192.5 376.1q-4 6.4 0.6 16.1" fill="none" stroke="#B4FAFF" stroke-width="1.6424679880656488" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M250.2 321.8q4 3.1 -3.0 7.7" fill="none" stroke="#B4FAFF" stroke-width="1.4048480198904572" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M206.2 454.4q4 7.6 1.0 19.0" fill="none" stroke="#188CC2" stroke-width="1.8031091751795505" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M235.3 373.2q4 4.0 2.4 10.0" fill="none" stroke="#B4FAFF" stroke-width="1.9112634792600587" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M178.1 293.6q-4 5.7 -2.8 14.3" fill="none" stroke="#B4FAFF" stroke-width="2.658129519909609" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M201.7 474.9q4 7.5 1.5 18.8" fill="none" stroke="#188CC2" stroke-width="2.1070574150196006" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M263.4 317.4q4 7.6 -0.4 19.0" fill="none" stroke="#B4FAFF" stroke-width="1.8772968689840233" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M216.7 300.1q4 7.2 -0.9 18.1" fill="none" stroke="#B4FAFF" stroke-width="1.7331457105629418" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M244.6 410.6q4 3.7 -1.7 9.2" fill="none" stroke="#188CC2" stroke-width="2.263440404567902" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M244.4 293.5q4 4.4 2.7 11.1" fill="none" stroke="#B4FAFF" stroke-width="1.9822947215710613" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M132.7 318.9q-4 3.4 -1.9 8.5" fill="none" stroke="#B4FAFF" stroke-width="2.4363665831799186" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M219.9 447.8q4 4.4 1.3 11.0" fill="none" stroke="#188CC2" stroke-width="2.3987526432016133" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M136.4 360.3q-4 5.2 -2.2 13.1" fill="none" stroke="#B4FAFF" stroke-width="1.5829757715241293" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M135.4 365.1q-4 7.5 -1.8 18.7" fill="none" stroke="#B4FAFF" stroke-width="2.6476472686523564" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M125.6 436.2q-4 7.5 2.5 18.7" fill="none" stroke="#188CC2" stroke-width="2.0881045409994647" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M196.7 466.3q-4 2.9 -2.8 7.3" fill="none" stroke="#B4FAFF" stroke-width="1.7658461963134633" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M250.1 460.9q4 3.4 -1.2 8.5" fill="none" stroke="#B4FAFF" stroke-width="1.467319167086285" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M179.3 331.8q-4 5.0 -2.8 12.4" fill="none" stroke="#188CC2" stroke-width="2.2864170653203506" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M254.6 334.6q4 5.3 -0.6 13.3" fill="none" stroke="#B4FAFF" stroke-width="2.448706602305071" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M163.0 355.7q-4 3.4 -1.6 8.6" fill="none" stroke="#B4FAFF" stroke-width="1.6518525687642702" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M178.0 435.7q-4 6.5 -1.8 16.2" fill="none" stroke="#188CC2" stroke-width="1.4047869399418278" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M183.7 347.5q-4 7.5 -2.4 18.8" fill="none" stroke="#B4FAFF" stroke-width="1.6174701273417564" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M165.5 317.0q-4 7.8 3.5 19.5" fill="none" stroke="#B4FAFF" stroke-width="1.641363399303376" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M198.1 295.2q-4 5.8 -3.1 14.6" fill="none" stroke="#188CC2" stroke-width="1.9271971288195886" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M124.2 442.6q-4 6.5 1.5 16.3" fill="none" stroke="#B4FAFF" stroke-width="2.479663381906448" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M194.5 384.8q-4 5.5 -2.9 13.7" fill="none" stroke="#B4FAFF" stroke-width="2.0708485398268697" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M174.9 334.1q-4 3.0 -2.7 7.6" fill="none" stroke="#188CC2" stroke-width="1.382877137766257" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M159.9 395.9q-4 5.7 0.0 14.2" fill="none" stroke="#B4FAFF" stroke-width="1.6495008420900805" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M213.4 311.1q4 6.3 1.5 15.8" fill="none" stroke="#B4FAFF" stroke-width="2.0615436918747085" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M127.7 403.9q-4 4.4 2.4 11.0" fill="none" stroke="#188CC2" stroke-width="1.8657959251078036" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M188.9 306.3q-4 7.1 -3.2 17.8" fill="none" stroke="#B4FAFF" stroke-width="1.4677307555205732" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M256.6 387.2q4 4.8 -2.0 12.1" fill="none" stroke="#B4FAFF" stroke-width="2.4519279383704546" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M171.4 304.3q-4 5.9 2.8 14.8" fill="none" stroke="#188CC2" stroke-width="2.5916110275398614" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M164.5 351.8q-4 4.7 -3.0 11.7" fill="none" stroke="#B4FAFF" stroke-width="1.7089620337445097" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M272.8 442.1q4 4.2 -3.4 10.5" fill="none" stroke="#B4FAFF" stroke-width="2.40917290314399" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M244.7 483.1q4 4.9 2.0 12.4" fill="none" stroke="#188CC2" stroke-width="2.4407999076987386" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M198.9 437.5q-4 8.0 2.2 20.0" fill="none" stroke="#B4FAFF" stroke-width="1.6525957171830943" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M137.6 373.3q-4 4.7 2.5 11.9" fill="none" stroke="#B4FAFF" stroke-width="2.029375337572222" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M242.4 392.5q4 3.3 -1.2 8.1" fill="none" stroke="#188CC2" stroke-width="2.025093477739568" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M228.1 386.2q4 7.7 2.4 19.2" fill="none" stroke="#B4FAFF" stroke-width="2.118273949727585" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M205.9 425.2q4 7.9 0.8 19.8" fill="none" stroke="#B4FAFF" stroke-width="2.1910806509679337" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M187.7 366.2q-4 6.8 -1.0 16.9" fill="none" stroke="#188CC2" stroke-width="2.655681476640158" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M269.2 434.2q4 6.5 0.6 16.2" fill="none" stroke="#B4FAFF" stroke-width="1.8502567659859968" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M222.6 288.7q4 6.7 1.8 16.8" fill="none" stroke="#B4FAFF" stroke-width="2.4386712405466158" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M225.8 292.3q4 4.3 -0.9 10.6" fill="none" stroke="#188CC2" stroke-width="2.602787958635019" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M195.0 368.0q-4 3.1 -2.5 7.7" fill="none" stroke="#B4FAFF" stroke-width="1.6152866664199101" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M203.2 329.1q4 3.0 -3.3 7.6" fill="none" stroke="#B4FAFF" stroke-width="1.4292978274358195" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M271.5 435.4q4 6.7 0.1 16.8" fill="none" stroke="#188CC2" stroke-width="1.4957842771363044" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M143.7 445.7q-4 3.2 0.1 8.0" fill="none" stroke="#B4FAFF" stroke-width="2.5935770437801065" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M255.2 348.7q4 4.5 3.7 11.3" fill="none" stroke="#B4FAFF" stroke-width="2.4079870393053735" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M273.6 462.3q4 7.0 -2.4 17.6" fill="none" stroke="#188CC2" stroke-width="2.073938236846745" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M233.8 396.7q4 4.0 0.6 10.0" fill="none" stroke="#B4FAFF" stroke-width="1.7262147838151845" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M193.0 322.8q-4 7.0 0.4 17.4" fill="none" stroke="#B4FAFF" stroke-width="1.8319068064787696" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M180.2 331.3q-4 4.9 -1.8 12.2" fill="none" stroke="#188CC2" stroke-width="1.7664967312398194" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M171.2 331.6q-4 6.3 1.0 15.8" fill="none" stroke="#B4FAFF" stroke-width="2.2398785373933086" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M225.2 474.4q4 3.5 -0.8 8.7" fill="none" stroke="#B4FAFF" stroke-width="2.0863125797548756" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M204.6 438.0q4 3.3 -0.2 8.2" fill="none" stroke="#188CC2" stroke-width="2.2826379674361643" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+<path d="M191.8 446.0q-4 3.9 -3.7 9.8" fill="none" stroke="#B4FAFF" stroke-width="2.0546247192805778" stroke-linecap="round" stroke-linejoin="round" opacity=".24" />
+</g>
+<g id="mascot_blue_head" inkscape:label="Tufted head">
+<path d="M94 254L71 262 80 239 57 248 70 222 50 231 66 207 48 212 62 191 44 198C46 177 56 166 72 151L53 156C62 128 83 113 109 104L84 101Q105 77 138 81Q120 57 99 63Q123 37 155 58L148 33Q177 40 190 66Q196 33 181 17Q216 28 221 72Q241 32 239 23Q262 47 245 83Q272 58 297 62L277 83Q304 78 320 96L291 107Q324 119 338 142L320 140 340 162 326 163 348 187L332 185 347 208 333 208 345 232 329 228 336 253 317 248 322 267 300 260C277 292 123 297 94 254Z" fill="url(#blueFace)" stroke="#147FAF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M87 129Q127 79 172 116" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M73 151Q110 117 153 119" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M153 70Q182 75 194 113" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M203 51Q220 81 209 112" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M260 77Q234 92 230 119" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M297 106Q269 100 254 127" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M65 201Q80 179 101 177" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M72 224Q86 208 103 208" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M303 178Q326 190 330 203" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M300 216Q320 222 327 239" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M107 249Q126 268 144 269" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+<path d="M260 261Q286 253 297 242" fill="none" stroke="#7AFAFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".48" />
+</g>
+<g id="mascot_blue_eyes" inkscape:label="Expressive eyes">
+<ellipse cx="143" cy="189" rx="37" ry="44" fill="url(#eyeWhite)" stroke="#25486A" stroke-width="3" transform="rotate(13,143,189)" />
+<ellipse cx="150" cy="187" rx="18" ry="26" fill="#07588E" stroke="#0D2E54" stroke-width="3" />
+<ellipse cx="153" cy="185" rx="10" ry="20" fill="#08152D" />
+<ellipse cx="145" cy="174" rx="8" ry="10" fill="white" />
+<ellipse cx="160" cy="197" rx="3" ry="4" fill="#A2F8FF" />
+<ellipse cx="253" cy="174" rx="37" ry="44" fill="url(#eyeWhite)" stroke="#25486A" stroke-width="3" transform="rotate(18,253,174)" />
+<ellipse cx="260" cy="172" rx="18" ry="26" fill="#07588E" stroke="#0D2E54" stroke-width="3" />
+<ellipse cx="263" cy="170" rx="10" ry="20" fill="#08152D" />
+<ellipse cx="255" cy="159" rx="8" ry="10" fill="white" />
+<ellipse cx="270" cy="182" rx="3" ry="4" fill="#A2F8FF" />
+<path d="M111 141Q132 124 157 135M227 125Q246 105 272 113" fill="none" stroke="#302144" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M111 138Q132 121 157 132M227 122Q246 102 272 110" fill="none" stroke="#53315D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<g id="mascot_blue_glasses" inkscape:label="Round black glasses">
+<path d="M108 184L73 191M284 159L308 151" fill="none" stroke="#18182E" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="144" cy="190" rx="47" ry="48" fill="none" stroke="#16162D" stroke-width="11" />
+<ellipse cx="144" cy="189" rx="44" ry="45" fill="none" stroke="#623D7D" stroke-width="5" />
+<path d="M112 163Q137 143 166 155" fill="none" stroke="#B58AC5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="254" cy="174" rx="47" ry="48" fill="none" stroke="#16162D" stroke-width="11" />
+<ellipse cx="254" cy="173" rx="44" ry="45" fill="none" stroke="#623D7D" stroke-width="5" />
+<path d="M222 147Q247 127 276 139" fill="none" stroke="#B58AC5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M189 179Q202 165 209 174" fill="none" stroke="#21182E" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<g id="mascot_blue_expression" inkscape:label="Thoughtful smile">
+<path d="M185 231Q195 222 205 228Q213 233 207 237Q193 239 185 231Z" fill="#187EB2" />
+<path d="M164 247Q194 264 223 241" fill="none" stroke="#124C78" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M169 251Q174 266 186 258Z" fill="#FFFCE2" stroke="#1B5D7B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<g id="mascot_blue_arms" inkscape:label="Folded arm and hand on chin">
+<path d="M292 298C326 308 328 346 308 366C278 390 214 379 166 365Q144 363 143 340Q147 320 173 326L252 335Q272 295 292 298Z" fill="url(#blueFur)" stroke="#138AB8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M114 302C88 319 92 362 124 372C155 381 179 347 204 322L231 300Q260 284 250 269Q246 261 237 265L247 248Q252 232 239 230Q228 231 218 251Q212 263 209 278Q188 264 182 274Q175 284 188 301L165 320Q133 292 114 302Z" fill="url(#blueFace)" stroke="#117EAD" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<path d="M208 279Q214 288 211 300M230 274Q241 270 247 278M225 293Q240 285 248 291" fill="none" stroke="#158ABD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+<ellipse cx="113" cy="322" rx="8" ry="12" fill="#188FC5" opacity=".7" />
+<ellipse cx="123" cy="346" rx="8" ry="12" fill="#188FC5" opacity=".7" />
+<ellipse cx="140" cy="333" rx="8" ry="12" fill="#188FC5" opacity=".7" />
+<ellipse cx="285" cy="347" rx="8" ry="12" fill="#188FC5" opacity=".7" />
+</g>
+<g id="mascot_blue_paws" inkscape:label="Feet and pink pads">
+<g id="mascot_blue_paw_111" transform="rotate(-24,111,476)">
+<ellipse cx="111" cy="476" rx="46" ry="67" fill="url(#blueFace)" stroke="#086EA4" stroke-width="3" />
+<ellipse cx="111" cy="490" rx="26" ry="36" fill="url(#paw)" stroke="#59618E" stroke-width="3" />
+<ellipse cx="88" cy="449" rx="9" ry="13" fill="url(#paw)" stroke="#58608F" stroke-width="2" />
+<ellipse cx="111" cy="438" rx="9" ry="13" fill="url(#paw)" stroke="#58608F" stroke-width="2" />
+<ellipse cx="133" cy="447" rx="9" ry="13" fill="url(#paw)" stroke="#58608F" stroke-width="2" />
+<path d="M133 428Q150 439 150 461" fill="none" stroke="#9BF9FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+<g id="mascot_blue_paw_294" transform="rotate(17,294,480)">
+<ellipse cx="294" cy="480" rx="46" ry="67" fill="url(#blueFace)" stroke="#086EA4" stroke-width="3" />
+<ellipse cx="294" cy="494" rx="26" ry="36" fill="url(#paw)" stroke="#59618E" stroke-width="3" />
+<ellipse cx="271" cy="453" rx="9" ry="13" fill="url(#paw)" stroke="#58608F" stroke-width="2" />
+<ellipse cx="294" cy="442" rx="9" ry="13" fill="url(#paw)" stroke="#58608F" stroke-width="2" />
+<ellipse cx="316" cy="451" rx="9" ry="13" fill="url(#paw)" stroke="#58608F" stroke-width="2" />
+<path d="M316 432Q333 443 333 465" fill="none" stroke="#9BF9FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</g>
+</g>
+</g>
+</svg>

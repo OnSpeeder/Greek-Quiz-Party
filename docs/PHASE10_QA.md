@@ -15,6 +15,71 @@ larger text, high contrast and reduced motion. High contrast removes decoration.
 Assets and exact built-in generation prompts: [art manifest](../src/QuizParty.Godot/Art/README.md).
 Core rules, protocol, host authority and reviewed question content are unchanged.
 
+## Settings implementation follow-up — 2026-10-18
+
+### Latest candidate: Inkscape study integration — 2026-10-19
+
+Following the user's instruction, study02 is integrated into the native settings
+page. The current candidate uses its blue/gold title, arrow tabs, gold-riveted
+frames, spectrum track, compact controls and bottom action row. Reusable skins
+derive from the editable Inkscape master; labels remain localized Godot text.
+Supported preferences/help/reset stay functional; mockup-only music/voice/haptic
+features are not exposed. Human visual/touch/audio/TV approval remains open.
+
+Additional scene coverage checks desktop action-row / portrait Help reparenting,
+one instance per action, focused action retention after rotation and modal bounds
+with Leave party visible. These checks exposed and drove fixes for long header
+labels and decoration timer lifecycle. Latest logs use the prefix
+`artifacts/settings-study-`; earlier settings evidence below describes the prior
+candidate, which the user rejected visually.
+
+The integrated candidate passes 369 tests (252 Core + 100 integration + 17 Godot).
+Bounds/focus assertions include Leave party and moving the actual reset action
+between orientations. Logs are checked for native runtime errors as well as test
+assertion results. The mascot timer is guarded against starting during reparent.
+Page-owned switch textures avoid repeated loads during preference updates, and
+fresh skin resource loads avoid stale C# resource handles when reopening scenes.
+Windows debug export/settings capture and Android export/install/portrait plus
+landscape renders are recorded in settings-study-export-*.log,
+settings-study-packaged{,-errors}.log, settings-study-android-*.log and
+settings-study-apk-signature.log. Expected EditorSettings export teardown
+diagnostics remain documented. No Core/protocol/question-pack changes.
+
+The additional settings reference is now implemented as a review candidate:
+landscape navigation and blue mascot, portrait scrollable cards and orange
+footer mascot, original gold/purple SVG skin, animated switches, live Greek/English
+menu language, offline help/credits/privacy/About and confirmed presentation-only
+reset. Existing sound/volume/accessibility preferences remain compatible.
+
+369 tests pass (252 Core +100 integration +17 Godot), including migration/invalid
+locale, reset cancellation/confirmation, nested Back, save failure, muted preview,
+motion cancellation, density targets, reflow and retained language-control focus.
+Local build is clean. Unsupported music/narration/haptics/shake controls are absent.
+
+Inspected actual engine captures for Greek 1920×1080 Audio, 1280×720 Gameplay,
+English 1152×648 Help, portrait 420×900, high-contrast/large-text portrait480×800,
+and short landscape800×480. Physical Android portrait/landscape captures were
+also inspected in standard and high-contrast/large-text modes. On the 533dpi
+phone, minimum targets remain64 portrait/72 landscape logical units (>=48dp).
+The high-contrast Back icon was bounded after device capture exposed oversizing.
+
+Evidence: `artifacts/settings-tests-final.log`, `settings-build-final.log`,
+`settings-export-{windows,android}-final.log`, `settings-android-*-final.log`,
+`phase10-qa/android{,-standard}/`, and `phase10-settings-*/preview.png`.
+Packaged five-player mixed local/LAN, teams + strategy,20 synthetic questions:
+all peers agree; runtime stderr clean (`settings-network-final.log`).
+
+Asset validation: both PNG atlases have real alpha and clear central seams.
+Declared text/surface contrast pairs are4.98:1 or better (body13.65:1;
+hover8.02:1; active6.54:1; high-contrast18.23:1). These source-palette checks and
+render inspection do not certify assistive-technology support or all device states.
+Source assets/final imagegen prompts: `src/QuizParty.Godot/Art/Settings/README.md`.
+
+Human touch/drag/listening/TV readability, full screen-reader acceptance and the
+full combination matrix remain open. Credits/privacy copy still needs release
+review. Android's accessibility backend still reports unsupported. The settings
+overhaul does not complete Phase10 or the deferred reviewed-content target.
+
 ## Observed evidence
 
 | Check | Result |

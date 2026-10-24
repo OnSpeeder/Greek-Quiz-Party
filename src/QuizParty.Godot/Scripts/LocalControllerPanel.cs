@@ -26,7 +26,7 @@ public partial class LocalControllerPanel : VBoxContainer
         else if (snapshot.Phase is "QuestionActive" or "QuestionLocked" && (_transport.AnswerPending || _transport.OwnAnswerIndex is not null)) Open = false;
         foreach (var child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
         if (!Visible) return;
-        AddChild(new Label { Text = Tr("LOCAL_HANDOFF_HINT"), AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        AddChild(new Label { Text = "LOCAL_HANDOFF_HINT", AutowrapMode = TextServer.AutowrapMode.WordSmart });
         foreach (var player in _transport.OwnedPlayers)
         {
             var confirmed = _transport.AnswerForSlot(player.LocalSlot) is not null;
@@ -43,7 +43,7 @@ public partial class LocalControllerPanel : VBoxContainer
         }
         if (Open)
         {
-            var hide = new Button { Text = Tr("LOCAL_HIDE"), CustomMinimumSize = new(0, 64) };
+            var hide = new Button { Text = "LOCAL_HIDE", CustomMinimumSize = new(0, 64) };
             hide.Pressed += Close; AddChild(hide);
         }
     }

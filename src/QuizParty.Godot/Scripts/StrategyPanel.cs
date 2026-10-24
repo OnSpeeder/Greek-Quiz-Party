@@ -47,7 +47,7 @@ public partial class StrategyPanel : VBoxContainer
             bet.Pressed += () => { _confidence.Select(index); UpdateBetButtons(); };
             _betButtons.Add(bet); _bets.AddChild(bet);
         }
-        _privacy = new Button { Name = "Privacy", Text = Tr("STRATEGY_PRIVATE"), CustomMinimumSize = new(0, 64),
+        _privacy = new Button { Name = "Privacy", Text = "STRATEGY_PRIVATE", CustomMinimumSize = new(0, 64),
             AutowrapMode = TextServer.AutowrapMode.WordSmart };
         _privacy.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         top.AddChild(_privacy);

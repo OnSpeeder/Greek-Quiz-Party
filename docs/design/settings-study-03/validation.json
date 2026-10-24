@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-19",
+  "renderer": "Inkscape 1.4.4 (dcaf3e7, 2026-05-05)",
+  "checks": "PASS",
+  "files": [
+    {
+      "file": "settings-landscape-outlined.svg",
+      "width": 1920.0,
+      "height": 1080.0,
+      "unique_ids": 730,
+      "text_elements": 0,
+      "raster_images": 0,
+      "local_references_resolved": true
+    },
+    {
+      "file": "settings-landscape.svg",
+      "width": 1920.0,
+      "height": 1080.0,
+      "unique_ids": 150,
+      "text_elements": 60,
+      "raster_images": 0,
+      "local_references_resolved": true
+    },
+    {
+      "file": "settings-portrait-outlined.svg",
+      "width": 675.0,
+      "height": 1200.0,
+      "unique_ids": 658,
+      "text_elements": 0,
+      "raster_images": 0,
+      "local_references_resolved": true
+    },
+    {
+      "file": "settings-portrait.svg",
+      "width": 675.0,
+      "height": 1200.0,
+      "unique_ids": 107,
+      "text_elements": 55,
+      "raster_images": 0,
+      "local_references_resolved": true
+    },
+    {
+      "file": "settings-study-03-outlined.svg",
+      "width": 2800.0,
+      "height": 1400.0,
+      "unique_ids": 1265,
+      "text_elements": 0,
+      "raster_images": 0,
+      "local_references_resolved": true
+    },
+    {
+      "file": "settings-study-03.svg",
+      "width": 2800.0,
+      "height": 1400.0,
+      "unique_ids": 228,
+      "text_elements": 120,
+      "raster_images": 0,
+      "local_references_resolved": true
+    },
+    {
+      "file": "settings-landscape.png",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "file": "settings-portrait.png",
+      "width": 675,
+      "height": 1200
+    },
+    {
+      "file": "settings-study-03.png",
+      "width": 2800,
+      "height": 1400
+    }
+  ],
+  "outlined_render_comparison": {
+    "channel_extrema": [
+      [
+        0,
+        15
+      ],
+      [
+        0,
+        16
+      ],
+      [
+        0,
+        12
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "mean_absolute_channel_difference": [
+      0.0004744897959183673,
+      0.0004818877551020408,
+      0.0005260204081632653,
+      0.0
+    ],
+    "note": "Small antialiasing/outline conversion differences; both renders visually inspected."
+  },
+  "selection_exports": [
+    {
+      "group": "btn_reset_all",
+      "dimensions": [
+        368,
+        105
+      ],
+      "transparent_png": true
+    },
+    {
+      "group": "slider_music_thumb",
+      "dimensions": [
+        64,
+        68
+      ],
+      "transparent_png": true
+    }
+  ]
+}

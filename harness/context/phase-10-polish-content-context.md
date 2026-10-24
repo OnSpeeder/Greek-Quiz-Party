@@ -128,8 +128,110 @@ Ignored evidence: `artifacts/phase10-build-final.log`, `phase10-restore-final.lo
 
 ## Deferred work
 
+### Inkscape study runtime integration — 2026-10-19
+
+The user requested integrating study02 into the game. Runtime skins derive from
+the actual Inkscape master's gradients through export-settings-study-skin.py;
+the shared vector builder applies that derivation last. SettingsPanel now has
+a dimensional blue/gold native title outside the main frame, gold arrow tabs,
+compact inline toggles/spectrum slider, two-column Audio when space permits,
+and desktop credits/privacy/reset actions with a larger mascot/pedestal.
+Portrait keeps scrollable cards, a framed title and a small waving mascot bay.
+
+Native controls are reparented rather than copied: quick actions move between
+the desktop action row and portrait Help card, retaining focus and handlers.
+Leave party moves to a compact desktop header action / portrait Help control.
+Compact localized labels retain full accessible names. Save feedback replaces
+metadata in the footer to avoid growing the modal beyond the viewport. Frame
+padding and slices keep text away from rivets. Reduced motion/high contrast,
+existing preference keys, language, reset confirmation and privacy remain intact.
+
+Additional assertions cover single action instances, action focus over rotation
+and frame bounds with Leave party present. Found/fixed header overflow and a
+mascot timer starting while its child was outside the tree during reparent.
+Native error-log review also caught stale cached texture handles when reopening
+scenes. Skin loads now use page-owned resources and toggles reuse their own
+texture references during state updates. Final assertions and native logs pass.
+The mockup's music/voice/haptic illustrations remain absent until real services
+exist. No Core/protocol/content change. Latest evidence: study integration entry
+in build-log.md and docs/PHASE10_QA.md; human acceptance remains separate.
+
+### Inkscape mockup follow-up — 2026-10-19
+
+User rejected the implemented settings UI and explicitly requested Inkscape and
+a high-fidelity side-by-side mockup. Delivered `docs/design/settings-study-02/`
+with editable SVG, outlined SVG and PNG, using original vector framing and the
+existing stage/character illustrations. Accessed configured Inkscape MCP through
+local FastMCP stdio; its validate/gradient/convert tools succeeded. Inkscape1.4.4
+rendered the previews and outlined export. Exact scope/provenance and reproduction
+are in that folder's README. Runtime settings retain their prior implementation
+and lack visual approval. No game code changed for this mockup-only request.
+
+### Settings implementation follow-up — 2026-10-18
+
+User authorized UI implementation and asset production after the specification.
+`SettingsPanel.tscn` / `SettingsPanel.cs` replace the shell's inline settings
+builder. The scene-owned shell still owns local persistence, audio and modal
+privacy. No Core, domain, protocol or production question change was needed.
+
+- Delivered 29 original editable SVGs plus original blue/orange four-pose atlases
+  in `Art/Settings/`. Vector generator and exact built-in image prompts are in
+  the repository. Final blue registration was repaired after seam inspection.
+- Landscape tabs select one section; narrow/portrait displays all three cards in
+  one scroll. Decoration has a separate bay. Rotation retains the focused
+  setting's section, not only the last landscape tab. Insets and density targets
+  propagate into all controls, including the header after rotation.
+- Existing five preferences remain compatible. Added validated device-local
+  `language` key (Greek default; English option), offline credits/engine component
+  notices, privacy/About panels and Cancel-first presentation-only reset.
+  Literal UI copy uses native translation keys rather than early translated text.
+  Host question-pack language and gameplay state do not change.
+- Native controls retain keyboard/focus/value semantics; switches animate only
+  their visual thumb. Reduced motion cancels tweens/mascot loops; high contrast
+  replaces artwork with plain outlined surfaces. Unsupported music, narration,
+  haptics and shake controls are omitted.
+- Fixed resource lifecycle/allocation issues found in iteration: keep a reusable
+  atlas view, recreate it on decoration reparent, dispose owned styles/themes,
+  and avoid rebuilding the settings skin on every slider value. Final test
+  process exits cleanly; no failing test was removed or weakened.
+
+Reproduction and observed verification: `docs/PHASE10_QA.md`, artwork README and
+the settings implementation entry in `harness/build-log.md`. This is a review
+candidate, not final human acceptance or completion of Phase 10.
+
+### Settings design follow-up — 2026-10-18
+
+The user supplied an additional settings art/UI prompt and composite image.
+Integrated it into `docs/design/SETTINGS_PAGE.md` and linked it from the shared
+visual direction, presentation guide and phase plan. Reference retained under
+`docs/design/concepts/settings-page-reference.jfif`, outside exported game assets.
+Only that composite was supplied; other image filenames in the prompt are not
+available assets. Reference provenance is unverified; production artwork should
+be original and editable, with localized live text rather than baked labels.
+
+Scope for this follow-up is the requested specification and production asset
+plan. Existing five preferences remain required; additional music/narration/
+haptics/shake controls require actual services before exposure. The specification
+also plans language selection, offline help/legal panels, actual version metadata
+and confirmed presentation-only reset. No accounts or game-rule changes. No code,
+new production artwork or runtime verification is claimed by this documentation
+change. Implementation acceptance is tracked separately in the new specification.
+
 Human TV/mobile readability/touch QA, accessibility blocker sign-off, physical
 Android orientation/notch/Back/screen-reader/audio checks and reviewed content
 scale remain unclaimed. The content gate still validates exactly one reviewed
 Greek question. No full Phase 10 acceptance or release readiness is implied.
 Further phase work requires separate user instruction/approval.
+
+
+### Settings vector recreation — 2026-10-19
+
+The latest user request is an Inkscape SVG recreation of the supplied
+dual-orientation reference. Study03 is isolated in docs/design/settings-study-03/
+and uses vector stage/mascots rather than embedded raster artwork. It keeps
+the requested English copy and illustrative control states. Editable and
+outlined master/orientation sources, PNG previews and validation evidence
+are delivered. Controls, fills, knobs and mascot parts have distinct IDs.
+No replacement of the existing runtime or new product behavior was requested
+or implemented. Direct Godot SVG import is unverified; selection PNG exports
+were observed and preserve shadow effects. Phase10 acceptance remains open.

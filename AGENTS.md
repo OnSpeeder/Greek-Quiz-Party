@@ -79,6 +79,21 @@ Do not load every document for unrelated trivial edits.
 - Release packs must contain only reviewed questions.
 - Preserve UTF-8 Greek characters and accents.
 
+## Visual & UI Polish Rules (Showtime Direction)
+1. **Typography & Greek Diacritics:** Never use the default Godot system font. All labels and buttons must use a bold, rounded display font that fully supports Greek (`el-GR`) accents (e.g., Rubik Bold/Black or Fredoka Bold). Question text must use `AutowrapMode.WordSmart` and a shadow/outline (`font_outline_size = 4`, `font_outline_color = #120A2A`).
+2. **Sticker/Chunky Game-Show StyleBoxes:** Never use unstyled Buttons or flat 1px-border panels. Every interactive card and button must use a `StyleBoxFlat` with:
+   - `CornerRadiusTopLeft/Right/BottomLeft/Right` = 18
+   - `BorderWidthLeft/Top/Right` = 3, `BorderWidthBottom` = 8 (creates a 3D tactile button lip)
+   - `ShadowSize` = 8, `ShadowOffset` = Vector2(0, 4), `ShadowColor` = Color(0, 0, 0, 0.35)
+   - `ContentMarginLeft/Right` = 20, `ContentMarginTop/Bottom` = 16
+3. **Distinct Answer Colors (Accessible):** Answer buttons A/B/C/D must each have a distinct high-contrast badge (A = Coral Red `#FF4B6E`, B = Electric Blue `#2B95FF`, C = Amber Gold `#FFB800`, D = Emerald `#1AD598`) plus a geometric shape/letter badge so colorblind players never rely on color alone.
+4. **Mandatory Juice & Tweening (Unless Reduced Motion is On):**
+   - Always set `PivotOffset = Size / 2f` before scaling any Control.
+   - Stagger the entrance of the 4 Answer Buttons by `0.06s` each using `Tween.TransitionType.Back` and `Tween.EaseType.Out` (scale from `0.85` to `1.0` over `0.28s`).
+   - On button hover/press, tween scale to `0.95` (press) and bounce to `1.04` (release).
+   - During `AnswerReveal`, pulse the correct answer button (`Scale` 1.0 -> 1.08 -> 1.0) and dim wrong answers to `Modulate = new Color(1, 1, 1, 0.45f)`.
+   - On `Scoreboard`, animate score numbers counting up over `0.6s` using `TweenMethod` rather than snapping instantly to the new integer.
+
 ## Tests
 
 GitHub CI is disabled by user decision. Use local verification and record evidence;

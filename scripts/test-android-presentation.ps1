@@ -1,7 +1,8 @@
-param([switch]$LeaveSettings)
+param([switch]$LeaveSettings, [switch]$StandardAppearance)
 . "$PSScriptRoot/common.ps1"
 $adb = Resolve-Tool 'adb' @("$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe")
 $output = Join-Path $RepoRoot 'artifacts/phase10-qa/android'
+if ($StandardAppearance) { $output += '-standard' }
 New-Item -ItemType Directory -Force $output | Out-Null
 $policy = (& $adb shell dumpsys window policy | Out-String)
 if ($policy -notmatch 'showing=false' -or $policy -notmatch 'interactiveState=INTERACTIVE_STATE_AWAKE') {
@@ -14,8 +15,12 @@ try {
     foreach ($orientation in @('portrait','landscape')) {
         foreach ($view in @('menu','settings')) {
             & $adb shell am force-stop org.quizparty.game
-            $preview = @('--match-ui-greek', "--match-ui-$orientation", '--match-ui-large-text', '--match-ui-reduced-motion')
-            if ($view -eq 'settings') { $preview += @('--match-ui-settings','--match-ui-high-contrast') }
+            $preview = @('--match-ui-preview', '--match-ui-greek', "--match-ui-$orientation")
+            if (!$StandardAppearance) { $preview += @('--match-ui-large-text', '--match-ui-reduced-motion') }
+            if ($view -eq 'settings') {
+                $preview += '--match-ui-settings'
+                if (!$StandardAppearance) { $preview += '--match-ui-high-contrast' }
+            }
             ConvertTo-Json -InputObject $preview -Compress | & $adb shell run-as org.quizparty.game tee $fixture | Out-Null
             Assert-Exit 'Write debug-only presentation preview arguments'
             & $adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -p org.quizparty.game | Out-Null

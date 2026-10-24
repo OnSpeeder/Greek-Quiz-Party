@@ -14,12 +14,12 @@ public partial class AppRoot : Control
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             CustomMinimumSize = new(0, 150), MouseFilter = MouseFilterEnum.Ignore };
         content.AddChild(crew); content.MoveChild(crew, 1);
-        var badge = new Label { Text = Tr("UI_PARTY_BADGE"), HorizontalAlignment = HorizontalAlignment.Center };
+        var badge = new Label { Text = "UI_PARTY_BADGE", HorizontalAlignment = HorizontalAlignment.Center };
         badge.AddThemeColorOverride("font_color", ShowtimeTheme.Cyan);
         badge.AddThemeFontSizeOverride("font_size", 18);
         content.AddChild(badge); content.MoveChild(badge, 0);
-        GetNode<Label>("Center/Frame/Content/Status").Text = Tr("UI_HOME_TAGLINE");
-        GetNode<Button>("Center/Frame/Content/Lobby").Text = Tr("UI_CREATE_PARTY");
+        GetNode<Label>("Center/Frame/Content/Status").Text = "UI_HOME_TAGLINE";
+        GetNode<Button>("Center/Frame/Content/Lobby").Text = "UI_CREATE_PARTY";
         GetNode<Button>("Center/Frame/Content/Lobby").CustomMinimumSize = new(0, 80);
         GetNode<Button>("Center/Frame/Content/Lobby").ThemeTypeVariation = "PrimaryAction";
         var title = GetNode<Label>("Center/Frame/Content/Title");
@@ -32,7 +32,7 @@ public partial class AppRoot : Control
         title.AutowrapMode = TextServer.AutowrapMode.Off;
         Resized += FitTitle;
         FitTitle();
-        var join = new Button { Name = "JoinParty", Text = Tr("UI_JOIN_PARTY"), CustomMinimumSize = new(0, 72) };
+        var join = new Button { Name = "JoinParty", Text = "UI_JOIN_PARTY", CustomMinimumSize = new(0, 72) };
         content.AddChild(join); join.Pressed += () => OpenLobby("join");
         PresentationShell.For(this)?.Fade(GetNode<Label>("Center/Frame/Content/Title"));
         if (OS.IsDebugBuild() && MatchProcessProbe.LaunchArguments().Any(a => a.StartsWith("--lan-", StringComparison.Ordinal)))

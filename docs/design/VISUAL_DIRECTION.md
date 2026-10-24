@@ -23,6 +23,11 @@ Greek remains the primary language rather than part of the product name.
 
 ## Platform and implementation boundaries
 
+Settings-specific composition, skin, responsive layouts and asset production are
+specified in [SETTINGS_PAGE.md](SETTINGS_PAGE.md), incorporating the user's
+2026-10-18 settings reference. This supplements the shared direction; it does
+not mark the settings redesign implemented or accepted.
+
 - Shared TV/desktop screen emphasizes questions, countdown, reveals and scores.
 - Phone layouts prioritize readable private controls and touch-friendly targets.
 - Keep personal cards and secret missions private according to product/rules.

@@ -22,7 +22,7 @@ public partial class LobbyScreen : Control
     private LineEdit _pin = null!;
     private RoomBrowser _browser = null!;
     private JoinFlow _joinFlow = null!;
-    private CharacterPicker _hostCharacter = null!;
+    private RoomCreationPanel _creation = null!;
     private RosterEditor _players = null!;
     private VBoxContainer _chooser = null!;
     private Button _switchPage = null!;
@@ -73,9 +73,15 @@ public partial class LobbyScreen : Control
         _joinFlow = new JoinFlow { Name = "JoinFlow" };
         content.AddChild(_joinFlow); content.MoveChild(_joinFlow, _address.GetIndex());
         _joinFlow.Bind(_transport); _browser = _joinFlow.GetNode<RoomBrowser>("RoomBrowser");
-        _hostCharacter = new CharacterPicker { Name = "HostCharacter" };
-        content.AddChild(_hostCharacter); content.MoveChild(_hostCharacter, _host.GetIndex());
-        _hostCharacter.Select(0);
+        _creation = new RoomCreationPanel { Name = "CreateRoom" }; content.AddChild(_creation);
+        content.MoveChild(_creation, _host.GetIndex());
+        _creation.CreateRequested += request => ShowError(_transport.Host(request.RoomName, request.PlayerName,
+            pin: request.Pin, character: request.Character, hostPlays: request.HostPlays, maxPlayers: request.MaxPlayers));
+        _creation.StepChanged += () =>
+        {
+            GetNode<Label>(path + "Title").Text = _creation.IdentityOpen ? "HOST_IDENTITY_TITLE" : "UI_CREATE_TITLE";
+            GetNode<ScrollContainer>("Margin/Scroll").ScrollVertical = 0;
+        };
         _matchSetup = new MatchSetupPanel { Name = "MatchSetup", Visible = false };
         var shellHost = GetNode<PresentationShell>("PresentationShell");
         shellHost.AddChild(_matchSetup); _matchSetup.Bind(_transport);
@@ -110,7 +116,6 @@ public partial class LobbyScreen : Control
         _pinOptions.Pressed += () => { _pinOpen = !_pinOpen; ShowSetup(true); };
         if (PresentationShell.For(this) is { } shell) shell.SetLeaveAction(() =>
         { _transport.Stop(); Reset(); shell.CloseSettings(); });
-        _host.Pressed += () => ShowError(_transport.Host(_room.Text.Trim(), _name.Text.Trim(), pin: _pin.Text, character: _hostCharacter.Selected ?? 0));
         _join.Pressed += () => ShowError(_transport.Join(_address.Text.Trim(), _name.Text.Trim(), pin: _pin.Text));
         _ready.Pressed += () =>
         {
@@ -156,7 +161,13 @@ public partial class LobbyScreen : Control
                     var page = preview["--ui-lobby-page=".Length..];
                     if (page != "roster") OpenMatchPage(page);
                 }).CallDeferred();
-            if (args.Contains("--ui-create")) ShowSetupPage("create");
+            if (args.Contains("--ui-create") || args.Contains("--ui-create-identity")) ShowSetupPage("create");
+            if (args.Contains("--ui-create-identity"))
+            {
+                ((Button)_creation.FindChild("Create", true, false)).EmitSignal(Button.SignalName.Pressed);
+                _creation.GetNode<PlayerIdentityForm>("Identity").NameInput.Text = "Φίλιππος";
+                _creation.GetNode<PlayerIdentityForm>("Identity").Characters.Select(1);
+            }
             if (args.Contains("--ui-join")) ShowSetupPage("join");
         }
         AddChild(new LanProcessProbe { Name = "LanProbe" });
@@ -171,6 +182,7 @@ public partial class LobbyScreen : Control
         _start.Disabled = true;
         _start.Visible = false;
         _matchSetup.Dismiss();
+        _creation.Reset();
         GetNode<PresentationShell>("PresentationShell").ShowLobbyActions(false);
         _players.Visible = false; _actions.Hide();
         _name.Editable = true;
@@ -236,16 +248,16 @@ public partial class LobbyScreen : Control
         var join = visible && _page == "join";
         _chooser.Visible = visible && _page == "choose";
         _switchPage.Visible = visible && _page != "choose";
-        _name.Visible = create;
-        _room.Visible = create;
-        _host.Visible = create;
+        _name.Visible = false;
+        _room.Visible = false;
+        _host.Visible = false;
         _address.Visible = false;
         _join.Visible = false;
-        _pin.Visible = create && _pinOpen;
-        _pinOptions.Visible = create;
+        _pin.Visible = false;
+        _pinOptions.Visible = false;
         _manualIp.Visible = false;
         _joinFlow.Visible = join;
-        _hostCharacter.Visible = create;
+        _creation.Visible = create;
         if (visible) _status.Visible = false;
         GetNode<Label>("Margin/Scroll/Content/Addresses").Visible = false;
         GetNode<Label>("Margin/Scroll/Content/Title").Text = Tr(create ? "UI_CREATE_TITLE" : join ? "UI_JOIN_TITLE" : "UI_PICK_PATH");
@@ -286,6 +298,7 @@ public partial class LobbyScreen : Control
         { PresentationShell.For(this)?.OpenSettings(); return; }
         if (_page == "join" && _setupVisible)
         { if (!_joinFlow.Back()) ReturnHome(); return; }
+        if (_page == "create" && _setupVisible && _creation.Back()) return;
         if (_matchSetup.Back()) return;
         if (!_setupVisible || _host.Disabled)
         { _transport.Stop(); Reset(); return; }

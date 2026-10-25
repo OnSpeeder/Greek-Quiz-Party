@@ -64,7 +64,7 @@ public partial class LobbyTransport : Node
     public bool PlayMatch { get; set; } = true;
     public event Action<MatchSnapshotDto>? MatchChanged;
     public event Action<string>? MatchInputChanged;
-    public MatchSnapshotDto? MatchSnapshot => MatchForSlot(_activeSlot);
+    public MatchSnapshotDto? MatchSnapshot => IsHost && OwnedPlayers.Count == 0 ? _host!.MatchSnapshot() : MatchForSlot(_activeSlot);
     public bool AnswerPending => AnswerPendingForSlot(_activeSlot);
     public bool CardPending => CardPendingForSlot(_activeSlot);
     public event Action<string>? CardInputChanged;
@@ -73,7 +73,7 @@ public partial class LobbyTransport : Node
     public event Action? OwnedStateChanged;
     public event Action? LocalPlayerChanged;
     public IReadOnlyList<LobbyPlayerDto> OwnedPlayers => _host is null ? _client.OwnedPlayers : Array.AsReadOnly(
-        _host.Snapshot().Players.Where(p => p.ControllerId == _host.Snapshot().Players.Single(p => p.IsHost).ControllerId).OrderBy(p => p.LocalSlot).ToArray());
+        _host.Snapshot().Players.Where(p => p.ControllerId == _host.HostControllerId).OrderBy(p => p.LocalSlot).ToArray());
     public MatchSnapshotDto? MatchForSlot(int slot) => slot is < 0 or > 7 ? null : _host is not null
         ? OwnedPlayers.FirstOrDefault(p => p.LocalSlot == slot) is { } own ? _host.MatchSnapshot(new Core.Players.PlayerId(own.PlayerId)) : null
         : _client.MatchForSlot(slot).Snapshot;
@@ -113,9 +113,9 @@ public partial class LobbyTransport : Node
         AddChild(poll);
     }
 
-    public Error Host(string roomName, string playerName, int port = DefaultPort, string pin = "", int character = 0)
+    public Error Host(string roomName, string playerName, int port = DefaultPort, string pin = "", int character = 0, bool hostPlays = true, int maxPlayers = 8)
     {
-        if (!Core.Players.Characters.IsValid(character) || !LobbyProtocol.ValidName(roomName) || !LobbyProtocol.ValidName(playerName) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin))
+        if (hostPlays && (!Core.Players.Characters.IsValid(character) || !LobbyProtocol.ValidName(playerName)) || maxPlayers is < 2 or > 8 || !LobbyProtocol.ValidName(roomName) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin))
             return Error.InvalidParameter;
         Core.Questions.QuestionPack pack;
         try { pack = Presentation.QuestionPackContent.Load(); }
@@ -133,7 +133,7 @@ public partial class LobbyTransport : Node
         QuestionCategories = _debugQuestions is null ? pack.Categories : questions.Select(q => q.CategoryId).Distinct()
             .Select(id => new Core.Questions.QuestionCategory(id, "MATCH_TEST_CATEGORY")).ToArray();
         _host = new(roomName, playerName, new MonotonicGameClock(), questions, new(1), pin,
-            OS.IsDebugBuild() && DebugStrategySeed is { } seed ? new Core.Randomness.SeededRandomSource(seed) : null, character);
+            OS.IsDebugBuild() && DebugStrategySeed is { } seed ? new Core.Randomness.SeededRandomSource(seed) : null, character, hostPlays, maxPlayers);
         _peer = peer;
         Multiplayer.MultiplayerPeer = peer;
         var host = _host;

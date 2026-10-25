@@ -343,3 +343,19 @@ to 2,000 base / 12,000 strategy due to the approved difficulty multiplier. Exist
 v7 clients would reject these valid reveals, so admission/discovery must reject
 mixed protocol versions. No new private payload is broadcast and manual-IP API
 remains intact. See `harness/phase-10-lobby-settings-plan.md`.
+
+## Optional host and creation follow-up — 2026-10-25
+
+The requested first checkpoint was committed and pushed as 05b7edd before this
+follow-up. Host authority is now independent of an optional player seat. Capacity
+is 2–8 actual players; a non-playing host occupies no character/team/ready slot
+and receives only public match state, never another player's cards or mission.
+Minimum two actual players remains. Protocol v9/app 0.9.0 rejects mixed versions.
+
+Creation first shows room name, always-visible optional PIN, capacity and host
+participation. Participating hosts continue to the shared join identity form;
+only final Create opens the room. Back preserves room choices. Character overflow
+is confined to its list; selected art uses the existing gold skin without a tick.
+All scrollbars are hidden while touch/drag/wheel scrolling remains available.
+Native tooltip labels bypass page-label wrapping; long labels wrap within viewport
+bounds. Header buttons reserve their actual touch size and separate inset space.

@@ -9,7 +9,7 @@ public partial class JoinFlow : VBoxContainer
 {
     private LobbyTransport _transport = null!;
     private RoomBrowser _browser = null!;
-    private VBoxContainer _identity = null!;
+    private PlayerIdentityForm _identity = null!;
     private LineEdit _name = null!;
     private CharacterPicker _characters = null!;
     private Button _join = null!;
@@ -25,12 +25,8 @@ public partial class JoinFlow : VBoxContainer
     {
         _browser = new RoomBrowser { Name = "RoomBrowser" }; AddChild(_browser);
         _message = new Label { Name = "Message", AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false }; AddChild(_message);
-        _identity = new VBoxContainer { Name = "Identity", Visible = false }; AddChild(_identity);
-        _identity.AddChild(new Label { Text = "JOIN_IDENTITY", AutowrapMode = TextServer.AutowrapMode.WordSmart });
-        _name = new LineEdit { Name = "PlayerName", PlaceholderText = "LOBBY_PLAYER_NAME", MaxLength = 32, CustomMinimumSize = new(0, 64) };
-        _identity.AddChild(_name);
-        _identity.AddChild(new Label { Text = "JOIN_CHARACTER", AutowrapMode = TextServer.AutowrapMode.WordSmart });
-        _characters = new CharacterPicker { Name = "Characters" }; _identity.AddChild(_characters);
+        _identity = new PlayerIdentityForm { Name = "Identity", Visible = false }; AddChild(_identity);
+        _name = _identity.NameInput; _characters = _identity.Characters;
         _join = new Button { Name = "JoinLobby", Icon = GD.Load<Texture2D>("res://Art/join.svg"),
             IconAlignment = HorizontalAlignment.Center,
             AccessibilityName = Tr("JOIN_LOBBY"), TooltipText = Tr("JOIN_LOBBY"), CustomMinimumSize = new(0, 72), Disabled = true };

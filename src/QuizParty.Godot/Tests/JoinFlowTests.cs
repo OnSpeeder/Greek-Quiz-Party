@@ -77,7 +77,7 @@ public class JoinFlowTests
             flow.ChooseRoom(Room(19881, host.Snapshot.SessionId)); pin.Text = "1234"; submit.EmitSignal(Button.SignalName.Pressed);
             await Wait(tree, () => flow.IdentityOpen);
             AssertThat(host.Snapshot.Players.Length).IsEqual(1);
-            var picker = flow.GetNode<CharacterPicker>("Identity/Characters");
+            var picker = flow.GetNode<CharacterPicker>("Identity/CharacterScroll/Characters");
             AssertThat(picker.GetNode<Button>("Character5").Disabled).IsTrue();
             flow.GetNode<LineEdit>("Identity/PlayerName").Text = "Ελένη"; picker.Select(7);
             AssertThat(flow.GetNode<Button>("Identity/JoinLobby").Text).IsEqual("");

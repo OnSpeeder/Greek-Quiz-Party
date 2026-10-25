@@ -24,7 +24,7 @@ public partial class MixedProcessProbe : Node
     }
     private void Begin()
     {
-        if (!int.TryParse(Arg("--match-local=") ?? "1", out _localCount) || _localCount is < 1 or > 8 ||
+        if (!int.TryParse(Arg("--match-local=") ?? "1", out _localCount) || _localCount is < 0 or > 8 || _localCount == 0 && !_args.Contains("--match-host") ||
             !int.TryParse(Arg("--match-players=") ?? "2", out _total) || _total is < 2 or > 8 ||
             !int.TryParse(Arg("--match-port=") ?? "7777", out var port)) { GetTree().Quit(2); return; }
         _transport = GetParent().GetNode<LobbyTransport>("Transport");
@@ -35,7 +35,7 @@ public partial class MixedProcessProbe : Node
         if (_args.Contains("--match-host") && int.TryParse(Arg("--match-fixture="), out var count)) _transport.UseSyntheticQuestions(count);
         var timer = new global::Godot.Timer { WaitTime = 0.05, Autostart = true };
         timer.Timeout += Think; AddChild(timer);
-        var error = _args.Contains("--match-host") ? _transport.Host("Mixed test", Arg("--match-name=") ?? "Host", port) :
+        var error = _args.Contains("--match-host") ? _transport.Host("Mixed test", Arg("--match-name=") ?? "Host", port, hostPlays: _localCount > 0) :
             _transport.Join(Arg("--match-join=") ?? "127.0.0.1", Arg("--match-name=") ?? "Phone", port);
         if (error != Error.Ok) { GD.PushError($"Mixed probe startup: {error}"); GetTree().Quit(2); }
         GetTree().CreateTimer(600).Timeout += () => { if (Live && !_finished) { GD.PushError("Mixed match timed out."); GetTree().Quit(3); } };

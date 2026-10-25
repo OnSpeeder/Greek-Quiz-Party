@@ -17,11 +17,20 @@ public sealed class LobbySession
     private readonly GameStateMachine _state = new(GameAuthority.Host);
     private long _revision = 1;
     private bool _teamMode;
-    public LobbySession(Player host)
+    public int Capacity { get; }
+    public bool HostPlays { get; }
+    public LobbySession(Player host, int maxPlayers = MaxPlayers) : this(host, maxPlayers, true) { }
+    public static LobbySession WithoutHostPlayer(int maxPlayers = MaxPlayers) => new(null, maxPlayers, false);
+    private LobbySession(Player? host, int maxPlayers, bool hostPlays)
     {
-        ArgumentNullException.ThrowIfNull(host);
-        if (host.ConnectionId != HostConnection || (host.LocalSlot?.Value ?? 0) != 0) throw new ArgumentException("Host must own connection1/slot0.", nameof(host));
-        _players.Add(host.Id, new(host with { Character = host.Character ?? CharacterId.Pink }, true, false));
+        if (maxPlayers is < MinPartyPlayers or > MaxPlayers) throw new ArgumentOutOfRangeException(nameof(maxPlayers));
+        Capacity = maxPlayers; HostPlays = hostPlays;
+        if (hostPlays) ArgumentNullException.ThrowIfNull(host);
+        if (host is not null)
+        {
+            if (host.ConnectionId != HostConnection || (host.LocalSlot?.Value ?? 0) != 0) throw new ArgumentException("Host must own connection1/slot0.", nameof(host));
+            _players.Add(host.Id, new(host with { Character = host.Character ?? CharacterId.Pink }, true, false));
+        }
         _state.TryTransition(GameTrigger.Initialize); _state.TryTransition(GameTrigger.OpenLobby);
     }
     public LobbyError Join(Player player)
@@ -44,7 +53,7 @@ public sealed class LobbySession
         var slot = player.LocalSlot?.Value ?? 0;
         if (_players.ContainsKey(player.Id) || (primary && slot != 0)) return LobbyError.InvalidPlayer;
         if (_players.Values.Any(p => p.Player.ConnectionId == player.ConnectionId && (p.Player.LocalSlot?.Value ?? 0) == slot)) return LobbyError.AlreadyJoined;
-        if (_players.Count >= MaxPlayers) return LobbyError.RoomFull;
+        if (_players.Count >= Capacity) return LobbyError.RoomFull;
         var character = player.Character ?? Enumerable.Range(0, Characters.Count).Select(i => (CharacterId)i)
             .First(id => _players.Values.All(p => p.Player.Character != id));
         if (!Characters.IsValid((int)character)) return LobbyError.InvalidPlayer;

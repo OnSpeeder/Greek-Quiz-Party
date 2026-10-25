@@ -65,12 +65,11 @@ public class PresentationTests
             AssertThat(root.GetNode<Control>(path + "PartyChoice").Visible).IsTrue();
             AssertThat(root.GetNode<LineEdit>(path + "PlayerName").Visible).IsFalse();
             root.ShowSetupPage("create");
-            AssertThat(root.GetNode<LineEdit>(path + "RoomName").Visible).IsTrue();
-            AssertThat(root.GetNode<Button>(path + "Host").Visible).IsTrue();
+            var creation = root.GetNode<RoomCreationPanel>(path + "CreateRoom");
+            AssertThat(((LineEdit)creation.FindChild("RoomName", true, false)).IsVisibleInTree()).IsTrue();
+            AssertThat(((Button)creation.FindChild("Create", true, false)).IsVisibleInTree()).IsTrue();
             AssertThat(root.GetNode<RoomBrowser>(path + "JoinFlow/RoomBrowser").IsVisibleInTree()).IsFalse();
-            AssertThat(root.GetNode<LineEdit>(path + "RoomPin").Visible).IsFalse();
-            root.GetNode<Button>(path + "PinOptions").EmitSignal(Button.SignalName.Pressed);
-            AssertThat(root.GetNode<LineEdit>(path + "RoomPin").Visible).IsTrue();
+            AssertThat(((LineEdit)creation.FindChild("RoomPin", true, false)).IsVisibleInTree()).IsTrue();
             root.ShowSetupPage("join");
             AssertThat(root.GetNode<LineEdit>(path + "RoomName").Visible).IsFalse();
             AssertThat(root.GetNode<Button>(path + "Host").Visible).IsFalse();

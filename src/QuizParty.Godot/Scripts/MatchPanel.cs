@@ -227,7 +227,7 @@ public partial class MatchPanel : VBoxContainer
         _strategy.Visible = _controllers.Open && _snapshot.Strategy is not null && _snapshot.Phase is not ("GameOver" or "AnswerReveal");
         for (var i = 0; i < 4; i++)
         {
-            _answers[i].Visible = _snapshot.Phase == "AnswerReveal" || _controllers.Open && _snapshot.Phase is "QuestionActive" or "QuestionLocked";
+            _answers[i].Visible = _snapshot.Phase == "AnswerReveal" || (_controllers.Open || _transport.IsHost && _transport.OwnedPlayers.Count == 0) && _snapshot.Phase is "QuestionActive" or "QuestionLocked";
             _answers[i].Disabled = !active || !_snapshot.EligiblePlayers.Contains(_transport.LocalPlayerId ?? Guid.Empty) ||
                 _transport.AnswerPending || _transport.CardPending || _transport.OwnAnswerIndex is not null ||
                 _snapshot.Private?.HiddenAnswers.Contains(i) == true;

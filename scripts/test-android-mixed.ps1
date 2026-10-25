@@ -1,9 +1,9 @@
 param([Parameter(Mandatory=$true)][string]$HostAddress, [switch]$AndroidHost,
-    [ValidateRange(1,7)][int]$HostPlayers = 2, [ValidateRange(1,7)][int]$ClientPlayers = 3,
+    [ValidateRange(0,7)][int]$HostPlayers = 2, [ValidateRange(1,7)][int]$ClientPlayers = 3,
     [ValidateSet(10,20,30)][int]$QuestionCount = 20, [int]$Port = 17793)
 . "$PSScriptRoot/common.ps1"
 $total = $HostPlayers + $ClientPlayers
-if ($total -gt 8 -or $HostAddress -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw 'Supply host IPv4 and2–8 total players.' }
+if ($total -lt 2 -or $total -gt 8 -or $HostAddress -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw 'Supply host IPv4 and2–8 total players.' }
 $adb = Resolve-Tool 'adb' @("$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe")
 $output = Join-Path $RepoRoot "artifacts/phase09-android-$HostPlayers-$ClientPlayers$(if ($AndroidHost) { '-phone-host' })"
 New-Item -ItemType Directory -Force $output | Out-Null

@@ -25,15 +25,15 @@ public static class DiscoveryProtocol
     public static byte[] Request(Guid nonce) => JsonSerializer.SerializeToUtf8Bytes(new DiscoveryRequest("quiz-discover", LobbyProtocol.Version, nonce), Options);
     public static byte[] Response(Guid nonce, LobbySnapshotDto lobby, int gamePort, bool requiresPin) =>
         JsonSerializer.SerializeToUtf8Bytes(new DiscoveryAnnouncement("quiz-host", LobbyProtocol.Version, nonce,
-            lobby.SessionId, lobby.RoomName, gamePort, lobby.Players.Length, 8, requiresPin, LobbyProtocol.AppVersion, lobby.Phase), Options);
+            lobby.SessionId, lobby.RoomName, gamePort, lobby.Players.Length, lobby.MaxPlayers, requiresPin, LobbyProtocol.AppVersion, lobby.Phase), Options);
 
     public static bool TryRequest(byte[] packet, out DiscoveryRequest? request) =>
         Read(packet, RequestFields, out request) && request is { Type: "quiz-discover", Protocol: LobbyProtocol.Version } && request.Nonce != Guid.Empty;
 
     public static bool TryResponse(byte[] packet, out DiscoveryAnnouncement? room) =>
-        Read(packet, ResponseFields, out room) && room is { Type: "quiz-host", Protocol: LobbyProtocol.Version, MaxPlayers: 8,
-            GamePort: >= 1024 and <= 65535, Players: >= 1 and <= 8, State: "Lobby" or "GameStarting" } &&
-        room.Nonce != Guid.Empty && room.SessionId != Guid.Empty && LobbyProtocol.ValidName(room.RoomName) && room.AppVersion is { Length: > 0 and <= 32 };
+        Read(packet, ResponseFields, out room) && room is { Type: "quiz-host", Protocol: LobbyProtocol.Version, MaxPlayers: >= 2 and <= 8,
+            GamePort: >= 1024 and <= 65535, Players: >= 0 and <= 8, State: "Lobby" or "GameStarting" } &&
+        room.Players <= room.MaxPlayers && room.Nonce != Guid.Empty && room.SessionId != Guid.Empty && LobbyProtocol.ValidName(room.RoomName) && room.AppVersion is { Length: > 0 and <= 32 };
 
     public static bool ValidSource(string address) => IPAddress.TryParse(address, out var ip) && ip.AddressFamily == AddressFamily.InterNetwork &&
         !ip.Equals(IPAddress.Any) && !ip.Equals(IPAddress.Broadcast) && ip.GetAddressBytes()[0] is > 0 and < 224;

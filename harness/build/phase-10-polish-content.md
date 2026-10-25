@@ -90,3 +90,10 @@ Current scope includes the user's lobby/readiness/settings request and approved
 three-band difficulty scoring ×1/×1.5/×2. Concrete plan:
 `harness/phase-10-lobby-settings-plan.md`. This includes protocol v8 compatibility
 for larger host score bounds. Existing phase acceptance gates remain outstanding.
+
+## Optional host and compact creation — 2026-10-25
+
+Approved scope: `harness/phase-10-optional-host-plan.md`. This extends Phase 10 with
+an optional roster host, capacity 2–8, two-step creation, shared character identity,
+global tooltip/scrollbar correction and non-overlapping header actions. Protocol v9
+is part of this authorized scope. Do not advance to Phase 11 automatically.

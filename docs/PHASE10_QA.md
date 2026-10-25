@@ -181,3 +181,15 @@ startup/broadcast/disconnect regressions: `harness/build-log.md`.
 This confirms the observed technical scenarios on this device. Human listening,
 subjective visual approval and the newly requested tooltip/header/create-flow
 corrections remain distinct work; no blanket accessibility certification is made.
+
+## Optional host and compact creation — 2026-10-25
+
+Actual Android portrait/landscape captures cover creation, shared player identity
+and eight-player lobby. Inspected Greek labels, all eight characters, fixed submit
+controls, hidden scrollbars and separated header actions. Native Windows tooltip
+capture reads horizontally; long-text tooltip behavior has a viewport-bound test.
+Physical touch verified both creation paths, including name entry with Android
+keyboard and initial not-ready player. Ten-question team/strategy LAN matches passed
+with Android and Windows each acting as the non-playing host. Logs, captures and
+scope limits are recorded in harness/build-log.md. New debug APK installed on the
+physical device; temporary launch fixtures are removed after verification.

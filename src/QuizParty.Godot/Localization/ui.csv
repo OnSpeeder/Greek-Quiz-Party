@@ -367,3 +367,10 @@ SETUP_CARD_HELP_ExtraTime,"+5 δευτερόλεπτα. Χρήση πριν απ
 SETUP_CARD_HELP_CategorySwap,Αλλάζει την επόμενη κατηγορία στη βαθμολογία. Ο host δίνει έγκυρες επιλογές.,Swap the next category during recap. The host offers eligible alternatives.
 SETUP_CARD_HELP_Shield,Μπλοκάρει μία Κλοπή. Ενεργοποίηση πριν απαντήσεις ή στη βαθμολογία.,Blocks one Steal. Arm before answering or during recap.
 SETUP_CARD_HELP_Steal,Έως 100 πόντοι από αντίπαλο στη βαθμολογία. Μία στόχευση ανά παίκτη.,Up to 100 points from an opponent during recap. Each victim can be targeted once.
+HOST_PLAYER_COUNT,{0} / {1} παίκτες στη σκηνή,{0} / {1} players on stage
+HOST_OPTIONAL_PIN,PIN · προαιρετικό,PIN · optional
+HOST_CAPACITY,Μέγιστοι παίκτες,Maximum players
+HOST_PLAYS,Παίζω κι εγώ ως host,Join as a player too
+HOST_CONTINUE,Συνέχεια,Continue
+HOST_PIN_HINT,Κενό ή 4–6 ψηφία,Empty or 4–6 digits
+HOST_IDENTITY_TITLE,Ο παίκτης σου,Your player

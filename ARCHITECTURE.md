@@ -385,3 +385,18 @@ stable IDs to the original atlas and four additional portraits; standings, cast
 and handoff use those IDs. ResponsiveCanvas reserves virtual-keyboard height and
 scrolls focused fields into view; PIN modal has its own keyboard-safe scroll area.
 Manual-IP UI is hidden; LobbyTransport.Join remains supported internally.
+
+## Host authority without a player — 2026-10-25
+
+Core `LobbySession.WithoutHostPlayer` creates an empty roster while retaining
+connection-1 authority. Capacity is immutable per room and checked by Core and
+admission/preflight. Infrastructure maps an optional recipient in `MatchSnapshot`;
+an absent host seat yields only the public projection. Godot `LobbyTransport`
+resolves host-owned slots via controller identity, without finding an IsHost player.
+UI controls never manufacture a player to satisfy host authority.
+
+`RoomCreationPanel` owns draft room inputs and emits a creation request only after
+final submission. `PlayerIdentityForm` is shared by host creation and remote join;
+its character list has the bounded overflow region. The scene-owned presentation
+shell applies global tooltip/scrollbar policy and sizes header actions against
+actual minimum targets, preserving existing shared themes and tactile feedback.

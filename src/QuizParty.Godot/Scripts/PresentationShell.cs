@@ -19,6 +19,7 @@ public partial class PresentationShell : Control
     private Button? _back;
     private HBoxContainer? _lobbyActions;
     private bool _lobbyActionsAvailable;
+    private Vector4 _currentInsets;
     private bool _navigationCovered;
     private ExitConfirmation? _exitConfirmation;
     public bool ExitConfirmationOpen => _exitConfirmation?.Visible == true;
@@ -63,8 +64,9 @@ public partial class PresentationShell : Control
         backdrop.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _audio = new AudioStreamPlayer { Name = "FeedbackAudio" };
         AddChild(_audio);
-        _settings = new Button { Name = "Settings", Icon = GD.Load<Texture2D>("res://Art/settings.svg"), IconAlignment = HorizontalAlignment.Center, AccessibilityName = Tr("UI_SETTINGS"),
+        _settings = new Button { Name = "Settings", Icon = GD.Load<Texture2D>("res://Art/settings.svg"), ExpandIcon = true, IconAlignment = HorizontalAlignment.Center, AccessibilityName = Tr("UI_SETTINGS"),
             TooltipText = Tr("UI_SETTINGS"), CustomMinimumSize = new(64, 64) };
+        _settings.AddThemeConstantOverride("icon_max_width", 32);
         AddChild(_settings);
         _settings.SetAnchorsAndOffsetsPreset(LayoutPreset.TopRight);
         _settings.OffsetLeft = -84; _settings.OffsetRight = -20; _settings.OffsetTop = 12; _settings.OffsetBottom = 76;
@@ -116,6 +118,12 @@ public partial class PresentationShell : Control
                     if (args.Contains("--ui-gameplay")) _overlay.SelectSection(1);
                     if (args.Contains("--ui-help")) _overlay.SelectSection(2);
                 }).CallDeferred();
+                if (args.Contains("--ui-tooltip")) GetTree().CreateTimer(.15).Timeout += () =>
+                {
+                    var position = _settings.GetGlobalRect().GetCenter();
+                    using var motion = new InputEventMouseMotion { Position = position, GlobalPosition = position };
+                    GetViewport().PushInput(motion, true);
+                };
                 if (args.Contains("--ui-exit-confirmation")) Callable.From(OpenExitConfirmation).CallDeferred();
                 if (args.Contains("--ui-sound-preview")) GetTree().CreateTimer(.1).Timeout += () =>
                 { if (GodotObject.IsInstanceValid(this) && IsInsideTree()) PlayCue("reveal"); };
@@ -129,7 +137,7 @@ public partial class PresentationShell : Control
     {
         try
         {
-            await ToSignal(GetTree().CreateTimer(MatchProcessProbe.LaunchArguments().Any(a => a.Contains("ui-join-step=", StringComparison.Ordinal)) ? 4 : .45), global::Godot.Timer.SignalName.Timeout);
+            await ToSignal(GetTree().CreateTimer(MatchProcessProbe.LaunchArguments().Any(a => a.Contains("ui-join-step=", StringComparison.Ordinal)) ? 4 : MatchProcessProbe.LaunchArguments().Any(a => a.Contains("ui-tooltip", StringComparison.Ordinal)) ? 1.5 : .45), global::Godot.Timer.SignalName.Timeout);
             if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
             if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
@@ -151,7 +159,14 @@ public partial class PresentationShell : Control
 
     private void OnNodeAdded(Node node)
     {
-        if (_root.IsAncestorOf(node)) StyleControl(node);
+        if (!_root.IsAncestorOf(node)) return;
+        StyleControl(node);
+        // Native tooltip setup and scene _Ready methods can assign their final
+        // variation/scroll modes after NodeAdded. Apply the shared policy afterward.
+        if (node is Label or ScrollContainer) Callable.From(() =>
+        {
+            if (GodotObject.IsInstanceValid(this) && GodotObject.IsInstanceValid(node) && IsInsideTree() && node.IsInsideTree()) StyleControl(node);
+        }).CallDeferred();
     }
 
     private void StyleTree(Node node)
@@ -163,8 +178,32 @@ public partial class PresentationShell : Control
     private void StyleControl(Node node)
     {
         if (node is not Control control) return;
+        // Engine-created tooltip labels have no assigned wrapping width. Applying the
+        // page-label recipe makes their minimum width collapse to one character.
+        if (control is Label tooltip && (tooltip.ThemeTypeVariation == "TooltipLabel" ||
+            tooltip.GetParent() is PopupPanel popup && popup.ThemeTypeVariation == "TooltipPanel"))
+        {
+            var font = _root.Theme.DefaultFont;
+            var fontSize = Preferences.LargeText ? 22 : 18;
+            var width = Math.Max(80, Math.Min(420, _root.GetViewportRect().Size.X - 64));
+            var wrap = font.GetStringSize(tooltip.Text, HorizontalAlignment.Left, -1, fontSize).X > width;
+            tooltip.CustomMinimumSize = new(wrap ? width : 0, 0);
+            tooltip.AutowrapMode = wrap ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off;
+            tooltip.AddThemeFontOverride("font", font);
+            tooltip.AddThemeFontSizeOverride("font_size", fontSize);
+            return;
+        }
         if (control is Button or LineEdit or Slider && !control.HasMeta("presentation_minimum"))
             control.SetMeta("presentation_minimum", control.CustomMinimumSize);
+        if (control is OptionButton option)
+        {
+            HideNativeScrollbars(option.GetPopup());
+            if (!option.HasMeta("scrollbars_hidden"))
+            {
+                option.SetMeta("scrollbars_hidden", true);
+                option.GetPopup().AboutToPopup += () => HideNativeScrollbars(option.GetPopup());
+            }
+        }
         if (control is Button button)
         {
             button.Flat = false;
@@ -189,7 +228,12 @@ public partial class PresentationShell : Control
         if (control is Slider slider)
             slider.CustomMinimumSize = new(MinimumTarget, Math.Max(MinimumTarget, slider.GetMeta("presentation_minimum").AsVector2().Y));
         if (control is Label label) label.AutowrapMode = label.HasMeta("presentation_no_wrap") ? TextServer.AutowrapMode.Off : TextServer.AutowrapMode.WordSmart;
-        if (control is ScrollContainer scroll) scroll.FollowFocus = true;
+        if (control is ScrollContainer scroll)
+        {
+            scroll.FollowFocus = true;
+            if (scroll.VerticalScrollMode != ScrollContainer.ScrollMode.Disabled) scroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+            if (scroll.HorizontalScrollMode != ScrollContainer.ScrollMode.Disabled) scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+        }
         if (!control.HasMeta("presentation_font") && control.HasThemeFontSizeOverride("font_size"))
             control.SetMeta("presentation_font", control.GetThemeFontSize("font_size"));
         if (control.HasMeta("presentation_font"))
@@ -206,9 +250,9 @@ public partial class PresentationShell : Control
             ("GameSetup", "setup", "SETUP_SETUP", setup), ("GameRules", "rules", "SETUP_RULES", rules) })
         {
             var button = new Button { Name = name, Icon = LobbyIcons.Texture(icon),
-                IconAlignment = HorizontalAlignment.Center, CustomMinimumSize = new(64, 64),
+                ExpandIcon = true, IconAlignment = HorizontalAlignment.Center, CustomMinimumSize = new(72, 72),
                 AccessibilityName = Tr(key), TooltipText = Tr(key) };
-            button.AddThemeConstantOverride("icon_max_width", 36);
+            button.AddThemeConstantOverride("icon_max_width", 32);
             button.Pressed += action; _lobbyActions.AddChild(button);
         }
         UpdateInsets(Vector4.Zero);
@@ -219,7 +263,18 @@ public partial class PresentationShell : Control
         if (_lobbyActions is null) return;
         _lobbyActions.Visible = available && !_navigationCovered && !SettingsOpen;
         _lobbyActions.GetNode<Button>("GameSetup").Visible = host;
+        UpdateInsets(_currentInsets);
         if (GetNodeOrNull<Label>("Wordmark") is { } mark) mark.Visible = !available || _root.Size.X > 700;
+    }
+
+    private static void HideNativeScrollbars(Node node)
+    {
+        if (node is ScrollContainer scroll)
+        {
+            if (scroll.VerticalScrollMode != ScrollContainer.ScrollMode.Disabled) scroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+            if (scroll.HorizontalScrollMode != ScrollContainer.ScrollMode.Disabled) scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+        }
+        foreach (var child in node.GetChildren(true)) HideNativeScrollbars(child);
     }
 
     private void BuildSettings()
@@ -300,6 +355,7 @@ public partial class PresentationShell : Control
 
     public void UpdateInsets(Vector4 inset)
     {
+        _currentInsets = inset;
         if (OS.HasFeature("android"))
         {
             var scale = ResponsiveCanvas.PixelsPerUnit(GetWindow().Size, _root.GetViewportRect().Size);
@@ -310,13 +366,17 @@ public partial class PresentationShell : Control
                 StyleTree(_root); _overlay.Render(Preferences, MinimumTarget);
             }
         }
-        _settings.OffsetLeft = -20 - MinimumTarget - inset.Z; _settings.OffsetRight = -20 - inset.Z;
-        _settings.OffsetTop = 12 + inset.Y; _settings.OffsetBottom = 12 + MinimumTarget + inset.Y;
+        var headerTarget = Math.Max(72, MinimumTarget);
+        _settings.CustomMinimumSize = new(headerTarget, headerTarget);
+        _settings.OffsetLeft = -20 - headerTarget - inset.Z; _settings.OffsetRight = -20 - inset.Z;
+        _settings.OffsetTop = 12 + inset.Y; _settings.OffsetBottom = 12 + headerTarget + inset.Y;
         if (_lobbyActionsAvailable && GetNodeOrNull<Label>("Wordmark") is { } lobbyMark) lobbyMark.Visible = _root.Size.X > 700;
         if (_lobbyActions is not null)
         {
-            _lobbyActions.OffsetRight = _settings.OffsetLeft - 8;
-            _lobbyActions.OffsetLeft = _lobbyActions.OffsetRight - 2 * MinimumTarget - 8;
+            foreach (var action in _lobbyActions.GetChildren().OfType<Button>()) action.CustomMinimumSize = new(headerTarget, headerTarget);
+            var count = _lobbyActions.GetChildren().OfType<Button>().Count(b => b.Visible);
+            _lobbyActions.OffsetRight = _settings.OffsetLeft - 12;
+            _lobbyActions.OffsetLeft = _lobbyActions.OffsetRight - count * headerTarget - Math.Max(0, count - 1) * 8;
             _lobbyActions.OffsetTop = _settings.OffsetTop; _lobbyActions.OffsetBottom = _settings.OffsetBottom;
         }
         if (GetNodeOrNull<MatchSetupPanel>("MatchSetup") is { } matchSetup)

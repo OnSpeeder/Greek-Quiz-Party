@@ -44,7 +44,7 @@ public partial class RosterEditor : VBoxContainer
     }
     public void Bind(LobbyTransport transport)
     { _transport = transport; transport.SnapshotChanged += Render; }
-    private void UpdateAdd() => _add.Disabled = _transport?.Snapshot is not { Phase: "Lobby", Players.Length: < 8 } ||
+    private void UpdateAdd() => _add.Disabled = _transport?.Snapshot is not { Phase: "Lobby" } snapshot || snapshot.Players.Length >= snapshot.MaxPlayers ||
         !LobbyProtocol.ValidName(_name.Text.Trim()) || _characters.Selected is null;
     private void Render(LobbySnapshotDto snapshot)
     {
@@ -53,8 +53,9 @@ public partial class RosterEditor : VBoxContainer
         _characters.SetTaken(snapshot.Players.Where(p => p.CharacterId is not null).Select(p => p.CharacterId!.Value));
         if (_characters.Selected is null)
             _characters.Select(Enumerable.Range(0, 8).Where(id => snapshot.Players.All(p => p.CharacterId != id)).Select(id => (int?)id).FirstOrDefault());
+        _addToggle.Visible = _transport.OwnedPlayers.Count > 0;
         UpdateAdd(); _teams.Visible = _transport.IsHost && _hostOptions; _teams.SetPressedNoSignal(snapshot.TeamMode);
-        _hint.Text = string.Format(Tr("UI_WAITING_COUNT"), snapshot.Players.Length);
+        _hint.Text = string.Format(Tr("HOST_PLAYER_COUNT"), snapshot.Players.Length, snapshot.MaxPlayers);
         if (snapshot.TeamMode) _hint.Text += "\n" + Tr(snapshot.Players.Select(p => p.TeamId).Distinct().Count() == 2 ? "TEAM_HINT" : "TEAM_NEED_TWO");
         foreach (var child in _rows.GetChildren()) { _rows.RemoveChild(child); child.QueueFree(); }
         var owned = _transport.OwnedPlayers.Select(p => p.PlayerId).ToHashSet();

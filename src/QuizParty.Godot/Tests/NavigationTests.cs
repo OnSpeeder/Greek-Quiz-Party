@@ -97,8 +97,12 @@ public class NavigationTests
             AssertThat(flow.PinOpen).IsFalse();
             AssertThat(root.GetNode<RoomBrowser>(path + "JoinFlow/RoomBrowser").Visible).IsTrue();
             root.ShowSetupPage("create");
-            root.GetNode<Button>(path + "PinOptions").EmitSignal(Button.SignalName.Pressed);
-            shell.NavigateBack(); AssertThat(root.GetNode<LineEdit>(path + "RoomPin").Visible).IsFalse();
+            var creation = root.GetNode<RoomCreationPanel>(path + "CreateRoom");
+            AssertThat(((LineEdit)creation.FindChild("RoomPin", true, false)).IsVisibleInTree()).IsTrue();
+            ((Button)creation.FindChild("Create", true, false)).EmitSignal(Button.SignalName.Pressed);
+            AssertThat(creation.IdentityOpen).IsTrue();
+            shell.NavigateBack(); AssertThat(creation.IdentityOpen).IsFalse();
+            AssertThat(((LineEdit)creation.FindChild("RoomPin", true, false)).IsVisibleInTree()).IsTrue();
             var transport = root.GetNode<Networking.LobbyTransport>("Transport");
             transport.DiscoveryPort = 19994;
             AssertThat(transport.Host("Navigation", "Host", 19993)).IsEqual(Error.Ok);

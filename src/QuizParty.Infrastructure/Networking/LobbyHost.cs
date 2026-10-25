@@ -30,21 +30,23 @@ public sealed class LobbyHost
     private IRandomSource? _random;
     public Guid SessionId { get; } = Guid.NewGuid();
     public string RoomName { get; }
+    public Guid HostControllerId => _controllers[1];
 
-    public LobbyHost(string roomName, string hostName, IGameClock clock, QuestionDefinition? question = null, string pin = "", int hostCharacter = 0)
+    public LobbyHost(string roomName, string hostName, IGameClock clock, QuestionDefinition? question = null, string pin = "", int hostCharacter = 0, bool hostPlays = true, int maxPlayers = 8)
     {
         if (!LobbyProtocol.ValidName(roomName)) throw new ArgumentException("Invalid room name.", nameof(roomName));
-        if (!LobbyProtocol.ValidName(hostName)) throw new ArgumentException("Invalid host name.", nameof(hostName));
+        if (hostPlays && !LobbyProtocol.ValidName(hostName)) throw new ArgumentException("Invalid host name.", nameof(hostName));
         ArgumentNullException.ThrowIfNull(clock);
         RoomName = roomName;
         _clock = clock;
         _admission = new(pin, clock);
         _questions = question is null ? [] : [question];
-        _lobby = new(new(new(Guid.NewGuid()), hostName, LobbySession.HostConnection, new(0), (CharacterId)hostCharacter));
+        _lobby = hostPlays ? new(new(new(Guid.NewGuid()), hostName, LobbySession.HostConnection, new(0), (CharacterId)hostCharacter), maxPlayers)
+            : LobbySession.WithoutHostPlayer(maxPlayers);
     }
 
     public LobbyHost(string roomName, string hostName, IGameClock clock, IReadOnlyList<QuestionDefinition> questions,
-        MatchSettings settings, string pin = "", IRandomSource? random = null, int hostCharacter = 0) : this(roomName, hostName, clock, pin: pin, hostCharacter: hostCharacter)
+        MatchSettings settings, string pin = "", IRandomSource? random = null, int hostCharacter = 0, bool hostPlays = true, int maxPlayers = 8) : this(roomName, hostName, clock, pin: pin, hostCharacter: hostCharacter, hostPlays: hostPlays, maxPlayers: maxPlayers)
     {
         _questions = Array.AsReadOnly(questions.ToArray());
         _settings = settings;
@@ -65,7 +67,7 @@ public sealed class LobbyHost
         var snapshot = _lobby.GetSnapshot();
         return new(SessionId, snapshot.Revision, RoomName, snapshot.Phase.ToString(), snapshot.Players.Select(player =>
             new LobbyPlayerDto(player.Player.Id.Value, player.Player.DisplayName, player.IsHost, player.Ready,
-                _controllers[player.Player.ConnectionId!.Value.Value], player.Player.LocalSlot?.Value ?? 0, (int?)player.TeamId, (int?)player.Player.Character)).ToArray(), snapshot.TeamMode);
+                _controllers[player.Player.ConnectionId!.Value.Value], player.Player.LocalSlot?.Value ?? 0, (int?)player.TeamId, (int?)player.Player.Character)).ToArray(), snapshot.TeamMode, _lobby.Capacity, _lobby.HostPlays);
     }
 
     public LobbyError SetHostReady(bool ready, int localSlot = 0) => localSlot is < 0 or > 7 ? LobbyError.InvalidPlayer : _lobby.SetReady(LobbySession.HostConnection, ready, new(localSlot));
@@ -93,8 +95,10 @@ public sealed class LobbyHost
         if (_match is null) return null;
         var game = _match.Snapshot;
         var question = game.Question!;
-        var player = GetPlayers().Single(p => p.Id == (recipient ?? _lobby.FindPlayer(new(1))!.Value));
-        var own = _match.Private(player.Id);
+        var owner = recipient ?? _lobby.FindPlayer(new(1));
+        var player = owner is { } id ? GetPlayers().Single(p => p.Id == id) : null;
+        // The non-playing host gets the public projection only, never another seat's hand/mission.
+        var own = player is null ? null : _match.Private(player.Id);
         var rules = _match.Strategy;
         return new(SessionId, _match.Revision, game.Phase.ToString(), _clock.Now.Ticks,
             new(question.InstanceId.Value, question.Text, question.Answers.ToArray(), question.CategoryId,
@@ -116,7 +120,7 @@ public sealed class LobbyHost
             _match.FinalStrategy.Select(s => new StrategyFinalDto(s.Player.Value, Mission(s.Mission), s.MissionBonus,
                 s.CardsUsed, s.ConfidentCorrect, s.ConfidentWrong, s.AllInCorrect, s.AllInWrong)).ToArray(),
             _match.TeamScores.Select(t => new TeamScoreDto((int)t.TeamId, t.Total, t.Members.Select(p => p.Value).ToArray())).ToArray(),
-            _match.WinningTeams.Select(t => (int)t).ToArray(), player.LocalSlot?.Value ?? 0);
+            _match.WinningTeams.Select(t => (int)t).ToArray(), player?.LocalSlot?.Value ?? 0);
     }
     private static MissionDto? Mission(MissionView? mission) => mission is null ? null :
         new((int)mission.Kind, mission.Target, mission.Progress, mission.Complete);
@@ -238,7 +242,7 @@ public sealed class LobbyHost
     {
         if (packet.SessionId != SessionId) return "WrongSession";
         if (Snapshot().Phase != "Lobby") return "GameStarted";
-        if (Snapshot().Players.Length >= LobbySession.MaxPlayers) return "RoomFull";
+        if (Snapshot().Players.Length >= _lobby.Capacity) return "RoomFull";
         if (packet.MessageType == "RoomAvailability")
             return LobbyProtocol.TryPayload<RoomAvailabilityRequestDto>(packet, out _) && peer.AdmittedUntil > _clock.Now ? "None" : "AccessExpired";
         if (!LobbyProtocol.TryPayload<RoomAccessRequestDto>(packet, out var request) || request is null ||
@@ -258,7 +262,7 @@ public sealed class LobbyHost
         if (_lobby.FindPlayer(new(connection)) is not null) return "AlreadyJoined";
         var snapshot = _lobby.GetSnapshot();
         if (snapshot.Phase != GamePhase.Lobby) return "GameStarted";
-        if (snapshot.Players.Count >= LobbySession.MaxPlayers) return "RoomFull";
+        if (snapshot.Players.Count >= _lobby.Capacity) return "RoomFull";
         var admission = hello.UsePreflight ? _peers[connection].AdmittedUntil > _clock.Now ? "None" : "AccessExpired" : _admission.Admit(hello.Pin, sourceAddress);
         if (admission != "None") return admission;
         var player = new Player(new(Guid.NewGuid()), hello.DisplayName, new(connection), new(0), (CharacterId?)hello.CharacterId);

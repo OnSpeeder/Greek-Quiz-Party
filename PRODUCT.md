@@ -241,3 +241,18 @@ All eight slots, including host and shared-device players, obey uniqueness.
 Portrait/landscape Android inputs must remain visible above the virtual keyboard.
 These decisions explicitly authorize the necessary lobby/protocol changes within
 the current phase; manual-IP transport remains available for possible future UI.
+
+## Optional host player and room capacity — 2026-10-25
+
+User approved a rendered host with no player seat ("headless" in this UI's terms).
+Host authority remains transport connection 1; its roster player is optional.
+A non-playing host owns no character, readiness, team membership, score, answers,
+hand or mission. It controls setup and progression and renders a public match
+projection only. It does not occupy one of the 2–8 configured actual-player slots.
+A match still requires at least two actual players, all ready.
+
+Creation now has room name, always-visible optional PIN, maximum players (2–8),
+and whether the host participates. Participating hosts continue to the same
+name/character form used by joining clients, then create the room. Non-playing
+hosts create immediately. Character-list overflow scrolls independently, while
+name and submit remain outside it. Scrollbars are hidden; scrolling remains usable.

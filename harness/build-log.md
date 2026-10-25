@@ -815,3 +815,34 @@ scope, not claimed fixed by this hardware checkpoint.
   client: 20 questions, strategy, aggressive cards, identical authoritative totals
   and final personal results. Evidence: artifacts/pre-host-android-host-match.log and
   artifacts/phase08-android-20-steal-phone-host/. All debug argument fixtures cleaned.
+
+## Optional-host verification — 2026-10-25
+
+Core: 265 passed. Infrastructure: 110 passed, including v9 zero-player admission,
+capacity, full match and observer privacy. Full Godot suite: 29 passed; final focused
+creation/join/navigation/tooltip regression: 7 passed after final layout changes.
+Production rebuild: zero warnings/errors. Local ENet matches passed with host0 /
+remote2 and normal host2 / remote3. Physical Android 15 (23013PC75G) passed ten-question
+team/strategy matches both as non-playing host and as two-slot client of a Windows
+non-playing host; scores, teams, missions and statistics agreed. Evidence:
+artifacts/optional-host-network-*.log, artifacts/optional-host-android-*.log and
+artifacts/phase09-android-0-2{,-phone-host}/.
+
+Physical touch creation also passed: host participation off creates an empty lobby;
+on continues to name/character then creates AndroidHost with readiness false.
+Observed Android keyboard, name input, character selection and submit. Captures and
+logs: artifacts/optional-host/android-touch/. Inspected desktop native tooltip,
+portrait/wide creation, identity and roster captures; icons no longer overlap,
+selected character art has no central tick. Physical portrait/wide previews use
+scripts/capture-android-creation.ps1 and artifacts/optional-host/android/.
+
+Windows/Android debug exports and structural question validation pass. Existing
+content layout/editorial warnings and known Godot EditorSettings shutdown warning
+remain recorded; neither is a new runtime failure. No content review flags changed.
+The pre-existing tools/generators directory stays untouched and untracked.
+- Final production rebuild and Windows/Android exports completed; latest APK installed.
+  Final six physical captures passed (optional-host-final-previews.log). Landscape
+  identity shows all eight character illustrations and fixed Create action; overflow
+  remains confined to the character list. Android temporary fixture absent and normal
+  launch restored. git diff --check passed. Follow-up remains local after pushed
+  checkpoint 05b7edd, matching the requested sequence.

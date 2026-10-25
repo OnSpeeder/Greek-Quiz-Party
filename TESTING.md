@@ -321,3 +321,14 @@ Actual preview flags: `--ui-preview --ui-greek --ui-reduced-motion
 production content. Capture normal and larger text in both orientations; inspect
 Greek accents, clipping, privacy, touch targets and scrolling. No script replaces
 physical Android/human usability sign-off.
+
+## Optional host, creation and tooltip regression
+
+OptionalHostTests cover absent host seat and 2–8 capacity. OptionalHostProtocolTests
+cover v9 admission, full-match observer privacy and authoritative state. Godot
+OptionalHostSceneTests exercises both create paths, back/PIN persistence, absent
+selection tick, hidden native popup scrollbars, bounded short/long tooltips and
+header non-overlap. PlayerIdentityForm is shared by creation and JoinFlow.
+Physical capture helper: scripts/capture-android-creation.ps1. Live Android zero-seat
+host matches: scripts/test-android-mixed.ps1 -HostPlayers 0 -RemotePlayers 2,
+including reverse host direction. Preserve test fixtures and clean owned fixtures.

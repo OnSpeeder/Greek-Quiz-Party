@@ -745,3 +745,20 @@ per answer, with existing negative penalties unchanged. The client only validate
 bounds and renders authoritative totals. v7's 1,000/6,000 reveal bounds would reject
 valid v8 results, requiring the version increment despite unchanged payload shape.
 Manual-IP joining and duplicate-safe ready/answer/card routing remain supported.
+
+## Protocol v9 — optional host player and configurable capacity (2026-10-25)
+
+Protocol 9 / app 0.9.0 adds `MaxPlayers` (2–8) and `HostPlays` to lobby snapshots.
+The host identity is its authenticated transport connection, independent of a
+roster seat. `HostPlays=false` means zero IsHost players; `true` means exactly one.
+Empty waiting rooms are valid when the host does not play. Clients validate these
+invariants and cannot mutate these room-creation fields after admission.
+Discovery announces actual participant count (0–MaxPlayers) and the selected cap;
+admission/preflight/local additions all enforce that cap. Version 8 is rejected,
+since it requires a roster host, at least one advertised player and capacity 8.
+
+The non-playing host receives a public match projection, never another player's
+private hand, hidden options, mission or personal deadline. It cannot submit an
+answer/card with connection1/slot0 when no such player exists. Remote broadcasts
+retain one private projection per authenticated owned player. Existing strict
+bounds, duplicate handling and host receive-time deadlines remain unchanged.

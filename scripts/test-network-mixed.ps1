@@ -1,4 +1,4 @@
-param([int]$Port = 17791, [ValidateRange(1,8)][int]$HostPlayers = 2,
+param([int]$Port = 17791, [ValidateRange(0,8)][int]$HostPlayers = 2,
     [ValidateRange(0,7)][int]$ClientPlayers = 3, [ValidateRange(0,6)][int]$SecondClientPlayers = 0,
     [ValidateSet(10,20,30)][int]$QuestionCount = 20, [switch]$Teams, [switch]$Strategy,
     [switch]$Packaged, [switch]$Capture)

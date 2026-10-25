@@ -32,6 +32,13 @@ public static class ShowtimeTheme
                 theme.SetColor(state, type, Ink);
             theme.SetColor("font_disabled_color", type, new("b9bbd1"));
         }
+        theme.SetColor("font_color", "TooltipLabel", Ink);
+        theme.SetFont("font", "TooltipLabel", theme.DefaultFont);
+        theme.SetFontSize("font_size", "TooltipLabel", preferences.LargeText ? 22 : 18);
+        var tooltip = Panel(Navy, Cyan, 2);
+        tooltip.ContentMarginLeft = 12; tooltip.ContentMarginRight = 12;
+        tooltip.ContentMarginTop = 8; tooltip.ContentMarginBottom = 8;
+        theme.SetStylebox("panel", "TooltipPanel", tooltip);
         theme.SetColor("font_color", "Label", Ink);
         theme.SetColor("font_color", "LineEdit", Ink);
         theme.SetColor("font_placeholder_color", "LineEdit", new("c2c4dc"));

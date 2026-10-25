@@ -16,7 +16,7 @@ public sealed record RemoveLocalPlayerDto([property: JsonRequired] int LocalSlot
 public sealed record StartRequestDto;
 public sealed record LobbyPlayerDto(Guid PlayerId, string DisplayName, bool IsHost, bool Ready,
     Guid? ControllerId = null, int LocalSlot = 0, int? TeamId = null, int? CharacterId = null);
-public sealed record LobbySnapshotDto(Guid SessionId, long Revision, string RoomName, string Phase, LobbyPlayerDto[] Players, bool TeamMode = false);
+public sealed record LobbySnapshotDto(Guid SessionId, long Revision, string RoomName, string Phase, LobbyPlayerDto[] Players, bool TeamMode = false, int MaxPlayers = 8, bool HostPlays = true);
 public sealed record ServerHelloDto(bool Accepted, string Reason, Guid? PlayerId, LobbySnapshotDto? Lobby, Guid? ControllerId = null, int[]? TakenCharacters = null);
 public sealed record RequestResultDto(bool Accepted, string Reason);
 public sealed record LobbyOutbound(long ConnectionId, string Json);
@@ -24,10 +24,10 @@ public sealed record LobbyDispatch(IReadOnlyList<LobbyOutbound> Messages, bool D
 
 public static class LobbyProtocol
 {
-    public const int Version = 8;
+    public const int Version = 9;
     public const int MaxPacketBytes = 16384;
     public const int MaxNameLength = 32;
-    public const string AppVersion = "0.8.0";
+    public const string AppVersion = "0.9.0";
     private static readonly JsonSerializerOptions Options = new()
     {
         MaxDepth = 8,

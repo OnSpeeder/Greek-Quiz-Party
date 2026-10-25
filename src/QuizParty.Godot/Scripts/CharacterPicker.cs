@@ -54,7 +54,7 @@ public partial class CharacterPicker : GridContainer
             var button = _buttons[i]; button.Disabled = _taken.Contains(i);
             button.Material = button.Disabled ? _unavailable : null;
             button.Modulate = button.Disabled ? new(.6f, .6f, .6f, .8f) : Colors.White;
-            button.Text = Selected == i ? "✓" : "";
+            button.Text = "";
             button.ThemeTypeVariation = Selected == i ? "PrimaryAction" : "";
             button.AccessibilityName = Tr("CHARACTER_" + i) + (button.Disabled ? " — " + Tr("CHARACTER_TAKEN") : Selected == i ? " — " + Tr("CHARACTER_SELECTED") : "");
         }

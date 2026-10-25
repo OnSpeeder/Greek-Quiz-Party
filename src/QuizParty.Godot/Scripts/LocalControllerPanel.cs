@@ -22,7 +22,7 @@ public partial class LocalControllerPanel : VBoxContainer
         Visible = multiple && snapshot?.Phase is "QuestionActive" or "QuestionLocked" or "Scoreboard" or "RoundEnd";
         if (snapshot is null) { Open = false; return; }
         if (_question != snapshot.Question.InstanceId) { _question = snapshot.Question.InstanceId; Open = false; }
-        if (!multiple) Open = true;
+        if (!multiple) Open = _transport.OwnedPlayers.Count == 1;
         else if (snapshot.Phase is "QuestionActive" or "QuestionLocked" && (_transport.AnswerPending || _transport.OwnAnswerIndex is not null)) Open = false;
         foreach (var child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
         if (!Visible) return;

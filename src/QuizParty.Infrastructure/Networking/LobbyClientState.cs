@@ -124,7 +124,7 @@ public sealed class LobbyClientState
             OwnedPlayers.Any(p => p.LocalSlot == card.LocalSlot) && MatchForSlot(card.LocalSlot).ApplyCardReceipt(packet, _snapshot.SessionId))
         { LastMatchSlot = card.LocalSlot; return LobbyClientUpdate.CardReceipt; }
         if (packet.MessageType == "LobbySnapshot" && LobbyProtocol.TryPayload<LobbySnapshotDto>(packet, out var next) &&
-            ValidSnapshot(next) && next!.SessionId == _snapshot.SessionId && next.Revision > _snapshot.Revision &&
+            ValidSnapshot(next) && next!.SessionId == _snapshot.SessionId && next.Revision > _snapshot.Revision && next.MaxPlayers == _snapshot.MaxPlayers && next.HostPlays == _snapshot.HostPlays &&
             next.Players.Any(player => player.PlayerId == PlayerId && (player.ControllerId ?? player.PlayerId) == ControllerId && player.LocalSlot == 0) &&
             !(_snapshot.Phase == "GameStarting" && (next.Phase != "GameStarting" || next.TeamMode != _snapshot.TeamMode)))
         {
@@ -146,11 +146,12 @@ public sealed class LobbyClientState
 
     private static bool ValidSnapshot(LobbySnapshotDto? snapshot) => snapshot is not null && snapshot.SessionId != Guid.Empty &&
         snapshot.Revision > 0 && LobbyProtocol.ValidName(snapshot.RoomName) && snapshot.Phase is "Lobby" or "GameStarting" &&
-        snapshot.Players is { Length: >= 1 and <= LobbySession.MaxPlayers } players &&
+        snapshot.MaxPlayers is >= 2 and <= LobbySession.MaxPlayers &&
+        snapshot.Players is { Length: >= 0 and <= LobbySession.MaxPlayers } players && players.Length <= snapshot.MaxPlayers &&
         players.All(player => player is not null && player.PlayerId != Guid.Empty && LobbyProtocol.ValidName(player.DisplayName) &&
             (player.CharacterId is null || Core.Players.Characters.IsValid(player.CharacterId.Value)) && player.ControllerId != Guid.Empty && player.LocalSlot is >= 0 and <= 7 && (!player.IsHost || player.LocalSlot == 0) &&
             (snapshot.TeamMode ? player.TeamId is 1 or 2 : player.TeamId is null)) &&
         players.Where(p => p.CharacterId is not null).Select(p => p.CharacterId).Distinct().Count() == players.Count(p => p.CharacterId is not null) &&
-        players.Count(player => player.IsHost) == 1 && players.Select(player => player.PlayerId).Distinct().Count() == players.Length &&
+        players.Count(player => player.IsHost) == (snapshot.HostPlays ? 1 : 0) && players.Select(player => player.PlayerId).Distinct().Count() == players.Length &&
         players.GroupBy(p => p.ControllerId ?? p.PlayerId).All(group => group.Any(p => p.LocalSlot == 0) && group.Select(p => p.LocalSlot).Distinct().Count() == group.Count());
 }

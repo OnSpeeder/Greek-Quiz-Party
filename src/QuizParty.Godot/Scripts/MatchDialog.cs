@@ -38,4 +38,3 @@ public partial class MatchDialog : Control
             foreach (var child in container.GetChildren()) { container.RemoveChild(child); child.QueueFree(); }
     }
 }
-

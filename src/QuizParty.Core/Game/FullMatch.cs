@@ -8,14 +8,15 @@ namespace QuizParty.Core.Game;
 public sealed record MatchSettings
 {
     public int QuestionCount { get; }
+    public bool Unlimited => QuestionCount == 0;
     public TimeSpan QuestionDuration { get; }
     public StrategyRules? Strategy { get; }
     public IReadOnlyList<int> Difficulties { get; }
     public MatchSettings(int questionCount = 20, int questionSeconds = 20, StrategyRules? strategy = null, IEnumerable<int>? difficulties = null)
     {
         // One question remains an explicit content preview, not a full-game preset.
-        if (questionCount is not (1 or 10 or 20 or 30)) throw new ArgumentOutOfRangeException(nameof(questionCount));
-        if (questionSeconds is < 5 or > 60) throw new ArgumentOutOfRangeException(nameof(questionSeconds));
+        if (questionCount is not (0 or 1 or 10 or 20 or 30 or 40 or 50)) throw new ArgumentOutOfRangeException(nameof(questionCount));
+        if (questionSeconds != 0 && (questionSeconds is < 5 or > 120)) throw new ArgumentOutOfRangeException(nameof(questionSeconds));
         QuestionCount = questionCount;
         QuestionDuration = TimeSpan.FromSeconds(questionSeconds);
         Strategy = strategy;
@@ -57,7 +58,7 @@ public sealed class FullMatch
     public long Revision { get; private set; } = 1;
     public int QuestionNumber { get; private set; }
     public int TotalQuestions => _settings.QuestionCount;
-    public int RoundNumber => IsTieBreaker ? Math.Min(4, TotalQuestions) + 1 :
+    public int RoundNumber => _settings.Unlimited ? 1 : IsTieBreaker ? Math.Min(4, TotalQuestions) + 1 :
         Math.Min(Math.Min(4, TotalQuestions), (QuestionNumber * Math.Min(4, TotalQuestions) - 1) / TotalQuestions + 1);
     public bool IsTieBreaker { get; private set; }
     public bool ContentExhausted { get; private set; }
@@ -74,14 +75,14 @@ public sealed class FullMatch
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
         _deck = new(questions, random, categories, settings.Difficulties);
-        if (_deck.Remaining < settings.QuestionCount) throw new ArgumentException("Insufficient unique questions.", nameof(questions));
+        if (_deck.Remaining < Math.Max(1, settings.QuestionCount)) throw new ArgumentException("Insufficient unique questions.", nameof(questions));
         _nextInstance = nextInstance ?? (() => new(Guid.NewGuid()));
         _clock = clock;
         var roster = players.ToArray();
         _teams = teams;
         teams?.ValidateRoster(roster.Select(p => p.Id));
         _connected = roster.Select(p => p.Id).ToHashSet();
-        _strategy = settings.Strategy is null ? null : new StrategySession(roster.Select(p => p.Id), random, _deck.Upcoming(settings.QuestionCount), settings.Strategy, nextCard);
+        _strategy = settings.Strategy is null ? null : new StrategySession(roster.Select(p => p.Id), random, _deck.Upcoming(settings.Unlimited ? _deck.Remaining : settings.QuestionCount), settings.Strategy, nextCard);
         _game = new(GameAuthority.Host, roster, clock, random, strategy: _strategy, scaleDifficulty: true);
         _eligible = Snapshot.Scores.Select(s => s.PlayerId).ToArray();
         _stats = _eligible.ToDictionary(id => id, id => new PlayerStatistics(id, 0, 0, 0, 0, 0, 0));
@@ -98,10 +99,55 @@ public sealed class FullMatch
         return error;
     }
 
-    public void Disconnect(PlayerId player) => _connected.Remove(player);
+    public void Disconnect(PlayerId player)
+    {
+        if (!_connected.Remove(player)) return;
+        _game.Disconnect(player);
+        _continueVotes.Remove(player); _endVotes.Remove(player);
+        Revision++;
+        TryConsensus();
+    }
+    public IReadOnlyList<PlayerId> AnsweredPlayers => _game.AnsweredPlayers;
+    public IReadOnlyList<PlayerId> ContinueVotes => _continueVotes.ToArray();
+    public IReadOnlyList<PlayerId> EndVotes => _endVotes.ToArray();
+    private readonly HashSet<PlayerId> _continueVotes = [];
+    private readonly HashSet<PlayerId> _endVotes = [];
+    private int RemainingNormal => _settings.Unlimited ? _deck.Remaining : TotalQuestions - QuestionNumber;
+    public GameError Vote(PlayerId player, QuestionInstanceId question, GamePhase phase, bool endGame)
+    {
+        if (!_connected.Contains(player) || Snapshot.Question?.InstanceId != question || Snapshot.Phase != phase ||
+            (endGame ? !_settings.Unlimited || phase != GamePhase.Scoreboard : phase is not (GamePhase.AnswerReveal or GamePhase.Scoreboard or GamePhase.RoundEnd)))
+            return GameError.InvalidTransition;
+        if ((endGame ? _endVotes : _continueVotes).Add(player)) Revision++;
+        TryConsensus();
+        return GameError.None;
+    }
+    private void TryConsensus()
+    {
+        if (_connected.Count == 0) return;
+        if (_connected.All(_endVotes.Contains)) EndUnlimited();
+        else if (_connected.All(_continueVotes.Contains)) Advance();
+    }
+    public GameError EndUnlimited()
+    {
+        if (!_settings.Unlimited || Snapshot.Phase != GamePhase.Scoreboard) return GameError.InvalidTransition;
+        FinishNow(); Revision++; ClearVotes(); return GameError.None;
+    }
+    private void ClearVotes() { _continueVotes.Clear(); _endVotes.Clear(); }
+    private void FinishNow()
+    {
+        if (_strategy is not null && !_strategy.BonusesApplied) _game.ApplyBonuses(_strategy.ApplyBonuses());
+        var scores = Snapshot.Scores;
+        _eligible = _teams is null ? scores.Where(s => s.Total == scores.Max(p => p.Total)).Select(s => s.PlayerId).ToArray()
+            : _teams.PlayersIn(TeamScores.Where(t => t.Total == TeamScores.Max(p => p.Total)).Select(t => t.TeamId)).ToArray();
+        _winners = _eligible.ToArray();
+        _winningTeams = _teams is null ? [] : _eligible.Select(_teams.TeamOf).Distinct().Order().ToArray();
+        ContentExhausted = _deck.Remaining == 0 && (_teams is null ? _winners.Length > 1 : _winningTeams.Length > 1);
+        Require(_game.EndRound()); Require(_game.FinishGame()); _strategy?.EndGame();
+    }
     public StrategyPrivate? Private(PlayerId player) => _strategy is null ? null : _strategy.Private(player, _game.Deadline(player),
         !IsTieBreaker && !_selectionSwapped && Snapshot.Phase is GamePhase.Scoreboard or GamePhase.RoundEnd ?
-            Array.AsReadOnly(_swapCategories ??= _deck.SwapCategories(TotalQuestions - QuestionNumber, _strategy.MissionsPossible).Take(3).ToArray()) : Array.AsReadOnly(Array.Empty<string>()));
+            Array.AsReadOnly(_swapCategories ??= _deck.SwapCategories(RemainingNormal, _strategy.MissionsPossible).Take(3).ToArray()) : Array.AsReadOnly(Array.Empty<string>()));
 
     public CardError Activate(CardIntent intent, TimeSpan receivedAt)
     {
@@ -122,7 +168,7 @@ public sealed class FullMatch
         switch (card.Kind)
         {
             case CardKind.DoublePoints:
-                if (recap && QuestionNumber >= TotalQuestions) return CardError.NoUpcomingQuestion;
+                if (recap && RemainingNormal <= 0) return CardError.NoUpcomingQuestion;
                 if (_strategy.HasDouble(intent.Player, active)) return CardError.EffectActive;
                 _strategy.SetDouble(intent.Player, active); error = CardError.None; break;
             case CardKind.FiftyFifty:
@@ -130,16 +176,16 @@ public sealed class FullMatch
                 if (Private(intent.Player)!.HiddenAnswers.Count != 0) return CardError.EffectActive;
                 _strategy.SetHidden(intent.Player, _game.HideWrongAnswers()); error = CardError.None; break;
             case CardKind.ExtraTime:
-                if (!active) return CardError.InvalidWindow;
+                if (!active || _settings.QuestionDuration == TimeSpan.Zero) return CardError.InvalidWindow;
                 if (_strategy.ExtraUsed(intent.Player)) return CardError.EffectActive;
                 if (receivedAt > Snapshot.Question.Deadline - TimeSpan.FromSeconds(StrategyRules.ExtraCutoffSeconds)) return CardError.Late;
                 _game.ExtendDeadline(intent.Player); _strategy.SetExtra(intent.Player); error = CardError.None; break;
             case CardKind.CategorySwap:
                 if (!recap) return CardError.InvalidWindow;
-                if (QuestionNumber >= TotalQuestions) return CardError.NoUpcomingQuestion;
+                if (RemainingNormal <= 0) return CardError.NoUpcomingQuestion;
                 if (_selectionSwapped) return CardError.EffectActive;
                 if (intent.Category is not { Length: > 0 and <= 128 } || !Private(intent.Player)!.SwapCategories.Contains(intent.Category) ||
-                    !_deck.SwapNext(intent.Category, TotalQuestions - QuestionNumber, _strategy.MissionsPossible)) return CardError.InvalidCategory;
+                    !_deck.SwapNext(intent.Category, RemainingNormal, _strategy.MissionsPossible)) return CardError.InvalidCategory;
                 _selectionSwapped = true; error = CardError.None; break;
             case CardKind.Shield:
                 if (!_strategy.Rules.AllowSteal) return CardError.Disabled;
@@ -205,7 +251,9 @@ public sealed class FullMatch
         else if (_game.Phase == GamePhase.RoundEnd) { Require(_game.BeginRound()); BeginQuestion(); }
         else if (_game.Phase == GamePhase.Scoreboard)
         {
-            if (!IsTieBreaker && QuestionNumber < TotalQuestions)
+            if (_settings.Unlimited)
+            { if (_deck.Remaining == 0) FinishNow(); else BeginQuestion(); }
+            else if (!IsTieBreaker && QuestionNumber < TotalQuestions)
             {
                 var round = RoundNumber;
                 var nextRound = ((QuestionNumber + 1) * Math.Min(4, TotalQuestions) - 1) / TotalQuestions + 1;
@@ -215,6 +263,7 @@ public sealed class FullMatch
             else ResolveEnd();
         }
         else return GameError.InvalidTransition;
+        ClearVotes();
         Revision++;
         return GameError.None;
     }
@@ -260,7 +309,7 @@ public sealed class FullMatch
     private void BeginQuestion()
     {
         var question = _deck.Draw() ?? throw new InvalidOperationException("Question deck exhausted.");
-        Require(_game.StartQuestion(question, _nextInstance(), _settings.QuestionDuration, _eligible, !IsTieBreaker));
+        Require(_game.StartQuestion(question, _nextInstance(), _settings.QuestionDuration, _eligible, !IsTieBreaker, _settings.QuestionDuration == TimeSpan.Zero));
         QuestionNumber++;
         _selectionSwapped = false;
         _swapCategories = null;

@@ -327,3 +327,18 @@ answer is 2,000 before strategy; the x6 strategy cap permits at most 12,000.
 The host copies category/difficulty/card/mission selections into the match. Empty
 card/mission lists disable those systems; impossible selected missions are omitted.
 No enabled categories/difficulties or insufficient filtered questions blocks start.
+
+## Approved match-flow extension — 2026-10-25
+
+40/50-question presets retain the existing four-round scheduling. Unlimited uses
+a continuous round and a finite shuffled deck without repeats. Host or unanimous
+connected participant votes can finish at Scoreboard. Mission bonuses apply once
+before determining individual/team winners; tied leaders share this deliberate
+finish. Deck exhaustion also finishes unlimited matches safely.
+
+Zero question duration means untimed: answers remain host-receipt validated,
+question closes when all remaining participants answer, and correct raw points
+are the base 500 before difficulty/strategy, with no speed bonus. Extra Time is
+unavailable; other cards retain their existing timing windows. Disconnected
+players retain confirmed results but cannot hold an untimed question or vote
+barrier open. Host Continue can always advance reveal/recap/round end.

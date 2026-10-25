@@ -30,6 +30,7 @@ public partial class LanProcessProbe : Node
         _transport.DiscoveryPort = discoveryPort;
         _transport.PlayMatch = _args.Contains("--lan-match");
         _transport.StrategyEnabled = false;
+        if (_transport.PlayMatch && _args.Contains("--lan-host")) _transport.UseSyntheticQuestions(1);
         _transport.QuestionSeconds = 5;
         _transport.StatusChanged += OnStatus;
         _transport.MatchChanged += OnMatch;
@@ -96,7 +97,8 @@ public partial class LanProcessProbe : Node
         if (_transport.IsHost && match.Phase == "QuestionActive" && !_answered)
         {
             _answered = true;
-            var correct = Array.IndexOf(match.Question.Answers, "Αθήνα");
+            var correct = Array.IndexOf(match.Question.Answers, "Σωστό");
+            if (correct < 0) { GD.PushError("LAN probe did not receive its synthetic fixture."); GetTree().Quit(4); return; }
             GetTree().CreateTimer(0.1).Timeout += () => { if (Live) _transport.SubmitAnswer(correct); };
         }
         if (_transport.IsHost && match.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd")

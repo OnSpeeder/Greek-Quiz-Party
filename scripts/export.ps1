@@ -1,14 +1,16 @@
-param([ValidateSet('Windows', 'Android')][string]$Platform = 'Windows')
+param([ValidateSet('Windows', 'Android')][string]$Platform = 'Windows', [switch]$Release)
 . "$PSScriptRoot/common.ps1"
 & "$PSScriptRoot/validate-content.ps1" -Stage
 $destination = Join-Path $RepoRoot "artifacts/exports/$Platform"
+if ($Release) { $destination = Join-Path $destination 'Release' }
 New-Item -ItemType Directory -Force $destination | Out-Null
 $filename = if ($Platform -eq 'Android') { 'QuizParty.apk' } else { 'QuizParty.exe' }
 $arguments = @('--headless', '--path', $GodotProject)
 if ($Platform -eq 'Android' -and !(Test-Path "$GodotProject/android/build/build.gradle")) {
     $arguments += '--install-android-build-template'
 }
-$arguments += @('--export-debug', $Platform, (Join-Path $destination $filename))
+$exportMode = if ($Release) { '--export-release' } else { '--export-debug' }
+$arguments += @($exportMode, $Platform, (Join-Path $destination $filename))
 $log = Join-Path $destination 'export.log'
 $stdout = Join-Path $destination 'stdout.log'
 $stderr = Join-Path $destination 'stderr.log'

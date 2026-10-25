@@ -14,7 +14,7 @@ public sealed class LobbySession
     public const int MinPartyPlayers = 2;
     public static readonly ConnectionId HostConnection = new(1);
     private readonly Dictionary<PlayerId, LobbyPlayer> _players = new();
-    private readonly GameStateMachine _state = new(GameAuthority.Host);
+    private GameStateMachine _state = new(GameAuthority.Host);
     private long _revision = 1;
     private bool _teamMode;
     public int Capacity { get; }
@@ -103,6 +103,15 @@ public sealed class LobbySession
         var error = _state.TryTransition(GameTrigger.StartGame);
         if (error != GameError.None) throw new InvalidOperationException($"Unexpected lobby transition: {error}");
         _revision++; return LobbyError.None;
+    }
+    public void Replay()
+    {
+        if (_state.Phase != GamePhase.GameStarting) throw new InvalidOperationException("No match to replay.");
+        // Lobby admission has its own state machine; the match coordinator verifies GameOver.
+        _state = new(GameAuthority.Host);
+        _state.TryTransition(GameTrigger.Initialize); _state.TryTransition(GameTrigger.OpenLobby);
+        foreach (var id in _players.Keys.ToArray()) _players[id] = _players[id] with { Ready = false };
+        _revision++;
     }
     public bool Disconnect(ConnectionId connection)
     {

@@ -56,7 +56,7 @@ public sealed class LobbyHost
     public bool ConfigureMatch(MatchSettings settings, IReadOnlyCollection<string>? categories = null)
     {
         if (_match is not null || _lobby.GetSnapshot().Phase != GamePhase.Lobby ||
-            _questions.Count(q => (categories is null || categories.Contains(q.CategoryId)) && settings.Difficulties.Contains(q.Difficulty)) < settings.QuestionCount) return false;
+            _questions.Count(q => (categories is null || categories.Contains(q.CategoryId)) && settings.Difficulties.Contains(q.Difficulty)) < Math.Max(1, settings.QuestionCount)) return false;
         _settings = settings;
         _categories = categories?.ToArray();
         return true;
@@ -84,7 +84,7 @@ public sealed class LobbyHost
     public LobbyError Start() => _lobby.Start(LobbySession.HostConnection);
     public bool BeginMatch()
     {
-        if (_match is not null || _questions.Count < _settings.QuestionCount || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
+        if (_match is not null || _questions.Count < Math.Max(1, _settings.QuestionCount) || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
         foreach (var player in GetPlayers()) _matchCharacters[player.Id.Value] = (int)player.Character!.Value;
         _match = new(GetPlayers(), _clock, _random ?? new SeededRandomSource(Random.Shared.Next()), _questions, _settings, _categories, teams: _lobby.Teams());
         return true;
@@ -120,7 +120,8 @@ public sealed class LobbyHost
             _match.FinalStrategy.Select(s => new StrategyFinalDto(s.Player.Value, Mission(s.Mission), s.MissionBonus,
                 s.CardsUsed, s.ConfidentCorrect, s.ConfidentWrong, s.AllInCorrect, s.AllInWrong)).ToArray(),
             _match.TeamScores.Select(t => new TeamScoreDto((int)t.TeamId, t.Total, t.Members.Select(p => p.Value).ToArray())).ToArray(),
-            _match.WinningTeams.Select(t => (int)t).ToArray(), player?.LocalSlot?.Value ?? 0);
+            _match.WinningTeams.Select(t => (int)t).ToArray(), player?.LocalSlot?.Value ?? 0, _match.AnsweredPlayers.Select(p => p.Value).ToArray(),
+            _match.ContinueVotes.Select(p => p.Value).ToArray(), _match.EndVotes.Select(p => p.Value).ToArray());
     }
     private static MissionDto? Mission(MissionView? mission) => mission is null ? null :
         new((int)mission.Kind, mission.Target, mission.Progress, mission.Complete);
@@ -130,6 +131,19 @@ public sealed class LobbyHost
             LobbyProtocol.Encode("MatchSnapshot", SessionId, MatchSnapshot(player.Player.Id)!))).ToArray();
 
     public bool PollMatch() => _match?.Poll() ?? false;
+    public GameError Vote(long connection, MatchVoteDto request)
+    {
+        if (request.LocalSlot is < 0 or > 7 || request.Phase is not ("AnswerReveal" or "Scoreboard" or "RoundEnd") ||
+            _lobby.FindPlayer(new(connection), new(request.LocalSlot)) is not { } player || _match is null)
+            return GameError.InvalidTransition;
+        return _match.Vote(player, new(request.QuestionInstanceId), Enum.Parse<GamePhase>(request.Phase), request.EndGame);
+    }
+    public GameError EndMatch() => _match?.EndUnlimited() ?? GameError.InvalidTransition;
+    public bool Replay()
+    {
+        if (_match?.Snapshot.Phase != GamePhase.GameOver) return false;
+        _lobby.Replay(); _match = null; _matchCharacters.Clear(); return true;
+    }
     public GameError AdvanceMatch() => _match?.Advance() ?? GameError.InvalidTransition;
     public SubmissionError SubmitHostAnswer(int index, int confidence = 1, int localSlot = 0) => SubmitAnswer(1,
         new(_match?.Snapshot.Question?.InstanceId.Value ?? Guid.Empty, index, confidence, localSlot), _clock.Now);
@@ -190,6 +204,17 @@ public sealed class LobbyHost
             if (previous.Request == json) return new([new(connection, previous.Reply)], false);
             return Reply(connection, packet, "RequestConflict", disconnect: ++peer.Violations >= 3);
         }
+        if (_settings.Unlimited && _match?.Snapshot.Question is { } current &&
+            (peer.Processed.Count >= MaxRequestsPerConnection || peer.CachedBytes >= MaxCachedBytes))
+        {
+            // Only question-bound intents can expire: the immutable instance ID prevents reapplication.
+            // Lobby mutation receipts remain retained for the lifetime of the connection.
+            foreach (var entry in peer.Processed.Where(p => p.Value.Question is { } id && id != current.InstanceId.Value).ToArray())
+            {
+                peer.CachedBytes -= Encoding.UTF8.GetByteCount(entry.Value.Request) + Encoding.UTF8.GetByteCount(entry.Value.Reply);
+                peer.Processed.Remove(entry.Key);
+            }
+        }
         if (peer.Processed.Count >= MaxRequestsPerConnection || peer.CachedBytes >= MaxCachedBytes) return Reply(connection, packet, "RequestLimit", disconnect: true);
         if (packet.ProtocolVersion != LobbyProtocol.Version) return Reply(connection, packet, "IncompatibleVersion", disconnect: true);
         if (packet.CorrelationId is not null) return Reply(connection, packet, "MalformedRequest", disconnect: ++peer.Violations >= 3);
@@ -228,7 +253,9 @@ public sealed class LobbyHost
             }
             else reply = LobbyProtocol.Encode("RequestResult", SessionId, new RequestResultDto(reason == "None", reason), packet.MessageId);
         }
-        peer.Processed.Add(packet.MessageId, new(json, reply));
+        Guid? boundQuestion = packet.MessageType is "SubmitAnswer" or "ActivateCard" or "MatchVote" &&
+            packet.Payload.TryGetProperty("QuestionInstanceId", out var questionId) && questionId.ValueKind == System.Text.Json.JsonValueKind.String && questionId.TryGetGuid(out var parsedQuestion) ? parsedQuestion : null;
+        peer.Processed.Add(packet.MessageId, new(json, reply, boundQuestion));
         peer.CachedBytes += Encoding.UTF8.GetByteCount(json) + Encoding.UTF8.GetByteCount(reply);
         var messages = new List<LobbyOutbound> { new(connection, reply) };
         if (before != Snapshot().Revision) messages.AddRange(Broadcast());
@@ -276,6 +303,8 @@ public sealed class LobbyHost
         if (_lobby.FindPlayer(new(connection)) is null) return "HandshakeRequired";
         if (packet.SessionId != SessionId) return "WrongSession";
         if (packet.MessageType is "StartGame" or "AdvanceMatch" or "SetTeam") return "NotHost";
+        if (packet.MessageType == "MatchVote")
+            return LobbyProtocol.TryPayload<MatchVoteDto>(packet, out var vote) && vote is not null ? Vote(connection, vote).ToString() : "MalformedRequest";
         if (packet.MessageType == "AddLocalPlayer")
             return LobbyProtocol.TryPayload<AddLocalPlayerDto>(packet, out var add) && add is not null ? AddLocal(connection, add).ToString() : "MalformedRequest";
         if (packet.MessageType == "RemoveLocalPlayer")
@@ -304,7 +333,7 @@ public sealed class LobbyHost
         return new([new(connection, json)], disconnect);
     }
 
-    private sealed record CachedReply(string Request, string Reply);
+    private sealed record CachedReply(string Request, string Reply, Guid? Question);
     private sealed class PeerRequests
     {
         public TimeSpan AdmittedUntil;

@@ -374,3 +374,12 @@ HOST_PLAYS,Παίζω κι εγώ ως host,Join as a player too
 HOST_CONTINUE,Συνέχεια,Continue
 HOST_PIN_HINT,Κενό ή 4–6 ψηφία,Empty or 4–6 digits
 HOST_IDENTITY_TITLE,Ο παίκτης σου,Your player
+
+SETUP_UNLIMITED,Απεριόριστες,Unlimited
+SETUP_UNTIMED,Χωρίς χρόνο,No timer
+MATCH_PLAYER_ANSWERED,✓ Απάντησε,✓ Answered
+MATCH_PLAYER_WAITING,○ Περιμένουμε,○ Waiting
+MATCH_REPLAY,Παίξε ξανά,Play again
+MATCH_END_GAME,Τέλος παιχνιδιού,End game
+MATCH_VOTES,Συνέχεια · {0}/{1},Continue · {0}/{1}
+MATCH_END_VOTES,Τέλος παιχνιδιού · {0}/{1},End game · {0}/{1}

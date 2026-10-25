@@ -11,7 +11,7 @@ public partial class StandingsPanel : GridContainer
     private string _renderKey = "";
     public override void _Ready()
     {
-        AddThemeConstantOverride("h_separation", 12); AddThemeConstantOverride("v_separation", 12);
+        AddThemeConstantOverride("h_separation", 12); AddThemeConstantOverride("v_separation", 8);
         Resized += UpdateColumns; UpdateColumns();
     }
     private void UpdateColumns() => Columns = Size.X >= 800 ? 4 : 2;
@@ -26,13 +26,15 @@ public partial class StandingsPanel : GridContainer
         {
             var card = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
             AddChild(card);
-            var column = new VBoxContainer(); card.AddChild(column);
-            column.AddChild(GameArt.Avatar(score.CharacterId ?? Array.FindIndex(scores, player => player.PlayerId == score.PlayerId), 112));
+            var row = new HBoxContainer(); card.AddChild(row);
+            row.AddChild(GameArt.Avatar(score.CharacterId ?? Array.FindIndex(scores, player => player.PlayerId == score.PlayerId), 40));
+            var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; row.AddChild(column);
+            column.AddThemeConstantOverride("separation", 4);
             var name = new Label { Text = score.DisplayName, HorizontalAlignment = HorizontalAlignment.Center,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart };
             name.AddThemeFontSizeOverride("font_size", 18); column.AddChild(name);
             var total = new Label { Text = score.Total.ToString("N0"), HorizontalAlignment = HorizontalAlignment.Center };
-            total.AddThemeFontSizeOverride("font_size", 30); total.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
+            total.AddThemeFontSizeOverride("font_size", 28); total.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
             column.AddChild(total);
             var previous = _totals.GetValueOrDefault(score.PlayerId);
             _totals[score.PlayerId] = score.Total;

@@ -762,3 +762,37 @@ private hand, hidden options, mission or personal deadline. It cannot submit an
 answer/card with connection1/slot0 when no such player exists. Remote broadcasts
 retain one private projection per authenticated owned player. Existing strict
 bounds, duplicate handling and host receive-time deadlines remain unchanged.
+
+## Protocol v10 / app 0.10.0 — match-flow extension (2026-10-25)
+
+All peers upgrade together; admission and discovery reject v9 and earlier.
+MatchSnapshot adds bounded distinct AnsweredPlayers, ContinueVotes and EndVotes
+GUID arrays (0–8 roster IDs), without answer choices before Reveal. AnsweredPlayers
+length equals AcceptedAnswerCount. Continue votes exist only at AnswerReveal,
+Scoreboard or RoundEnd; end votes only at unlimited Scoreboard.
+
+MatchVote carries QuestionInstanceId, Phase, EndGame and LocalSlot (0–7). Host
+resolves the seat through authenticated connection ownership, requires the exact
+current instance/phase and an allowed action, and deduplicates each player's vote.
+Request receipts remain message-ID duplicate-safe. All connected participants,
+including each local seat, must agree; host-local authority may override. Votes
+clear on transition and disconnected seats leave the quorum.
+
+TotalQuestions accepts 0 (unlimited), 1,10,20,30,40,50. Unlimited question counters
+are not restricted to 10,000. Timed duration is at most 120 seconds (125 with Extra
+Time). DeadlineTicks=long.MaxValue is an explicit untimed sentinel; host retains
+receipt-time validation and disables speed bonuses/Extra Time. Client arithmetic
+guards this sentinel and permits untimed response statistics.
+
+Host Replay accepts only GameOver, emits a higher-revision LobbySnapshot with
+unchanged seats/teams/controllers and readiness false, and clears its match.
+Clients accept this backward phase transition only after all received local
+match projections reached GameOver, clear old per-slot state, and ignore old
+match packets while in that returned lobby. New question instance IDs prevent
+old answer/vote/card intents affecting the next match.
+
+Unlimited matches may retire question-bound receipt entries for older instances
+when the bounded cache fills; stale IDs are still rejected by Core. Generic
+lobby mutation receipts retain their original lifetime bounds/disconnect policy.
+The 720-question regression crosses 4,320 match requests on one connection.
+Rate, packet/depth, ownership and manual-IP transport checks remain in force.

@@ -53,11 +53,11 @@ public partial class LobbyTransport : Node
 
     public void UseSyntheticQuestions(int count)
     {
-        if (!OS.IsDebugBuild() || count is not (10 or 20 or 30)) throw new InvalidOperationException("Debug fixture only.");
+        if (!OS.IsDebugBuild() || count is not (1 or 10 or 20 or 30 or 40 or 50)) throw new InvalidOperationException("Debug fixture only.");
         _debugQuestions = Enumerable.Range(1, count + 5).Select(i => new Core.Questions.QuestionDefinition(
             $"fixture_{i}", $"ΔΟΚΙΜΗ {i} — επιλέξτε «Σωστό»", ["Σωστό", "Λάθος Α", "Λάθος Β", "Λάθος Γ"],
             0, StrategyEnabled ? new[] { "history", "science", "arts", "sports", "geography" }[(i - 1) % 5] : "fixture",
-            i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.")).ToArray();
+            i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.", ["Δοκιμαστικό fun fact για έλεγχο της εμφάνισης."])).ToArray();
         QuestionCount = count;
         GD.Print($"MATCH SYNTHETIC_FIXTURE count={count} debug-only; no reviewed content added");
     }
@@ -285,6 +285,28 @@ public partial class LobbyTransport : Node
         BroadcastMatch();
     }
 
+    public void ContinueMatch(bool endGame = false, int? localSlot = null)
+    {
+        if (_host is not null && localSlot is null)
+        { if (endGame) _host.EndMatch(); else _host.AdvanceMatch(); BroadcastMatch(); return; }
+        var slot = localSlot ?? _activeSlot;
+        if (MatchForSlot(slot) is not { } snapshot) return;
+        var vote = new MatchVoteDto(snapshot.Question.InstanceId, snapshot.Phase, endGame, slot);
+        if (_host is not null) { _host.Vote(1, vote); BroadcastMatch(); }
+        else RpcId(1, MethodName.ClientMessage, LobbyProtocol.Encode("MatchVote", snapshot.SessionId, vote));
+    }
+    public void Replay()
+    {
+        if (_host?.Replay() != true) return;
+        ResetMatchPresentation();
+        foreach (var message in _host.Broadcast()) SendToConnectedPeer(message);
+        Publish();
+    }
+    private void ResetMatchPresentation()
+    {
+        _lastMatchRevision = 0; _presentedQuestion = Guid.Empty;
+        _lastAnswers.Clear(); _lastCards.Clear(); _hostAnswers.Clear();
+    }
     public void SendAdvanceRequest()
     {
         if (_host is null && Snapshot is { } snapshot)
@@ -471,7 +493,8 @@ public partial class LobbyTransport : Node
             { RoomAccessChanged?.Invoke(access); Emit("CharacterTaken"); return; }
             Fail(_client.LastReason); return;
         }
-        if (update is LobbyClientUpdate.Joined or LobbyClientUpdate.Snapshot) Publish();
+        if (update is LobbyClientUpdate.Joined or LobbyClientUpdate.Snapshot)
+        { if (_client.Snapshot?.Phase == "Lobby") ResetMatchPresentation(); Publish(); }
         if (update == LobbyClientUpdate.Joined) { _joiningPrepared = false; Emit("Joined"); }
         if (update == LobbyClientUpdate.RequestResult) Emit(_client.LastReason);
         if (update == LobbyClientUpdate.MatchSnapshot) { PublishMatch(); OwnedStateChanged?.Invoke(); }

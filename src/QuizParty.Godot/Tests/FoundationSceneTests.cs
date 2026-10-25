@@ -30,33 +30,33 @@ public class FoundationSceneTests
             editor.GetNode<CheckButton>("Teams").ButtonPressed = true;
             AssertThat(transport.Snapshot!.TeamMode).IsTrue(); transport.SetReady(true); transport.StartGame();
             var match = root.GetNode<Presentation.MatchPanel>(prefix + "MatchPanel");
-            var controllers = match.GetNode<Presentation.LocalControllerPanel>("LocalControllers");
-            var strategy = match.GetNode<Presentation.StrategyPanel>("Strategy");
+            var controllers = match.GetNode<Presentation.LocalControllerPanel>("QuestionLayout/HostRail/LocalControllers");
+            var strategy = match.GetNode<Presentation.StrategyPanel>("QuestionLayout/QuestionContent/Strategy");
             AssertThat(controllers.Open).IsFalse(); AssertThat(strategy.Visible).IsFalse();
-            AssertThat(match.GetNode<Button>("Answers/Answer0").Visible).IsFalse();
-            controllers.GetChildren().OfType<Button>().First().EmitSignal(Button.SignalName.Pressed);
+            AssertThat(match.GetNode<Button>("QuestionLayout/QuestionContent/Answers/Answer0").Visible).IsFalse();
+            controllers.FindChildren("*", "Button", true, false).OfType<Button>().First().EmitSignal(Button.SignalName.Pressed);
             AssertThat(controllers.Open).IsTrue(); AssertThat(strategy.Visible).IsTrue();
             strategy.GetNode<Button>("Top/Bets/Bet3").EmitSignal(Button.SignalName.Pressed);
             var correct = 0; // Handoff verifies independent submissions, regardless of the selected content.
-            match.GetNode<Button>($"Answers/Answer{correct}").EmitSignal(Button.SignalName.Pressed);
+            match.GetNode<Button>($"QuestionLayout/QuestionContent/Answers/Answer{correct}").EmitSignal(Button.SignalName.Pressed);
             AssertThat(controllers.Open).IsFalse(); AssertThat(strategy.Visible).IsFalse();
             AssertThat(transport.AnswerForSlot(0)).IsEqual(correct); AssertThat(transport.AnswerForSlot(1)).IsNull();
-            controllers.GetChildren().OfType<Button>().Single(b => b.Text.Contains("Ελένη", StringComparison.Ordinal)).EmitSignal(Button.SignalName.Pressed);
+            controllers.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.Text.Contains("Ελένη", StringComparison.Ordinal)).EmitSignal(Button.SignalName.Pressed);
             AssertThat(transport.ActiveSlot).IsEqual(1); AssertThat(controllers.Open).IsTrue();
             AssertThat(strategy.Confidence).IsEqual(1);
             AssertThat(transport.MatchSnapshot!.Private!.PlayerId).IsEqual(transport.OwnedPlayers.Single(p => p.LocalSlot == 1).PlayerId);
-            match.GetNode<Button>($"Answers/Answer{correct}").EmitSignal(Button.SignalName.Pressed);
+            match.GetNode<Button>($"QuestionLayout/QuestionContent/Answers/Answer{correct}").EmitSignal(Button.SignalName.Pressed);
             AssertThat(transport.AnswerForSlot(0)).IsEqual(correct); AssertThat(transport.AnswerForSlot(1)).IsEqual(correct);
             await root.ToSignal(tree.CreateTimer(0.15), global::Godot.Timer.SignalName.Timeout);
             AssertThat(transport.MatchSnapshot!.Phase).IsEqual("AnswerReveal"); transport.AdvanceMatch();
-            controllers.GetChildren().OfType<Button>().Single(b => b.Text.Contains("Ελένη", StringComparison.Ordinal)).EmitSignal(Button.SignalName.Pressed);
+            controllers.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.Text.Contains("Ελένη", StringComparison.Ordinal)).EmitSignal(Button.SignalName.Pressed);
             AssertThat(controllers.Open).IsTrue(); AssertThat(strategy.Visible).IsTrue();
             transport.SelectLocalPlayer(0); AssertThat(controllers.Open).IsFalse(); AssertThat(strategy.Visible).IsFalse();
             strategy.Render(transport.MatchSnapshot!);
             strategy.GetNode<Button>("Top/Privacy").EmitSignal(Button.SignalName.Pressed);
-            AssertThat(strategy.GetNode<VBoxContainer>("Private").Visible).IsTrue();
+            AssertThat(((VBoxContainer)strategy.FindChild("Private", true, false)).Visible).IsTrue();
             strategy.Render(transport.MatchSnapshot! with { SessionId = Guid.NewGuid() });
-            AssertThat(strategy.GetNode<VBoxContainer>("Private").Visible).IsFalse();
+            AssertThat(((VBoxContainer)strategy.FindChild("Private", true, false)).Visible).IsFalse();
         }
         finally { root.Free(); await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame); }
     }
@@ -67,7 +67,7 @@ public class FoundationSceneTests
     {
         using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<Control>();
         ((SceneTree)Engine.GetMainLoop()).Root.AddChild(root);
-        var panel = root.GetNode<Presentation.StrategyPanel>("Margin/Scroll/Content/MatchPanel/Strategy");
+        var panel = root.GetNode<Presentation.StrategyPanel>("Margin/Scroll/Content/MatchPanel/QuestionLayout/QuestionContent/Strategy");
         var owner = Guid.NewGuid();
         var snapshot = new Infrastructure.Networking.MatchSnapshotDto(Guid.NewGuid(), 1, "QuestionActive", 0,
             new(Guid.NewGuid(), "Test", ["a", "b", "c", "d"], "history", 1, 0, TimeSpan.TicksPerSecond * 20),
@@ -111,17 +111,17 @@ public class FoundationSceneTests
         var setup = root.GetNode<Presentation.MatchSetupPanel>("PresentationShell/MatchSetup");
         setup.ShowPage("setup");
         var choices = setup.FindChildren("Value*", "Button", true, false).OfType<Button>().ToArray();
-        AssertThat(choices.Length).IsEqual(8); // Four question counts and four timers.
+        AssertThat(choices.Length).IsEqual(13); // Seven question counts and six timers.
         AssertThat(choices.All(b => b.CustomMinimumSize.Y >= 64)).IsTrue();
         AssertThat(choices.Single(b => b.Name == "Value1").ButtonPressed).IsTrue();
         AssertThat(transport.QuestionSeconds).IsEqual(20);
         AssertThat(((CheckButton)setup.FindChild("Strategy", true, false)).ButtonPressed).IsTrue();
         AssertThat(transport.AllowSteal).IsFalse();
-        var strategy = root.GetNode<Presentation.StrategyPanel>("Margin/Scroll/Content/MatchPanel/Strategy");
+        var strategy = root.GetNode<Presentation.StrategyPanel>("Margin/Scroll/Content/MatchPanel/QuestionLayout/QuestionContent/Strategy");
         AssertThat(strategy.GetNode<OptionButton>("Top/Confidence").ItemCount).IsEqual(3);
         AssertThat(strategy.GetNode<OptionButton>("Top/Confidence").CustomMinimumSize.Y >= 64).IsTrue();
         AssertThat(strategy.GetNode<Button>("Top/Privacy").CustomMinimumSize.Y >= 64).IsTrue();
-        AssertThat(strategy.GetNode<VBoxContainer>("Private").Visible).IsFalse();
+        AssertThat(((VBoxContainer)strategy.FindChild("Private", true, false)).Visible).IsFalse();
         strategy.GetNode<OptionButton>("Top/Confidence").Select(2);
         AssertThat(strategy.Confidence).IsEqual(1); // Hidden/inactive strategy must always submit Safe.
         var pin = root.GetNode<LineEdit>("Margin/Scroll/Content/RoomPin");

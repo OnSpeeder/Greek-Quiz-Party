@@ -359,3 +359,41 @@ is confined to its list; selected art uses the existing gold skin without a tick
 All scrollbars are hidden while touch/drag/wheel scrolling remains available.
 Native tooltip labels bypass page-label wrapping; long labels wrap within viewport
 bounds. Header buttons reserve their actual touch size and separate inset space.
+
+## Match-flow extension — 2026-10-25
+
+- User requested checkpoint then implementation then final GitHub push. Initial
+  optional-host checkpoint ba03339 was pushed to origin/main before these changes.
+- FullMatch owns connected-seat Continue/End consensus. Intents carry exact
+  question instance and phase; duplicate votes cannot advance twice. Host may
+  advance alone. Departure removes vote and untimed blockers while keeping scores.
+- Unlimited is QuestionCount=0, a continuous round without repeats. Host or all
+  connected seats can finish at Scoreboard; finite deck exhaustion ends safely.
+  Deliberate completion applies mission bonuses once and shares tied leaders.
+- Untimed duration=0 is explicit only in the full-match API; low-level callers
+  still reject an accidental zero unless opting in. Wire deadline=long.MaxValue;
+  correct answers receive base/difficulty/strategy points without speed bonus.
+  Extra Time is unavailable. New 40/50 presets retain four rounds; max timer 120s.
+- v10/app0.10.0 adds bounded public answered/vote IDs. No answer/correctness leaks.
+  Unlimited can retire only old question-bound receipts at cache pressure; immutable
+  instance IDs prevent reapplication. Lobby-mutation lifetime bounds remain intact.
+- Replay is host-only after GameOver, retains room/connection/identity/team settings,
+  resets readiness and match state, and preserves increasing lobby revisions.
+  Returned clients reject stale final snapshots before the next match starts.
+- Wide host has an illustrated participant rail. Shared-device handoff remains
+  explicit, compact and privacy-preserving. Host cards use a scene-owned dialog;
+  responsive text fitting preserves minimum hit targets and larger-text distinction.
+  Main host question page cannot scroll; facts/private reading surfaces remain bounded.
+- Facts open 1.2s after the highlight. Modal and recap have per-owned-seat votes;
+  host controls override. Shared dialogs explicitly inherit the shipped theme
+  across CanvasLayer boundaries. Finals use compact horizontal standings cards.
+- Actual capture inspection caught and fixed misplaced recap instructions, a UTF-8
+  separator corruption, late lobby status leaking above an active match, and
+  unthemed modal buttons. Greek facts/controls are readable on the physical phone.
+- Old invalid-setting tests now exercise -1/121 since 0 and >60 up to120 are legal.
+  Existing UI assertions moved with the composable nodes; privacy checks are retained.
+  LAN discovery acceptance used a stale Athens bot against production questions;
+  fixed the opt-in probe to use its own synthetic question, retaining departure/score assertions.
+- docs/EXPORT_GUIDE.el.md gives debug/release Windows/APK and editor AAB steps.
+  export.ps1 -Release writes a separate Release folder. Android release signing
+  remains user-owned; no production credentials/key were created or committed.

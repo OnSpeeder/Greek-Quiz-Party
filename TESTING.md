@@ -332,3 +332,22 @@ header non-overlap. PlayerIdentityForm is shared by creation and JoinFlow.
 Physical capture helper: scripts/capture-android-creation.ps1. Live Android zero-seat
 host matches: scripts/test-android-mixed.ps1 -HostPlayers 0 -RemotePlayers 2,
 including reverse host direction. Preserve test fixtures and clean owned fixtures.
+
+## Match-flow regression — 2026-10-25
+
+MatchFlowTests covers untimed base-only scoring, 120-second exact deadlines,
+consensus/duplicates/staleness, disconnects, host override and finite-deck
+unlimited completion. Existing complete-match coverage extends to 40/50.
+MatchFlowProtocolTests covers owned local slots, timed/untimed wire validation,
+replay/fresh matches, v9 rejection and 720 questions beyond the receipt budget.
+Previously invalid 0-count/61-second fixtures now test -1-count/121-second bounds
+because the requested settings explicitly expand the legal domain.
+
+MatchFlowSceneTests exercises eight local seats in both orientations, no-scroll
+host question bounds, delayed modal/facts, host continuation and replay. Existing
+privacy/touch/font tests retain their assertions at the new composable node paths.
+Run scripts/test-network-flow.ps1 (-Packaged) for three players on two client
+connections, including two owned local slots, unanimous Continue/End and replay.
+It captures actual host/portrait controller views. scripts/test-android-flow.ps1
+-HostAddress <Windows-LAN-IP> exercises that flow on physical Android. All probes
+are explicitly opt-in debug fixtures and confer no question editorial approval.

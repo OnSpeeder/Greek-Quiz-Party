@@ -193,3 +193,23 @@ keyboard and initial not-ready player. Ten-question team/strategy LAN matches pa
 with Android and Windows each acting as the non-playing host. Logs, captures and
 scope limits are recorded in harness/build-log.md. New debug APK installed on the
 physical device; temporary launch fixtures are removed after verification.
+
+## Match-flow revision observation — 2026-10-25
+
+Inspected actual Godot wide host, portrait controller, delayed fact modal, recap
+and compact final captures under artifacts/match-flow-process{,-packaged}/.
+Host snapshot visibly distinguishes answered vs waiting players without exposing
+choices; all four choices fit the main viewport. Facts use a centered bounded
+reading area with fixed chunky Continue actions. Recap offers separate Continue
+and End votes. Final cards use small approved portraits with name/score, and host
+Play again remains visible.
+
+Physical Android 15 model23013PC75G completed two untimed unlimited questions with
+two local slots plus a separate Windows player and a non-playing Windows host.
+All final authoritative totals agreed, votes advanced both phases, unanimous End
+finished, and every peer observed the same lobby with readiness false. Inspected
+controller/facts/scoreboard/final PNGs in artifacts/match-flow-android/. Greek
+accents, fixed modal actions and portrait standings fit; score capture can show
+an intermediate count-up frame, with the final total verified by logs. Fixture
+was removed and normal app launch restored. This is automated real-device
+runtime/capture evidence, not human usability/accessibility or editorial sign-off.

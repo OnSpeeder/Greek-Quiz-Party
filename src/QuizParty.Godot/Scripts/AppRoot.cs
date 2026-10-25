@@ -36,7 +36,7 @@ public partial class AppRoot : Control
         content.AddChild(join); join.Pressed += () => OpenLobby("join");
         PresentationShell.For(this)?.Fade(GetNode<Label>("Center/Frame/Content/Title"));
         if (OS.IsDebugBuild() && MatchProcessProbe.LaunchArguments().Any(a =>
-            a == "--match-ui-create" || a == "--match-ui-create-identity" || a.StartsWith("--match-ui-lobby-page=", StringComparison.Ordinal)))
+            a == "--match-flow-host" || a == "--match-flow-client" || a == "--match-ui-create" || a == "--match-ui-create-identity" || a.StartsWith("--match-ui-lobby-page=", StringComparison.Ordinal)))
             Callable.From(() => GetTree().ChangeSceneToFile("res://Scenes/Lobby.tscn")).CallDeferred();
         if (OS.IsDebugBuild() && MatchProcessProbe.LaunchArguments().Any(a => a.StartsWith("--lan-", StringComparison.Ordinal)))
             Callable.From(() => GetTree().ChangeSceneToFile("res://Scenes/Lobby.tscn")).CallDeferred();

@@ -97,3 +97,11 @@ Approved scope: `harness/phase-10-optional-host-plan.md`. This extends Phase 10 
 an optional roster host, capacity 2–8, two-step creation, shared character identity,
 global tooltip/scrollbar correction and non-overlapping header actions. Protocol v9
 is part of this authorized scope. Do not advance to Phase 11 automatically.
+
+## Approved match-flow revision — 2026-10-25
+
+Scope: harness/phase-10-match-flow-plan.md. User authorizes checkpoint and final
+GitHub pushes, viewport-sized host questions, participant answer indicators,
+delayed fact modal, unanimous per-seat progression/end, room-preserving replay,
+compact finals, expanded settings and creation Back. Protocol v10 is included.
+This does not begin Phase 11 or grant the outstanding human/content acceptance gates.

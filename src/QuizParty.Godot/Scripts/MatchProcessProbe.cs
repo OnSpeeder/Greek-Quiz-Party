@@ -102,7 +102,7 @@ public partial class MatchProcessProbe : Node
         }
         if (snapshot.Strategy?.Cards == true && snapshot.Phase is "Scoreboard" or "RoundEnd") PlayRecapCard(snapshot);
         if (_transport.IsHost && snapshot.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd")
-            GetTree().CreateTimer(_args.Contains("--match-fast") ? 0.05 : 1).Timeout += () =>
+            GetTree().CreateTimer(_args.Contains("--match-fast") ? 0.05 : snapshot.Phase == "AnswerReveal" ? 2.5 : 1.5).Timeout += () =>
             { if (Live && _transport.MatchSnapshot?.Revision == snapshot.Revision) _transport.AdvanceMatch(); };
         if (snapshot.Phase == "GameOver")
         {
@@ -164,6 +164,8 @@ public partial class MatchProcessProbe : Node
 
     private async void Capture(string path)
     {
+        if (double.TryParse(Argument("--match-capture-delay="), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var delay))
+            await ToSignal(GetTree().CreateTimer(Math.Clamp(delay, 0, 5)), global::Godot.Timer.SignalName.Timeout);
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         if (Live) GD.Print($"MATCH CAPTURE {GetViewport().GetTexture().GetImage().SavePng(path)}");
     }

@@ -256,3 +256,21 @@ and whether the host participates. Participating hosts continue to the same
 name/character form used by joining clients, then create the room. Non-playing
 hosts create immediately. Character-list overflow scrolls independently, while
 name and submit remain outside it. Scrollbars are hidden; scrolling remains usable.
+
+## Match-flow revision — 2026-10-25
+
+Host question screens use a viewport-sized composition without page scrolling.
+Public participant indicators show who submitted, never their chosen answer.
+Reveal highlights the correct choice, then opens a facts/explanation modal after
+1.2 seconds. Continue advances on host action or unanimous connected-player
+consent, counted per LocalSlot in shared-device play. The same applies at recap
+and round boundaries.
+
+Lengths: preview, 10/20/30/40/50 or unlimited; question timers: 10/20/30/60/120
+seconds or no timer. Unlimited consumes the selected finite deck without repeats,
+finishes when it is exhausted, and can end at Scoreboard through host action or
+unanimous end votes. A deliberate end declares tied leaders jointly without
+starting sudden death. Untimed questions award no speed bonus; Extra Time is
+disabled. Final results are compact; host Play again preserves the room,
+connections, player identities and teams and resets all readiness/scores. Creation
+Back returns home after the nested identity step has been closed.

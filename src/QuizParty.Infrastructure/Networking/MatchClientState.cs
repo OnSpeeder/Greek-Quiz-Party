@@ -104,24 +104,24 @@ public sealed class MatchClientState
             next.Question is not { } question || question.InstanceId == Guid.Empty || question.Text is not { Length: > 0 and <= 2048 } ||
             question.Answers is not { Length: 4 } answers || answers.Any(answer => string.IsNullOrWhiteSpace(answer) || answer.Length > 512) ||
             question.StartedAtTicks < 0 || question.DeadlineTicks <= question.StartedAtTicks ||
-            question.DeadlineTicks - question.StartedAtTicks > TimeSpan.TicksPerMinute ||
+            (question.DeadlineTicks != long.MaxValue && question.DeadlineTicks - question.StartedAtTicks > 2 * TimeSpan.TicksPerMinute) ||
             next.Scores is not { Length: >= 1 and <= 8 } scores ||
             scores.Any(score => score is null || score.PlayerId == Guid.Empty || !LobbyProtocol.ValidName(score.DisplayName) || score.Total < 0 || score.CharacterId is { } character && !Core.Players.Characters.IsValid(character)) ||
             scores.Where(score => score.CharacterId is not null).Select(score => score.CharacterId).Distinct().Count() != scores.Count(score => score.CharacterId is not null) ||
             scores.Select(score => score.PlayerId).Distinct().Count() != scores.Length || !scores.Any(score => score.PlayerId == localPlayer) ||
             next.AcceptedAnswerCount < 0 || next.AcceptedAnswerCount > scores.Length ||
             question.CategoryId is not { Length: > 0 and <= 128 } || question.Difficulty is < 1 or > 5 ||
-            next.TotalQuestions is not (1 or 10 or 20 or 30) || next.QuestionNumber is < 1 or > 10000 ||
-            next.RoundNumber is < 1 or > 5 || (next.IsTieBreaker != (next.QuestionNumber > next.TotalQuestions) && next.Phase != "RoundEnd") ||
+            next.TotalQuestions is not (0 or 1 or 10 or 20 or 30 or 40 or 50) || next.QuestionNumber < 1 ||
+            next.RoundNumber is < 1 or > 5 || (next.IsTieBreaker != (next.TotalQuestions != 0 && next.QuestionNumber > next.TotalQuestions) && next.Phase != "RoundEnd") ||
             next.EligiblePlayers is not { Length: >= 1 and <= 8 } eligible || eligible.Distinct().Count() != eligible.Length ||
             eligible.Any(id => !scores.Any(s => s.PlayerId == id)) || next.Winners is not { Length: <= 8 } winners ||
             winners.Distinct().Count() != winners.Length || winners.Any(id => !eligible.Contains(id)) ||
-            next.Statistics is not { Length: <= 8 } || next.LocalSlot is < 0 or > 7 || !ValidTeams(next) || !ValidStrategy(next, localPlayer)) return false;
+            next.Statistics is not { Length: <= 8 } || next.LocalSlot is < 0 or > 7 || !ValidTeams(next) || !ValidStrategy(next, localPlayer) || !ValidVotes(next)) return false;
         if (next.Phase != "GameOver" && (winners.Length != 0 || next.Statistics.Length != 0 || next.ContentExhausted)) return false;
         if (next.Phase == "GameOver" && (winners.Length == 0 || next.Statistics.Length != scores.Length ||
             next.Statistics.Any(s => s is null || s.Correct < 0 || s.Wrong < 0 || s.Unanswered < 0 || s.BestStreak < 0 ||
                 (long)s.Correct + s.Wrong + s.Unanswered > next.QuestionNumber || s.BestStreak > s.Correct ||
-                s.Responses != (long)s.Correct + s.Wrong || s.ResponseTicks < 0 || s.ResponseTicks > (long)s.Responses * TimeSpan.TicksPerSecond * (next.Strategy is null ? 60 : 65)) ||
+                s.Responses != (long)s.Correct + s.Wrong || s.ResponseTicks < 0 || (question.DeadlineTicks != long.MaxValue && s.ResponseTicks > (long)s.Responses * TimeSpan.TicksPerSecond * (next.Strategy is null ? 120 : 125))) ||
             !next.Statistics.Select(s => s.PlayerId).Order().SequenceEqual(scores.Select(s => s.PlayerId).Order()))) return false;
         if (Rank(next.Phase) < 2) return next.Reveal is null;
         var reveal = next.Reveal;
@@ -134,6 +134,15 @@ public sealed class MatchClientState
             players.Select(player => player.PlayerId).Order().SequenceEqual(scores.Select(score => score.PlayerId).Order());
     }
 
+    private static bool ValidVotes(MatchSnapshotDto next)
+    {
+        bool ValidIds(Guid[]? ids) => ids is null || ids.Length <= 8 && ids.Distinct().Count() == ids.Length &&
+            ids.All(id => next.Scores.Any(s => s.PlayerId == id));
+        return ValidIds(next.AnsweredPlayers) && ValidIds(next.ContinueVotes) && ValidIds(next.EndVotes) &&
+            (next.AnsweredPlayers is null || next.AnsweredPlayers.Length == next.AcceptedAnswerCount) &&
+            (next.ContinueVotes is null or { Length: 0 } || next.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd") &&
+            (next.EndVotes is null or { Length: 0 } || next.TotalQuestions == 0 && next.Phase == "Scoreboard");
+    }
     private static bool ValidMission(MissionDto? mission) => mission is null || mission.Kind is >= 0 and <= 4 &&
         mission.Target == (mission.Kind switch { 0 or 3 => 3, 1 => 4, 2 => 2, _ => 5 }) &&
         mission.Progress >= 0 && mission.Progress <= mission.Target && mission.Complete == (mission.Progress == mission.Target);
@@ -161,7 +170,7 @@ public sealed class MatchClientState
             hand.Any(c => c is null || c.Id == Guid.Empty || c.Kind is < 0 or > 5 || (!rules.AllowSteal && c.Kind >= 4)) ||
             hand.Select(c => c.Id).Distinct().Count() != hand.Length || (!rules.Cards && hand.Length != 0) ||
             own.HiddenAnswers is not { Length: 0 or 2 } hidden || hidden.Any(i => i is < 0 or > 3) || hidden.Distinct().Count() != hidden.Length ||
-            own.DeadlineTicks < next.Question.DeadlineTicks || own.DeadlineTicks > next.Question.DeadlineTicks + TimeSpan.TicksPerSecond * 5 ||
+            own.DeadlineTicks < next.Question.DeadlineTicks || (next.Question.DeadlineTicks != long.MaxValue && own.DeadlineTicks > next.Question.DeadlineTicks + TimeSpan.TicksPerSecond * 5) ||
             own.Streak < 0 || own.Streak > next.QuestionNumber || own.Meter is < 0 or >= 100 ||
             !ValidMission(own.Mission) || (!rules.Missions && own.Mission is not null) ||
             own.SwapCategories is not { Length: <= 3 } categories || categories.Any(c => c is not { Length: > 0 and <= 128 }) ||
@@ -171,12 +180,13 @@ public sealed class MatchClientState
         return final.Length == next.Scores.Length && final.All(s => s is not null && ValidMission(s.Mission) &&
             s.MissionBonus == (s.Mission?.Complete == true ? 500 : 0) && s.CardsUsed is >= 0 and <= 10000 &&
             s.ConfidentCorrect >= 0 && s.ConfidentWrong >= 0 && s.AllInCorrect >= 0 && s.AllInWrong >= 0 &&
-            (long)s.ConfidentCorrect + s.ConfidentWrong + s.AllInCorrect + s.AllInWrong <= next.TotalQuestions) &&
+            (long)s.ConfidentCorrect + s.ConfidentWrong + s.AllInCorrect + s.AllInWrong <= next.QuestionNumber) &&
             final.Select(s => s.PlayerId).Order().SequenceEqual(next.Scores.Select(s => s.PlayerId).Order());
     }
 
     private static MatchSnapshotDto Copy(MatchSnapshotDto value) => value with
     {
+        AnsweredPlayers = value.AnsweredPlayers?.ToArray(), ContinueVotes = value.ContinueVotes?.ToArray(), EndVotes = value.EndVotes?.ToArray(),
         Question = value.Question with { Answers = value.Question.Answers.ToArray() }, Scores = value.Scores.ToArray(),
         EligiblePlayers = value.EligiblePlayers.ToArray(), Winners = value.Winners.ToArray(), Statistics = value.Statistics.ToArray(),
         Reveal = value.Reveal is null ? null : value.Reveal with { Players = value.Reveal.Players.ToArray() },

@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace QuizParty.Infrastructure.Networking;
 
+public sealed record MatchVoteDto(Guid QuestionInstanceId, string Phase, bool EndGame = false, int LocalSlot = 0);
 public sealed record AnswerRequestDto(Guid QuestionInstanceId, [property: JsonRequired] int AnswerIndex,
     [property: JsonRequired] int Confidence, int LocalSlot = 0);
 public sealed record AnswerReceiptDto(bool Accepted, string Reason, Guid QuestionInstanceId, int LocalSlot = 0);
@@ -27,4 +28,5 @@ public sealed record MatchSnapshotDto(Guid SessionId, long Revision, string Phas
     int QuestionNumber, int TotalQuestions, int RoundNumber, bool IsTieBreaker, Guid[] EligiblePlayers,
     Guid[] Winners, bool ContentExhausted, MatchStatisticsDto[] Statistics,
     StrategyRulesDto? Strategy = null, StrategyPrivateDto? Private = null, StrategyFinalDto[]? FinalStrategy = null,
-    TeamScoreDto[]? Teams = null, int[]? WinningTeams = null, int LocalSlot = 0);
+    TeamScoreDto[]? Teams = null, int[]? WinningTeams = null, int LocalSlot = 0, Guid[]? AnsweredPlayers = null,
+    Guid[]? ContinueVotes = null, Guid[]? EndVotes = null);

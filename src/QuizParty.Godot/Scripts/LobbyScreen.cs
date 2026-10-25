@@ -128,6 +128,7 @@ public partial class LobbyScreen : Control
         _transport.SnapshotChanged += Render;
         _transport.StatusChanged += reason =>
         {
+            if (_transport.MatchSnapshot is not null) { _status.Hide(); return; }
             if (_page == "join" && _setupVisible) { _status.Hide(); return; }
             if (_transport.Snapshot is null && reason != "Connecting") Reset();
             if (reason == "Connecting") { _host.Disabled = true; _join.Disabled = true; _browser.Visible = false; _pin.Editable = false; }
@@ -172,6 +173,7 @@ public partial class LobbyScreen : Control
         }
         AddChild(new LanProcessProbe { Name = "LanProbe" });
         AddChild(new MixedProcessProbe { Name = "MixedProbe" });
+        if (OS.IsDebugBuild()) AddChild(new MatchFlowProcessProbe { Name = "MatchFlowProbe" });
     }
 
     private void Reset()
@@ -217,6 +219,10 @@ public partial class LobbyScreen : Control
     private void Render(LobbySnapshotDto snapshot)
     {
         if (_transport.MatchSnapshot is not null) return;
+        GetNode<MatchPanel>("Margin/Scroll/Content/MatchPanel").Visible = false;
+        GetNode<ScrollContainer>("Margin/Scroll").VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+        _players.Visible = true;
+        foreach (var name in new[] { "Title", "Status" }) GetNode<Control>("Margin/Scroll/Content/" + name).Show();
         _pin.Text = "";
         ShowSetup(false);
         _host.Disabled = true;
@@ -229,7 +235,7 @@ public partial class LobbyScreen : Control
         _start.Visible = _transport.IsHost;
         GetNode<PresentationShell>("PresentationShell").ShowLobbyActions(snapshot.Phase == "Lobby", _transport.IsHost);
         _start.Disabled = snapshot.Phase != "Lobby" || snapshot.Players.Length < 2 || snapshot.Players.Any(player => !player.Ready) ||
-            _transport.IsHost && _transport.SelectedQuestionCapacity < _transport.QuestionCount ||
+            _transport.IsHost && _transport.SelectedQuestionCapacity < Math.Max(1, _transport.QuestionCount) ||
             snapshot.TeamMode && snapshot.Players.Select(p => p.TeamId).Distinct().Count() != 2;
         _roster.Text = snapshot.RoomName + "\n" + string.Join("\n", snapshot.Players.Select(player =>
             $"{player.DisplayName}{(player.IsHost ? " — " + Tr("LOBBY_HOST_MARK") : "")} — {Tr(player.Ready ? "LOBBY_READY_YES" : "LOBBY_READY_NO")}"));
@@ -298,7 +304,7 @@ public partial class LobbyScreen : Control
         { PresentationShell.For(this)?.OpenSettings(); return; }
         if (_page == "join" && _setupVisible)
         { if (!_joinFlow.Back()) ReturnHome(); return; }
-        if (_page == "create" && _setupVisible && _creation.Back()) return;
+        if (_page == "create" && _setupVisible) { if (!_creation.Back()) ReturnHome(); return; }
         if (_matchSetup.Back()) return;
         if (!_setupVisible || _host.Disabled)
         { _transport.Stop(); Reset(); return; }

@@ -400,3 +400,19 @@ final submission. `PlayerIdentityForm` is shared by host creation and remote joi
 its character list has the bounded overflow region. The scene-owned presentation
 shell applies global tooltip/scrollbar policy and sizes header actions against
 actual minimum targets, preserving existing shared themes and tactile feedback.
+
+## Match progression extension — 2026-10-25
+
+FullMatch owns question/phase-bound per-player Continue/End vote sets, connected
+participants, untimed behavior and unlimited completion. LobbyHost resolves every
+remote LocalSlot from its actual ConnectionId; UI sends intentions only. Public
+answered IDs expose no selection/correctness before reveal. Replay is host-only
+and permitted after GameOver; it clears the match while preserving lobby seats,
+teams and connections with a monotonically increasing lobby revision. Clients
+clear per-slot state only after receiving final state and authoritative lobby
+return, then reject stale match snapshots while waiting in the lobby.
+
+MatchDialog is scene-owned and reuses ShowtimeTheme and the existing motion
+service. It separates bounded reading/private-card surfaces from host question
+layout, preserving handoff privacy. Wide host uses a participant rail; portrait
+controllers retain their own composition and touch targets.

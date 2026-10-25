@@ -23,6 +23,7 @@ public partial class StrategyPanel : VBoxContainer
     private Label _betHint = null!;
     private readonly List<Button> _betButtons = [];
     private bool _compact;
+    private MatchDialog? _hostDialog;
     public void SetCompact(bool compact)
     {
         _compact = compact;
@@ -63,7 +64,13 @@ public partial class StrategyPanel : VBoxContainer
         _betHint = new Label { Name = "BetHint", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         _betHint.AddThemeFontSizeOverride("font_size", 18); AddChild(_betHint);
         AddChild(_private);
-        _privacy.Pressed += () => { _private.Visible = !_private.Visible; UpdatePrivacyLabel(); };
+        _privacy.Pressed += () =>
+        {
+            _private.Visible = !_private.Visible;
+            if (_hostDialog is not null) _hostDialog.Visible = _private.Visible;
+            UpdatePrivacyLabel();
+        };
+        VisibilityChanged += () => { if (!IsVisibleInTree() && _hostDialog is not null) { _hostDialog.Hide(); _private.Hide(); } };
         UpdatePrivacyLabel();
         _status = new Label { Name = "CardStatus", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_status);
@@ -79,12 +86,22 @@ public partial class StrategyPanel : VBoxContainer
     public void Render(MatchSnapshotDto snapshot)
     {
         _snapshot = snapshot;
+        if (_transport?.IsHost == true && _hostDialog is null)
+        {
+            var layer = new CanvasLayer { Layer = 21 }; AddChild(layer);
+            _hostDialog = new MatchDialog { Name = "HostCardsDialog" }; layer.AddChild(_hostDialog);
+            _private.Reparent(_hostDialog.Body);
+            var close = new Button { Text = "UI_CLOSE_CARDS", CustomMinimumSize = new(64, 64) };
+            close.Pressed += () => { _private.Hide(); _hostDialog.Hide(); UpdatePrivacyLabel(); };
+            _hostDialog.Actions.AddChild(close);
+        }
         Visible = snapshot.Strategy is not null && snapshot.Phase != "GameOver";
         if (_transport is null || !Visible || snapshot.Private is not { } own) return;
         if (_session != snapshot.SessionId)
         { _session = snapshot.SessionId; _initialized = false; _owner = Guid.Empty; _question = Guid.Empty; }
         if (!_initialized) { _private.Visible = false; _initialized = true; }
         UpdatePrivacyLabel();
+        if (_owner != own.PlayerId && _hostDialog is not null) { _hostDialog.Hide(); _private.Hide(); }
         if (_question != snapshot.Question.InstanceId || _owner != own.PlayerId)
         { _question = snapshot.Question.InstanceId; _owner = own.PlayerId; _confidence.Select(0); _reason = "None"; }
         _confidence.Visible = false;
@@ -141,7 +158,8 @@ public partial class StrategyPanel : VBoxContainer
             var recap = snapshot.Phase is "Scoreboard" or "RoundEnd";
             var available = (kind switch
             {
-                CardKind.FiftyFifty or CardKind.ExtraTime => active,
+                CardKind.FiftyFifty => active,
+                CardKind.ExtraTime => active && snapshot.Question.DeadlineTicks != long.MaxValue,
                 CardKind.CategorySwap => recap && own.SwapCategories.Length != 0,
                 CardKind.Steal => recap && targets.Length != 0,
                 _ => active || recap

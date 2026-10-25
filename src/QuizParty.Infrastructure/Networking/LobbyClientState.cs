@@ -7,6 +7,7 @@ public enum LobbyClientUpdate { Ignored, Rejected, Joined, Snapshot, RequestResu
 public sealed class LobbyClientState
 {
     private Guid _helloId;
+    private bool _returnedToLobby;
     private Guid _roomRequest;
     private Guid _roomSession;
     private RoomAccessResultDto? _access;
@@ -114,7 +115,7 @@ public sealed class LobbyClientState
             return LobbyClientUpdate.Joined;
         }
         if (_snapshot is null || packet.SessionId != _snapshot.SessionId) return LobbyClientUpdate.Ignored;
-        if (packet.MessageType == "MatchSnapshot" && LobbyProtocol.TryPayload<MatchSnapshotDto>(packet, out var match) && match is not null &&
+        if (!_returnedToLobby && packet.MessageType == "MatchSnapshot" && LobbyProtocol.TryPayload<MatchSnapshotDto>(packet, out var match) && match is not null &&
             OwnedPlayers.FirstOrDefault(p => p.LocalSlot == match.LocalSlot) is { } own && MatchForSlot(match.LocalSlot).ApplySnapshot(packet, _snapshot.SessionId, own.PlayerId))
         { LastMatchSlot = match.LocalSlot; return LobbyClientUpdate.MatchSnapshot; }
         if (packet.MessageType == "AnswerAccepted" && LobbyProtocol.TryPayload<AnswerReceiptDto>(packet, out var answer) && answer is not null &&
@@ -126,8 +127,11 @@ public sealed class LobbyClientState
         if (packet.MessageType == "LobbySnapshot" && LobbyProtocol.TryPayload<LobbySnapshotDto>(packet, out var next) &&
             ValidSnapshot(next) && next!.SessionId == _snapshot.SessionId && next.Revision > _snapshot.Revision && next.MaxPlayers == _snapshot.MaxPlayers && next.HostPlays == _snapshot.HostPlays &&
             next.Players.Any(player => player.PlayerId == PlayerId && (player.ControllerId ?? player.PlayerId) == ControllerId && player.LocalSlot == 0) &&
-            !(_snapshot.Phase == "GameStarting" && (next.Phase != "GameStarting" || next.TeamMode != _snapshot.TeamMode)))
+            !(_snapshot.Phase == "GameStarting" && (next.TeamMode != _snapshot.TeamMode ||
+                next.Phase != "GameStarting" && !(next.Phase == "Lobby" && _matches.Count > 0 && _matches.Values.All(m => m.Snapshot?.Phase == "GameOver")))))
         {
+            if (_snapshot.Phase == "GameStarting" && next.Phase == "Lobby") { _matches.Clear(); _pending.Clear(); _returnedToLobby = true; }
+            if (next.Phase == "GameStarting") _returnedToLobby = false;
             _snapshot = next with { Players = next.Players.ToArray() };
             foreach (var slot in _matches.Keys.Where(slot => !OwnedPlayers.Any(p => p.LocalSlot == slot)).ToArray()) _matches.Remove(slot);
             return LobbyClientUpdate.Snapshot;

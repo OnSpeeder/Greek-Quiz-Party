@@ -18,7 +18,7 @@ public class FullMatchTests
     }
 
     [Theory]
-    [InlineData(10)] [InlineData(20)] [InlineData(30)]
+    [InlineData(10)] [InlineData(20)] [InlineData(30)] [InlineData(40)] [InlineData(50)]
     public void CompleteFourRoundsWithoutRepeatsAndKeepAccurateCumulativeStatistics(int count)
     {
         var fixture = new SessionFixture();
@@ -193,6 +193,6 @@ public class FullMatchTests
     }
 
     [Theory]
-    [InlineData(0,20)] [InlineData(15,20)] [InlineData(20,4)] [InlineData(20,61)]
+    [InlineData(-1,20)] [InlineData(15,20)] [InlineData(20,4)] [InlineData(20,121)]
     public void InvalidSettingsAreRejected(int questions, int seconds) => Assert.Throws<ArgumentOutOfRangeException>(() => new MatchSettings(questions, seconds));
 }

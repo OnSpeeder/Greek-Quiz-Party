@@ -70,7 +70,7 @@ public sealed class GameSession
     public GameError BeginRound() => _machine.TryTransition(GameTrigger.BeginRound);
 
     public GameError StartQuestion(QuestionDefinition definition, QuestionInstanceId instanceId, TimeSpan duration,
-        IReadOnlyCollection<PlayerId>? eligible = null, bool awardPoints = true)
+        IReadOnlyCollection<PlayerId>? eligible = null, bool awardPoints = true, bool untimed = false)
     {
         if (_authority != GameAuthority.Host) return GameError.NotAuthoritative;
         if (Phase is not (GamePhase.RoundIntro or GamePhase.Scoreboard)) return GameError.InvalidTransition;
@@ -78,7 +78,8 @@ public sealed class GameSession
         ArgumentNullException.ThrowIfNull(definition);
         if (eligible is not null && (eligible.Count == 0 || eligible.Any(id => !_scores.ContainsKey(id)) ||
             eligible.Distinct().Count() != eligible.Count)) throw new ArgumentException("Invalid eligible players.", nameof(eligible));
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(duration.Ticks);
+        if (!untimed) ArgumentOutOfRangeException.ThrowIfNegativeOrZero(duration.Ticks);
+        else if (duration != TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(duration));
         var now = _clock.Now;
         if (now < TimeSpan.Zero || duration > TimeSpan.MaxValue - now)
             throw new ArgumentOutOfRangeException(nameof(duration));
@@ -151,12 +152,16 @@ public sealed class GameSession
         var view = question.Presentation;
         var duration = view.Deadline - view.StartedAt;
         var elapsed = answer.ReceivedAt - view.StartedAt;
-        var raw = _scoring.Calculate(correct, elapsed > duration ? duration : elapsed, duration);
+        var raw = view.Deadline == TimeSpan.MaxValue
+            ? _scoring.Calculate(correct, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1))
+            : _scoring.Calculate(correct, elapsed > duration ? duration : elapsed, duration);
         if (_scaleDifficulty) raw = DifficultyScore.Scale(raw, view.Difficulty);
         var points = _strategy?.Delta(playerId, correct, raw, answer.Confidence, _scores[playerId]) ?? raw;
         return new(playerId, answer.AnswerIndex, correct, _awardPoints ? points : 0, elapsed, answer.Confidence);
     }
 
+    public IReadOnlyList<PlayerId> AnsweredPlayers => _answers.Keys.ToArray();
+    internal void Disconnect(PlayerId player) { if (_deadlines.ContainsKey(player)) _deadlines[player] = TimeSpan.Zero; }
     internal bool HasAnswered(PlayerId player) => _answers.ContainsKey(player);
     internal TimeSpan Deadline(PlayerId player) => _deadlines.GetValueOrDefault(player);
     internal int[] HideWrongAnswers()

@@ -65,7 +65,7 @@ public partial class MatchSetupPanel : PanelContainer
     {
         var section = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _grid!.AddChild(section);
         section.AddChild(new Label { Text = key });
-        var row = new HBoxContainer(); section.AddChild(row);
+        var row = new GridContainer { Columns = options.Length > 5 ? 4 : 3 }; section.AddChild(row);
         var group = new ButtonGroup();
         foreach (var (value, text) in options)
         {
@@ -103,9 +103,9 @@ public partial class MatchSetupPanel : PanelContainer
     {
         _capacity = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart }; _body.AddChild(_capacity);
         _body.AddChild(_grid);
-        Choices("SETUP_LENGTH", [(1, Tr("SETUP_PREVIEW")), (10, "10"), (20, "20"), (30, "30")],
+        Choices("SETUP_LENGTH", [(1, Tr("SETUP_PREVIEW")), (10, "10"), (20, "20"), (30, "30"), (40, "40"), (50, "50"), (0, Tr("SETUP_UNLIMITED"))],
             _transport.QuestionCount, count => { _transport.QuestionCount = count; RefreshCapacity(); });
-        Choices("SETUP_SECONDS", [(10, "10"), (20, "20"), (30, "30"), (60, "60")],
+        Choices("SETUP_SECONDS", [(10, "10"), (20, "20"), (30, "30"), (60, "60"), (120, "120"), (0, Tr("SETUP_UNTIMED"))],
             _transport.QuestionSeconds, seconds => _transport.QuestionSeconds = seconds);
         var difficulty = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _grid.AddChild(difficulty);
         difficulty.AddChild(new Label { Text = "SETUP_DIFFICULTY" });
@@ -145,8 +145,8 @@ public partial class MatchSetupPanel : PanelContainer
     private void RefreshCapacity()
     {
         var count = _transport.SelectedQuestionCapacity;
-        _capacity.Text = string.Format(Tr("SETUP_CAPACITY"), count, _transport.QuestionCount);
-        _capacity.AddThemeColorOverride("font_color", QuizShowTheme.AnswerColor(count < _transport.QuestionCount ? 0 : 3));
+        _capacity.Text = string.Format(Tr("SETUP_CAPACITY"), count, _transport.QuestionCount == 0 ? Tr("SETUP_UNLIMITED").ToString() : _transport.QuestionCount.ToString());
+        _capacity.AddThemeColorOverride("font_color", QuizShowTheme.AnswerColor(count < Math.Max(1, _transport.QuestionCount) ? 0 : 3));
     }
     private void BuildSelection(string page)
     {

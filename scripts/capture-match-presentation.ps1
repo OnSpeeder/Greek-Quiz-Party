@@ -17,7 +17,7 @@ try {
     if (!$Motion) { $appearance += ' --ui-reduced-motion' }
     if ($LargeText) { $appearance += ' --ui-large-text' }
     if ($HighContrast) { $appearance += ' --ui-high-contrast' }
-    $hostArgs = "$launch --resolution ${Width}x$Height --language el_GR -- $appearance --match-host --match-auto --match-name=Ελένη --match-players=2 --match-port=17897 --match-delay=1 $strategyFlag --match-capture=`"$output/preview.png`" --match-capture-phase=$Phase"
+    $hostArgs = "$launch --resolution ${Width}x$Height --language el_GR -- $appearance --match-host --match-auto --match-fixture=1 --match-name=Ελένη --match-players=2 --match-port=17897 --match-delay=1 $strategyFlag --match-capture=`"$output/preview.png`" --match-capture-phase=$Phase --match-capture-delay=$(if ($Phase -eq 'AnswerReveal') { '1.5' } elseif ($Phase -eq 'Scoreboard' -or $Phase -eq 'GameOver') { '0.8' } else { '0.2' })"
     $hostProcess = Start-Process $binary -WindowStyle Hidden -PassThru -ArgumentList $hostArgs -RedirectStandardOutput "$output/host.log" -RedirectStandardError "$output/host-errors.log"
     $processes.Add($hostProcess)
     $deadline = [DateTime]::UtcNow.AddSeconds(20)

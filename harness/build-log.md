@@ -846,3 +846,48 @@ The pre-existing tools/generators directory stays untouched and untracked.
   remains confined to the character list. Android temporary fixture absent and normal
   launch restored. git diff --check passed. Follow-up remains local after pushed
   checkpoint 05b7edd, matching the requested sequence.
+
+## 2026-10-25 — match flow, unanimous progression and expanded game settings
+
+Initial user-requested GitHub checkpoint: ba03339 pushed to origin/main. New scope
+implemented within Phase10; see harness/phase-10-match-flow-plan.md and context.
+
+Observed local verification:
+- Restore and solution build passed. Production Godot rebuild: zero warnings/errors.
+  Solution test-project build retains two pre-existing xUnit2031 analyzer warnings
+  in QuestionPackTests (not suppressed).
+- Core273 passed, infrastructure114 passed, Godot30 passed. Includes 40/50 full
+  matches, exact120s/untimed timing, per-seat consensus/stale requests/disconnects,
+  eight-local-seat host bounds in both orientations, delayed facts and replay.
+- Unlimited720-question protocol regression crossed4,320 requests on one connection;
+  old question receipts were safely retired and a replayed old answer rejected.
+- Three-process real ENet flow passed from source and Windows package: observer
+  host, two client connections/three logical seats, unanimous reveals/recaps,
+  next question, unanimous End and same-room replay with all seats unready.
+- Packaged ten-question mixed/strategy match (host0/client2) passed with identical
+  final public results. Physical Android flow passed with two phone seats plus
+  a Windows player and observer host; final totals and replay agreed on all peers.
+- Reviewed host/portrait/modal/score/final captures; corrected concrete layout and
+  UTF-8 findings described in docs/PHASE10_QA.md. No human sign-off claimed.
+- Reviewed-only staging/QuestionValidator passes14,760 entries; existing editorial/
+  layout warnings retained. No question or review flags changed. Windows/Android
+  debug exports and Windows release export succeeded. Android APK installed and
+  launched successfully on the attached physical device.
+- Known Godot EditorSettings shutdown diagnostic remains in export logs. First
+  discovery departure run failed due to a pre-existing Athens-only test bot reading
+  the full production deck; probe now uses the existing synthetic fixture while
+  keeping its score/departure assertions. Evidence logs remain in artifacts/.
+- Evidence: artifacts/match-flow-{core,infrastructure,godot,build,process,packaged,
+  mixed,discovery,android,export-windows,export-android,export-windows-release}.log.
+  Guide: docs/EXPORT_GUIDE.el.md. Temporary physical debug arguments cleaned up.
+  tools/generators remains untouched and untracked.
+
+Final follow-up evidence: source and packaged discovery/manual-IP/PIN/departure
+regressions both passed after repairing the synthetic fixture. Latest Godot suite
+retains30/30, including suppression of late lobby statuses above an active match.
+Inspected actual420x900 larger-text host question capture: all four touch-sized
+answers fit without page scrolling, with readable Greek text and participant
+status. Windows release startup exited0 with clean runtime stderr. Final Windows
+debug/release and Android debug exports completed; final APK installed and the
+physical flow repeated on the exact final build. Export teardown warning remains
+the documented engine diagnostic, not a runtime failure. git diff --check passes.

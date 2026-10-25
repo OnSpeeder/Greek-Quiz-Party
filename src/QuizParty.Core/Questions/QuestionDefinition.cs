@@ -59,7 +59,7 @@ internal sealed class QuestionInstance
         }
         Presentation = new(id, definition.Text,
             Array.AsReadOnly(order.Select(index => definition.Answers[index]).ToArray()),
-            definition.CategoryId, definition.Difficulty, startedAt, startedAt + duration);
+            definition.CategoryId, definition.Difficulty, startedAt, duration == TimeSpan.Zero ? TimeSpan.MaxValue : startedAt + duration);
         CorrectAnswerIndex = Array.IndexOf(order, definition.CorrectAnswerIndex);
         Explanation = definition.Explanation;
         FunFacts = definition.FunFacts;

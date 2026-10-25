@@ -216,7 +216,7 @@ public class PresentationTests
             // Exercise actual container layout at phone and TV widths, independent of headless window limits.
             root.Size = new(480, 800);
             await Frames(tree);
-            AssertThat(panel.GetNode<GridContainer>("Answers").Columns).IsEqual(1);
+            AssertThat(panel.GetNode<GridContainer>("QuestionLayout/QuestionContent/Answers").Columns).IsEqual(1);
             var button = new Button { Text = "Μεγάλο ελληνικό κείμενο με τόνους και επεξήγηση για τη δοκιμή αναδίπλωσης" };
             root.GetNode<VBoxContainer>("Margin/Scroll/Content").AddChild(button);
             AssertThat(button.CustomMinimumSize.Y >= 64).IsTrue();
@@ -224,11 +224,11 @@ public class PresentationTests
             AssertThat(root.GetNode<ScrollContainer>("Margin/Scroll").FollowFocus).IsTrue();
             root.Size = new(1152, 648);
             await Frames(tree);
-            AssertThat(panel.GetNode<GridContainer>("Answers").Columns).IsEqual(2);
+            AssertThat(panel.GetNode<GridContainer>("QuestionLayout/QuestionContent/Answers").Columns).IsEqual(2);
             AssertThat(shell.GetNode<Button>("Settings").CustomMinimumSize.Y >= 64).IsTrue();
             shell.Apply(new(LargeText: true), persist: false);
-            AssertThat(panel.GetNode<Label>("Question").GetThemeFontSize("font_size")).IsEqual(36);
-            AssertThat(panel.GetNode<Button>("Answers/Answer0").GetThemeFontSize("font_size")).IsEqual(31);
+            AssertThat(panel.GetNode<Label>("QuestionLayout/QuestionContent/Question").GetThemeFontSize("font_size")).IsEqual(36);
+            AssertThat(panel.GetNode<Button>("QuestionLayout/QuestionContent/Answers/Answer0").GetThemeFontSize("font_size")).IsEqual(31);
         }
         finally { root.Free(); await Frames(tree); }
     }

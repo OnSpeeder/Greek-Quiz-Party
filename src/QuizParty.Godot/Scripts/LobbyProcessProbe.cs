@@ -84,6 +84,7 @@ public partial class LobbyProcessProbe : Node
         }
         if (_transport.IsHost)
         {
+            if (snapshot.Players.Any(p => p.IsHost && !p.Ready)) { _transport.SetReady(true); return; }
             if (snapshot.Players.Length == 3 && snapshot.Players.All(player => player.Ready)) _transport.StartGame();
         }
         else if (!_readySent)

@@ -55,6 +55,7 @@ public class LobbyProtocolTests
             if (message.ConnectionId == 2) first.Apply(message.Json);
             if (message.ConnectionId == 3) second.Apply(message.Json);
         }
+        host.SetHostReady(true);
         Assert.Equal(LobbyError.None, host.Start());
         foreach (var message in host.Broadcast())
         {
@@ -169,6 +170,7 @@ public class LobbyProtocolTests
         Assert.NotEqual(oldId, host.GetPlayers().Single(player => player.ConnectionId?.Value == 2).Id);
         for (var connection = 2; connection <= 8; connection++) host.Handle(connection,
             LobbyProtocol.Encode("SetReady", host.SessionId, new ReadyRequestDto(true)));
+        host.SetHostReady(true);
         Assert.Equal(LobbyError.None, host.Start());
         Assert.Equal("GameStarted", Reason(host.Handle(10, Hello())));
     }

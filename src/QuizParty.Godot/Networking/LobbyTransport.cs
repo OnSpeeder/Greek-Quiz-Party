@@ -14,6 +14,12 @@ public partial class LobbyTransport : Node
     private LobbyClientState _client = new();
     private string _clientName = "";
     private string _clientPin = "";
+    private int? _clientCharacter;
+    private Guid _prepareSession;
+    private bool _joiningPrepared;
+    public RoomAccessResultDto? RoomAccess => _client.Access;
+    public bool JoinPending => _joiningPrepared;
+    public event Action<RoomAccessResultDto>? RoomAccessChanged;
     public LanDiscovery Discovery { get; private set; } = null!;
     public int DiscoveryPort { get; set; } = DiscoveryProtocol.DefaultPort;
     private int _generation;
@@ -33,6 +39,13 @@ public partial class LobbyTransport : Node
     public int QuestionSeconds { get; set; } = 20;
     public bool StrategyEnabled { get; set; } = true;
     public bool AllowSteal { get; set; }
+    public HashSet<int> EnabledDifficulties { get; set; } = [1, 2, 3, 4, 5];
+    public HashSet<Core.Game.CardKind> EnabledCards { get; set; } = [Core.Game.CardKind.DoublePoints,
+        Core.Game.CardKind.FiftyFifty, Core.Game.CardKind.ExtraTime, Core.Game.CardKind.CategorySwap];
+    public HashSet<Core.Game.MissionKind> EnabledMissions { get; set; } = Enum.GetValues<Core.Game.MissionKind>().ToHashSet();
+    private IReadOnlyList<Core.Questions.QuestionDefinition> _availableContent = [];
+    public int SelectedQuestionCapacity => _availableContent.Count(q =>
+        (EnabledCategories is null || EnabledCategories.Contains(q.CategoryId)) && EnabledDifficulties.Contains(q.Difficulty));
     public int? DebugStrategySeed { get; set; }
     public int AvailableQuestions { get; private set; }
     public IReadOnlyList<Core.Questions.QuestionCategory> QuestionCategories { get; private set; } = [];
@@ -100,9 +113,9 @@ public partial class LobbyTransport : Node
         AddChild(poll);
     }
 
-    public Error Host(string roomName, string playerName, int port = DefaultPort, string pin = "")
+    public Error Host(string roomName, string playerName, int port = DefaultPort, string pin = "", int character = 0)
     {
-        if (!LobbyProtocol.ValidName(roomName) || !LobbyProtocol.ValidName(playerName) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin))
+        if (!Core.Players.Characters.IsValid(character) || !LobbyProtocol.ValidName(roomName) || !LobbyProtocol.ValidName(playerName) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin))
             return Error.InvalidParameter;
         Core.Questions.QuestionPack pack;
         try { pack = Presentation.QuestionPackContent.Load(); }
@@ -115,11 +128,12 @@ public partial class LobbyTransport : Node
         if (error != Error.Ok) { peer.Dispose(); return error; }
         var questions = _debugQuestions ?? pack.Questions;
         AvailableQuestions = questions.Count;
+        _availableContent = questions;
         EnabledCategories = null;
         QuestionCategories = _debugQuestions is null ? pack.Categories : questions.Select(q => q.CategoryId).Distinct()
             .Select(id => new Core.Questions.QuestionCategory(id, "MATCH_TEST_CATEGORY")).ToArray();
         _host = new(roomName, playerName, new MonotonicGameClock(), questions, new(1), pin,
-            OS.IsDebugBuild() && DebugStrategySeed is { } seed ? new Core.Randomness.SeededRandomSource(seed) : null);
+            OS.IsDebugBuild() && DebugStrategySeed is { } seed ? new Core.Randomness.SeededRandomSource(seed) : null, character);
         _peer = peer;
         Multiplayer.MultiplayerPeer = peer;
         var host = _host;
@@ -129,12 +143,13 @@ public partial class LobbyTransport : Node
         return Error.Ok;
     }
 
-    public Error Join(string address, string playerName, int port = DefaultPort, string pin = "")
+    public Error Join(string address, string playerName, int port = DefaultPort, string pin = "", int? character = null)
     {
-        if (!LobbyProtocol.ValidName(playerName) || string.IsNullOrWhiteSpace(address) || address.Length > 253 ||
+        if (character is { } chosen && !Core.Players.Characters.IsValid(chosen) || !LobbyProtocol.ValidName(playerName) || string.IsNullOrWhiteSpace(address) || address.Length > 253 ||
             address.Any(char.IsWhiteSpace) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin)) return Error.InvalidParameter;
         Stop();
         _clientName = playerName;
+        _clientCharacter = character;
         _clientPin = pin;
         var peer = new ENetMultiplayerPeer();
         var error = peer.CreateClient(address, port);
@@ -145,10 +160,35 @@ public partial class LobbyTransport : Node
         var generation = _generation;
         GetTree().CreateTimer(10).Timeout += () =>
         {
-            if (generation == _generation && GodotObject.IsInstanceValid(this) && IsInsideTree() && _client.PlayerId is null)
+            if (generation == _generation && GodotObject.IsInstanceValid(this) && IsInsideTree() && _client.PlayerId is null && _client.Access?.Accepted != true)
                 Fail("ConnectionTimeout");
         };
         return Error.Ok;
+    }
+
+    public Error PrepareRoom(DiscoveredRoom room, string pin)
+    {
+        var error = Join(room.Address, "Preview", room.Room.GamePort, pin);
+        if (error == Error.Ok) _prepareSession = room.Room.SessionId;
+        return error;
+    }
+    public bool JoinPrepared(string name, int character)
+    {
+        if (_joiningPrepared || _peer is null) return false;
+        var json = _client.BeginPreparedHello(name, OS.GetName(), character);
+        if (json is null) return false;
+        _joiningPrepared = true; RpcId(1, MethodName.ClientMessage, json);
+        var generation = _generation;
+        GetTree().CreateTimer(10).Timeout += () =>
+        {
+            if (generation == _generation && IsInsideTree() && _joiningPrepared && _client.PlayerId is null) Fail("ConnectionTimeout");
+        };
+        return true;
+    }
+    public void RefreshRoomAvailability()
+    {
+        if (!_joiningPrepared && _client.RefreshAvailability() is { } json && _peer is not null)
+            RpcId(1, MethodName.ClientMessage, json);
     }
 
     public void SetReady(bool ready, bool repeatLastRequest = false, int localSlot = 0)
@@ -165,10 +205,10 @@ public partial class LobbyTransport : Node
         RpcId(1, MethodName.ClientMessage, json);
     }
 
-    public void AddLocalPlayer(string name, int slot)
+    public void AddLocalPlayer(string name, int slot, int? character = null)
     {
-        if (_host is not null) { Emit(_host.AddHostLocal(name, slot).ToString()); Broadcast(); return; }
-        var json = _client.CreateAddLocal(name, slot); if (json is not null) RpcId(1, MethodName.ClientMessage, json);
+        if (_host is not null) { Emit(_host.AddHostLocal(name, slot, character).ToString()); Broadcast(); return; }
+        var json = _client.CreateAddLocal(name, slot, character); if (json is not null) RpcId(1, MethodName.ClientMessage, json);
     }
     public void RemoveLocalPlayer(int slot)
     {
@@ -189,8 +229,11 @@ public partial class LobbyTransport : Node
     public void StartGame()
     {
         if (_host is null) { Emit("NotHost"); return; }
+        if (EnabledDifficulties.Count == 0) { Emit("InsufficientContent"); return; }
         if (PlayMatch && !_host.ConfigureMatch(new(QuestionCount, QuestionSeconds,
-            StrategyEnabled ? new Core.Game.StrategyRules(AllowSteal: AllowSteal) : null), EnabledCategories)) { Emit("InsufficientContent"); return; }
+            StrategyEnabled ? new Core.Game.StrategyRules(AllowSteal: AllowSteal)
+            { EnabledCards = EnabledCards.ToArray(), EnabledMissions = EnabledMissions.ToArray() } : null,
+            EnabledDifficulties), EnabledCategories)) { Emit("InsufficientContent"); return; }
         var result = _host.Start();
         Emit(result.ToString());
         Broadcast();
@@ -259,7 +302,7 @@ public partial class LobbyTransport : Node
     {
         _generation++;
         _host = null;
-        _clientPin = "";
+        _clientPin = ""; _clientCharacter = null; _prepareSession = Guid.Empty; _joiningPrepared = false;
         if (GodotObject.IsInstanceValid(Discovery)) Discovery.Stop();
         _client = new();
         _handshaken.Clear();
@@ -291,7 +334,8 @@ public partial class LobbyTransport : Node
 
     private void OnConnected()
     {
-        var json = _client.BeginHello(_clientName, OS.GetName(), _clientPin);
+        var json = _prepareSession == Guid.Empty ? _client.BeginHello(_clientName, OS.GetName(), _clientPin, _clientCharacter) :
+            _client.BeginAccess(_prepareSession, _clientPin, OS.GetName());
         _clientPin = "";
         // Explicit incompatible header is only selected by the process test flag.
         if (ClientProtocol != LobbyProtocol.Version) json = json.Replace($"\"ProtocolVersion\":{LobbyProtocol.Version}", $"\"ProtocolVersion\":{ClientProtocol}", StringComparison.Ordinal);
@@ -305,7 +349,10 @@ public partial class LobbyTransport : Node
         GetTree().CreateTimer(10).Timeout += () =>
         {
             if (generation == _generation && GodotObject.IsInstanceValid(this) && IsInsideTree() && !_handshaken.Contains(connection))
-                DisconnectPeer(connection);
+            {
+                if (_host?.HasRoomAccess(connection) == true) OnPeerConnected(connection);
+                else DisconnectPeer(connection);
+            }
         };
     }
 
@@ -378,7 +425,8 @@ public partial class LobbyTransport : Node
 
     private void DisconnectPeer(long connection)
     {
-        _peer?.DisconnectPeer((int)connection);
+        if (_peer?.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected && Multiplayer.GetPeers().Contains((int)connection))
+            _peer.DisconnectPeer((int)connection);
         OnPeerDisconnected(connection);
     }
 
@@ -411,9 +459,20 @@ public partial class LobbyTransport : Node
     {
         if (_host is not null || Multiplayer.GetRemoteSenderId() != 1) return;
         var update = _client.Apply(json);
-        if (update == LobbyClientUpdate.Rejected) { Fail(_client.LastReason); return; }
+        if (update == LobbyClientUpdate.RoomAccess)
+        {
+            if (_client.Access is not { Accepted: true } access) { Fail(_client.LastReason); return; }
+            RoomAccessChanged?.Invoke(access); return;
+        }
+        if (update == LobbyClientUpdate.Rejected)
+        {
+            _joiningPrepared = false;
+            if (_client.LastReason == "CharacterTaken" && _client.Access is { Accepted: true } access)
+            { RoomAccessChanged?.Invoke(access); Emit("CharacterTaken"); return; }
+            Fail(_client.LastReason); return;
+        }
         if (update is LobbyClientUpdate.Joined or LobbyClientUpdate.Snapshot) Publish();
-        if (update == LobbyClientUpdate.Joined) Emit("Joined");
+        if (update == LobbyClientUpdate.Joined) { _joiningPrepared = false; Emit("Joined"); }
         if (update == LobbyClientUpdate.RequestResult) Emit(_client.LastReason);
         if (update == LobbyClientUpdate.MatchSnapshot) { PublishMatch(); OwnedStateChanged?.Invoke(); }
         if (update == LobbyClientUpdate.AnswerReceipt)

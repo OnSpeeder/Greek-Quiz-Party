@@ -1,7 +1,11 @@
-param([ValidateSet('QuestionActive','AnswerReveal','GameOver')][string]$Phase = 'QuestionActive',
-    [int]$Width = 420, [int]$Height = 900, [switch]$Strategy, [switch]$Packaged)
+param([ValidateSet('QuestionActive','AnswerReveal','Scoreboard','GameOver')][string]$Phase = 'QuestionActive',
+    [int]$Width = 420, [int]$Height = 900, [switch]$Strategy, [switch]$Packaged,
+    [switch]$Motion, [switch]$LargeText, [switch]$HighContrast)
 . "$PSScriptRoot/common.ps1"
 $output = Join-Path $RepoRoot "artifacts/phase10-redesign-match-${Width}x$Height-$Phase$(if ($Packaged) { '-packaged' })"
+if ($Motion) { $output += '-motion' }
+if ($LargeText) { $output += '-large' }
+if ($HighContrast) { $output += '-contrast' }
 New-Item -ItemType Directory -Force $output | Out-Null
 $binary = (Get-Godot) -replace '_console\.exe$', '.exe'
 $launch = "--path `"$GodotProject`""
@@ -9,7 +13,11 @@ if ($Packaged) { $binary = Join-Path $RepoRoot 'artifacts/exports/Windows/QuizPa
 $processes = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
 try {
     $strategyFlag = if ($Strategy) { '--match-strategy' } else { '' }
-    $hostArgs = "$launch --resolution ${Width}x$Height --language el_GR -- --ui-reduced-motion --match-host --match-auto --match-name=Ελένη --match-players=2 --match-port=17897 --match-delay=1 $strategyFlag --match-capture=`"$output/preview.png`" --match-capture-phase=$Phase"
+    $appearance = '--ui-preview --ui-greek'
+    if (!$Motion) { $appearance += ' --ui-reduced-motion' }
+    if ($LargeText) { $appearance += ' --ui-large-text' }
+    if ($HighContrast) { $appearance += ' --ui-high-contrast' }
+    $hostArgs = "$launch --resolution ${Width}x$Height --language el_GR -- $appearance --match-host --match-auto --match-name=Ελένη --match-players=2 --match-port=17897 --match-delay=1 $strategyFlag --match-capture=`"$output/preview.png`" --match-capture-phase=$Phase"
     $hostProcess = Start-Process $binary -WindowStyle Hidden -PassThru -ArgumentList $hostArgs -RedirectStandardOutput "$output/host.log" -RedirectStandardError "$output/host-errors.log"
     $processes.Add($hostProcess)
     $deadline = [DateTime]::UtcNow.AddSeconds(20)

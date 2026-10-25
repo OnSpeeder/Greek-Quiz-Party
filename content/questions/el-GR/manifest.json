@@ -2,5 +2,18 @@
   "schemaVersion": 1,
   "locale": "el-GR",
   "packVersion": "0.1.0",
-  "categories": [{ "id": "greece", "nameKey": "CATEGORY_GREECE" }]
+  "categories": [
+    { "id": "greece", "nameKey": "CATEGORY_GREECE" },
+    { "id": "history", "nameKey": "CATEGORY_HISTORY" },
+    { "id": "geography", "nameKey": "CATEGORY_GEOGRAPHY" },
+    { "id": "science", "nameKey": "CATEGORY_SCIENCE" },
+    { "id": "technology", "nameKey": "CATEGORY_TECHNOLOGY" },
+    { "id": "cinema_tv", "nameKey": "CATEGORY_CINEMA_TV" },
+    { "id": "music", "nameKey": "CATEGORY_MUSIC" },
+    { "id": "sports", "nameKey": "CATEGORY_SPORTS" },
+    { "id": "gaming", "nameKey": "CATEGORY_GAMING" },
+    { "id": "pop_culture", "nameKey": "CATEGORY_POP_CULTURE" },
+    { "id": "logic", "nameKey": "CATEGORY_LOGIC" },
+    { "id": "wtf_facts", "nameKey": "CATEGORY_WTF_FACTS" }
+  ]
 }

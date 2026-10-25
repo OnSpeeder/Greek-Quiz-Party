@@ -23,6 +23,7 @@ public class FullMatchProtocolTests
             Host = new("Test", "Host", Clock, questions, new(count));
             Deliver(Host.Handle(2, Client.BeginHello("Phone", "Android")));
             Deliver(Host.Handle(2, Client.CreateReady(true)!));
+            Host.SetHostReady(true);
             Host.Start(); foreach (var p in Host.Broadcast()) Client.Apply(p.Json);
             Assert.True(Host.BeginMatch()); Sync();
         }
@@ -38,6 +39,7 @@ public class FullMatchProtocolTests
         var f = new Fixture(count);
         var seen = new HashSet<Guid>();
         string? previousRequest = null;
+        long expectedTotal = 0;
         for (var i = 1; i <= count; i++)
         {
             var snapshot = f.Host.MatchSnapshot()!;
@@ -65,7 +67,8 @@ public class FullMatchProtocolTests
             Assert.Equal(f.Correct, f.Client.Match.OwnAnswerIndex);
             Assert.Equal(SubmissionError.None, f.Host.SubmitHostAnswer((f.Correct + 1) % 4));
             f.Sync(); Assert.True(f.Host.PollMatch()); f.Sync();
-            Assert.Equal(i * 975, f.Client.Match.Snapshot!.Scores.Single(s => s.DisplayName == "Phone").Total);
+            expectedTotal += QuizParty.Core.Scoring.DifficultyScore.Scale(975, snapshot.Question.Difficulty);
+            Assert.Equal(expectedTotal, f.Client.Match.Snapshot!.Scores.Single(s => s.DisplayName == "Phone").Total);
             f.Host.AdvanceMatch(); f.Sync(); f.Host.AdvanceMatch(); f.Sync();
             if (f.Host.MatchSnapshot()!.Phase == "RoundEnd") { f.Host.AdvanceMatch(); f.Sync(); }
         }
@@ -131,6 +134,7 @@ public class FullMatchProtocolTests
         }
         Assert.True(host.ConfigureMatch(new(1, strategy: strategy ? new StrategyRules() : null)));
         host.SetTeamMode(teams);
+        host.SetHostReady(true);
         host.Start(); host.BeginMatch(); clock.Now += TimeSpan.FromSeconds(21); host.PollMatch(); host.PollMatch();
         host.AdvanceMatch(); host.AdvanceMatch();
         Assert.Equal("GameOver", host.MatchSnapshot()!.Phase);
@@ -166,6 +170,7 @@ public class FullMatchProtocolTests
             Deliver(host.Handle(i + 2, clients[i].BeginHello($"Phone{i}", "Android")).Messages);
             Deliver(host.Handle(i + 2, clients[i].CreateReady(true)!).Messages);
         }
+        host.SetHostReady(true);
         host.Start(); Deliver(host.Broadcast()); Assert.True(host.BeginMatch()); Deliver(host.BroadcastMatch());
         var correct = Array.IndexOf(host.MatchSnapshot()!.Question.Answers, "yes");
         host.SubmitHostAnswer(correct);

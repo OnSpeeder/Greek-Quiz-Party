@@ -31,3 +31,10 @@ Upstream sources:
 - https://github.com/xunit/xunit
 - https://github.com/microsoft/vstest
 - https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_basics.html
+
+## Display font
+
+Comfortaa variable font (existing project asset), used at weight 700. SIL Open Font
+License 1.1; copyright The Comfortaa Project Authors. License: game Art/Fonts/OFL.txt
+and in-game credits, included in Windows/Android export filters. Source:
+https://github.com/google/fonts/tree/main/ofl/comfortaa . No runtime network access.

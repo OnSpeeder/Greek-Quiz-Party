@@ -10,7 +10,51 @@ public class PresentationTests
 {
     [TestCase]
     [RequireGodotRuntime]
-    public async Task LobbyUsesFocusedCreateAndJoinFlowsWithManualIpPreserved()
+    public void DisplayFontContainsGreekAccentsWithoutSystemFallback()
+    {
+        var font = GD.Load<FontFile>("res://Art/Fonts/Comfortaa-VariableFont_wght.ttf");
+        foreach (var character in "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰς")
+            AssertThat(font.HasChar(character)).IsTrue();
+        AssertThat(ShowtimeTheme.Create(new()).DefaultFont is FontVariation).IsTrue();
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task ReducedMotionFinishesPendingScoreAndEntranceButPreservesRevealCues()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = new Control(); tree.Root.AddChild(root);
+        var juice = new ShowtimeJuice(); root.AddChild(juice);
+        var answers = Enumerable.Range(0, 4).Select(_ => new Button { Size = new(160, 80) }).ToArray();
+        foreach (var answer in answers) root.AddChild(answer);
+        var score = new Label(); root.AddChild(score);
+        try
+        {
+            juice.StaggerInControls(answers);
+            AssertThat(answers[3].Scale.X).IsEqual(.85f);
+            juice.TweenScoreLabel(score, 900, 100);
+            juice.SetReducedMotion(true);
+            AssertThat(score.Text).IsEqual(100L.ToString("N0"));
+            AssertThat(answers.All(answer => answer.Scale == Vector2.One)).IsTrue();
+            juice.Reveal(answers, 2);
+            AssertThat(answers[2].Modulate.A).IsEqual(1f);
+            AssertThat(answers[0].Modulate.A).IsEqual(.45f);
+            await Frames(tree);
+            AssertThat(answers[2].Scale).IsEqual(Vector2.One);
+            juice.StaggerInControls(answers);
+            AssertThat(answers.All(answer => answer.Modulate == Colors.White)).IsTrue();
+            juice.SetReducedMotion(false);
+            juice.TweenScoreLabel(score, 100, 1200);
+            score.QueueFree();
+            await Frames(tree); // Freed controls must cancel pending callbacks safely.
+            juice.SetReducedMotion(true);
+        }
+        finally { root.Free(); await Frames(tree); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task LobbyUsesDiscoveryFirstJoinWithManualIpHiddenAndCreatePreserved()
     {
         var tree = (SceneTree)Engine.GetMainLoop();
         using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<LobbyScreen>();
@@ -23,18 +67,20 @@ public class PresentationTests
             root.ShowSetupPage("create");
             AssertThat(root.GetNode<LineEdit>(path + "RoomName").Visible).IsTrue();
             AssertThat(root.GetNode<Button>(path + "Host").Visible).IsTrue();
-            AssertThat(root.GetNode<RoomBrowser>(path + "RoomBrowser").Visible).IsFalse();
+            AssertThat(root.GetNode<RoomBrowser>(path + "JoinFlow/RoomBrowser").IsVisibleInTree()).IsFalse();
             AssertThat(root.GetNode<LineEdit>(path + "RoomPin").Visible).IsFalse();
             root.GetNode<Button>(path + "PinOptions").EmitSignal(Button.SignalName.Pressed);
             AssertThat(root.GetNode<LineEdit>(path + "RoomPin").Visible).IsTrue();
             root.ShowSetupPage("join");
             AssertThat(root.GetNode<LineEdit>(path + "RoomName").Visible).IsFalse();
             AssertThat(root.GetNode<Button>(path + "Host").Visible).IsFalse();
-            AssertThat(root.GetNode<RoomBrowser>(path + "RoomBrowser").Visible).IsTrue();
+            AssertThat(root.GetNode<RoomBrowser>(path + "JoinFlow/RoomBrowser").IsVisibleInTree()).IsTrue();
             AssertThat(root.GetNode<LineEdit>(path + "Address").Visible).IsFalse();
-            root.GetNode<Button>(path + "ManualIp").EmitSignal(Button.SignalName.Pressed);
-            AssertThat(root.GetNode<LineEdit>(path + "Address").Visible).IsTrue();
-            AssertThat(root.GetNode<Button>(path + "Join").Visible).IsTrue();
+            AssertThat(root.GetNode<Button>(path + "ManualIp").Visible).IsFalse();
+            AssertThat(root.GetNode<Button>(path + "Join").Visible).IsFalse();
+            AssertThat(root.GetNode<LineEdit>(path + "PlayerName").Visible).IsFalse();
+            AssertThat(root.GetNode<Button>(path + "JoinFlow/RoomBrowser/Header/Refresh").Text).IsEqual("");
+            AssertThat(root.GetNode<PresentationShell>("PresentationShell").GetNode<Button>("Back").Text).IsEqual("");
         }
         finally { root.Free(); await Frames(tree); }
     }
@@ -181,6 +227,9 @@ public class PresentationTests
             await Frames(tree);
             AssertThat(panel.GetNode<GridContainer>("Answers").Columns).IsEqual(2);
             AssertThat(shell.GetNode<Button>("Settings").CustomMinimumSize.Y >= 64).IsTrue();
+            shell.Apply(new(LargeText: true), persist: false);
+            AssertThat(panel.GetNode<Label>("Question").GetThemeFontSize("font_size")).IsEqual(36);
+            AssertThat(panel.GetNode<Button>("Answers/Answer0").GetThemeFontSize("font_size")).IsEqual(31);
         }
         finally { root.Free(); await Frames(tree); }
     }

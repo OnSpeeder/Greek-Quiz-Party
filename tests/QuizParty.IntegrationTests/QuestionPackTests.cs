@@ -17,6 +17,28 @@ public class QuestionPackTests
         new Dictionary<string,string> { ["greece.json"] = new JsonArray(question.DeepClone()).ToJsonString() }, "el-GR", release, new(2026,10,18));
 
     [Fact]
+    public void IndexedSimilarityMatchesExhaustiveScanAcrossDifferentVocabularySizes()
+    {
+        var random = new Random(42);
+        var prior = new List<HashSet<string>>(); var items = new JsonArray();
+        var expected = new HashSet<string>(); var normalized = new HashSet<string>();
+        for (var i = 0; i < 500; i++)
+        {
+            var words = Enumerable.Range(0, random.Next(2, 20)).Select(_ => "W" + random.Next(25)).ToHashSet();
+            var text = string.Join(" ", words.Order());
+            if (!normalized.Add(text)) continue;
+            var id = "q" + i;
+            if (words.Count >= 4 && prior.Any(previous => previous.Count >= 4 &&
+                (double)previous.Intersect(words).Count() / previous.Union(words).Count() >= .8)) expected.Add(id);
+            prior.Add(words);
+            var item = Question(); item["id"] = id; item["text"] = text; items.Add(item);
+        }
+        var result = QuestionPackLoader.Validate(Manifest, new Dictionary<string, string> { ["test.json"] = items.ToJsonString() }, "el-GR");
+        Assert.True(result.Success);
+        Assert.Equal(expected.Order(), result.Issues.Where(issue => issue.Code == "similar-text").Select(issue => issue.QuestionId).Order());
+    }
+
+    [Fact]
     public void ValidReviewedPackPreservesGreekAndReturnsReadOnlyDomainContent()
     {
         var result = Validate(Question());
@@ -25,6 +47,43 @@ public class QuestionPackTests
         Assert.Equal("Αθήνα", Assert.Single(pack.Questions).Answers[0]);
         Assert.Equal("CATEGORY_GREECE", Assert.Single(pack.Categories).NameKey);
         Assert.Throws<NotSupportedException>(() => ((IList<QuizParty.Core.Questions.QuestionDefinition>)pack.Questions).Clear());
+    }
+
+    [Fact]
+    public void SimilarityWarningPreservesExactJaccardBoundaryAndDuplicatePriority()
+    {
+        var texts = new[] { "ένα δύο τρία τέσσερα", "ένα δύο τρία τέσσερα πέντε",
+            "ένα δύο τρία έξι επτά οκτώ", "ένα  δύο τρία τέσσερα" };
+        var items = new JsonArray();
+        for (var i = 0; i < texts.Length; i++)
+        {
+            var question = Question(); question["id"] = "boundary_" + i; question["text"] = texts[i]; items.Add(question);
+        }
+        var result = QuestionPackLoader.Validate(Manifest, new Dictionary<string, string> { ["boundary.json"] = items.ToJsonString() }, "el-GR");
+        Assert.Equal("boundary_1", Assert.Single(result.Issues.Where(issue => issue.Code == "similar-text")).QuestionId);
+        Assert.Equal("boundary_3", Assert.Single(result.Issues.Where(issue => issue.Code == "duplicate-text")).QuestionId);
+    }
+
+    [Fact]
+    public void FunFactsAreLoadedIntoQuestionDefinition()
+    {
+        var q = Question();
+        q["funFacts"] = new JsonArray("Γεγονός 1", "Γεγονός 2");
+        var result = Validate(q);
+        Assert.True(result.Success);
+        var def = Assert.Single(result.Pack!.Questions);
+        Assert.Equal(2, def.FunFacts.Count);
+        Assert.Equal("Γεγονός 1", def.FunFacts[0]);
+    }
+
+    [Fact]
+    public void InvalidFunFactsAreRejected()
+    {
+        var q = Question();
+        q["funFacts"] = new JsonArray("1", "2", "3", "4", "5", "6");
+        var result = Validate(q);
+        Assert.False(result.Success);
+        Assert.Contains(result.Issues, issue => issue.Code == "fun-facts");
     }
 
     [Theory]

@@ -8,7 +8,7 @@ The root solution is `QuizParty.sln`; the Godot project is
 targets .NET 9 because Godot requires .NET 9 or later for C# Android export.
 
 Implemented through Phase 09: platform/LAN foundation, pure C# game rules,
-LAN room discovery/browser and optional PIN, manual-IP joining, four-round
+LAN room discovery/browser and optional PIN, retained internal manual-IP API, four-round
 matches, no-repeat selection, scoreboards, statistics and sudden-death ties. See
 [Match guide](docs/MATCH.md) and [observed evidence](docs/MATCH_EVIDENCE.md).
 Questions now load from validated JSON packs, with release gates and one explicitly
@@ -79,7 +79,7 @@ The first full release is complete when it provides:
 - 2–8 players.
 - Mixed local + LAN players in the same match.
 - Windows host and Android clients.
-- Automatic LAN discovery plus manual-IP fallback.
+- Automatic LAN discovery; manual-IP transport retained internally with its UI hidden.
 - Optional room PIN.
 - PC/TV main-screen mode with phones as controllers.
 - Solo, Quick Game, Full Game and Team Mode.
@@ -107,3 +107,12 @@ The first full release is complete when it provides:
 - AI-generated live questions during a match.
 
 Those can be evaluated only after the offline/LAN product is stable.
+
+## Participation update
+
+The current join UI is discovery-first: available rooms → optional PIN → name and
+one of eight unique characters → host-authorized join. The host resolves concurrent
+character claims; clients keep their name when retrying. Manual-IP functionality
+remains in the transport/probes but is hidden from the menu by user decision.
+See docs/LOBBY.md and production v7 in NETWORK_PROTOCOL.md. Home actions use
+«Δημιουργία» and «Συμμετοχή».

@@ -129,3 +129,55 @@ as human usability approval. Screenshots establish rendering, not touch comfort.
 Production content remains one reviewed question. Long matches above use explicit
 synthetic debug fixtures; the 1,000+ reviewed-question gate remains deferred.
 Phase 10 stays open. No Phase 11 work, push or publication was performed.
+# Participation revision — 2026-10-25
+
+New review candidate: discovery-first rooms/PIN/identity, eight unique host-owned
+characters, icon-only Back/refresh/join, hidden manual-IP UI and keyboard-aware
+Android scroll regions. See `harness/phase-10-join-flow-plan.md` and latest build
+log for observed tests/captures. Prior visual acceptance status does not confer
+approval of this revision. Human touch/accessibility review remains open.
+
+## Lobby/setup viewport review — 2026-10-25
+
+Implementation: `harness/phase-10-lobby-settings-plan.md`. Actual Windows Godot
+captures are in `artifacts/lobby-settings/` (480×960 portrait, 1152×648 landscape).
+
+Observed and corrected: initial narrow settings columns; a long cinema label
+splitting inside a Greek word; overly tall player tiles; footer clipping in wide
+lobby; full card descriptions making both layouts scroll unnecessarily; larger-text
+summary links breaking words; and an unattached empty rules-page grid causing an
+orphan-node/RID warning. Final focused Godot tests report no orphan warning.
+
+Final observed compositions:
+- Eight-player roster: three columns, all eight tiles and actions visible in both
+  orientations. Full-tile own-player readiness, check/hourglass indicators and
+  Greek names/accents are readable. Header gamepad (match setup), book (rules)
+  and existing sliders (device settings) are separate actions.
+- Default setup: length, timer, multi-select difficulty multipliers, strategy,
+  teams, three selection links and category-icon summary fit both orientations.
+- Categories: all 12 selectable pictograms and Greek labels fit portrait and
+  landscape. Cards: six choices with concise descriptions fit both orientations.
+  Missions: all five choices and objectives fit both orientations. Rules were
+  inspected in portrait; the pinned bottom action remains available.
+- Large-text portrait setup intentionally uses a single column for selection
+  links and scrolls vertically. Dragging from a button is tested to scroll without
+  activating it. Do not shrink accessible text to force everything onto one screen.
+
+Runtime evidence is Windows Godot rendering, not a physical Android touch review.
+No new APK was installed and no human visual/accessibility acceptance is claimed.
+Import emits an engine EditorSettings/android-shutdown-on-exit diagnostic; runtime
+captures after the orphan fix have empty error logs. Existing acceptance gates stay
+open. Content and editorial review flags were not changed.
+
+## Physical checkpoint before headless-host work — 2026-10-25
+
+Installed a fresh APK on Android 15 model 23013PC75G. Inspected actual portrait menu,
+landscape settings and active-match captures; Greek accents and touch controls fit.
+LAN discovery, PIN checks, manual-IP regression, reconnect-as-new-identity and
+host-exit checks passed in both host directions. A 20-question strategy match with
+Android client passed authoritative state/statistics agreement. Evidence and fixed
+startup/broadcast/disconnect regressions: `harness/build-log.md`.
+
+This confirms the observed technical scenarios on this device. Human listening,
+subjective visual approval and the newly requested tooltip/header/create-flow
+corrections remain distinct work; no blanket accessibility certification is made.

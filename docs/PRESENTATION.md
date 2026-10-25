@@ -5,7 +5,8 @@ not a game. The replacement follows Cartoon Showtime with illustrated portrait
 and landscape stages, expressive characters, bold type and framed answer panels.
 The replacement is a review candidate; **visual/accessibility sign-off is open**.
 Artwork and exact built-in generation prompts are in `src/QuizParty.Godot/Art/README.md`.
-Godot's bundled font renders Greek; no font/audio/plugin dependency was added.
+Comfortaa Bold (bundled variable font, weight 700) renders Greek and accents.
+Its OFL license is shipped and available in Settings credits; no new plugin is required.
 
 ## Layout and feedback
 
@@ -25,7 +26,7 @@ Godot's bundled font renders Greek; no font/audio/plugin dependency was added.
 - Cards/missions initially collapse on **all** devices. Tap the labelled button
   to open them. Existing local-player handoff/privacy curtains remain immediate.
 - Home offers separate create/join paths. Setup fields are shown only for the
-  chosen path; manual IP and optional PIN remain available. The waiting room uses
+  chosen path. Participation now uses discovery with optional PIN; manual IP is hidden. The waiting room uses
   character player cards with individual readiness; host rules start collapsed.
 - Confidence uses native ×1/×2/×3 game chips with a textual risk explanation.
   Results show character score cards; detailed stats are expandable. New party
@@ -108,3 +109,67 @@ initially enlarged controls incorrectly; that calculation was replaced. The
 device capture helper waits for C# startup/display metrics, not the engine splash.
 The 1,000+ question target remains deferred; production still has one reviewed
 question. No Phase 11 work begins.
+
+## Conversation review implementation — 2026-10-25
+
+See `PDF_CONVERSATION_REVIEW.md` and `../harness/phase-10-pdf-review-plan.md`.
+`QuizShowTheme` owns the palette, bold font, chunky lip/shadow recipe and redundant
+geometric answer icons; `ShowtimeTheme` assembles the accessible theme variations.
+`ShowtimeJuice` is scene-owned and cancels motion when reduced motion is enabled,
+when a control leaves the tree, or when a new animation supersedes it. Answers
+remain clickable throughout entrance. Reveal uses only the host's revealed index.
+Recap totals interpolate over 0.6 seconds and retain exact authoritative endpoints,
+including decreases; repeated snapshots do not restart the animation.
+
+Wide hosts show the illustrated cast above a two-column answer grid. Portrait
+controllers keep the question, clock, confidence and four stacked choices; lengthy
+risk hints remain accessible via confidence tooltips/accessibility names. Cards and
+missions stay behind the existing private toggle. Standings now appear at recap,
+not alongside answer reveal. No fixed stage/answer percentage overrides long text
+or touch target sizes. Shared-device handoff uses avatar buttons and retains its
+immediate privacy boundary. Readiness and team borders supplement existing labels.
+
+Art remains a 2D cutout composition using existing illustrated stage and cast
+assets. New portraits, parallax, constant spotlight sweeps and additional external
+3D generation services are not prerequisites for this implementation.
+
+## Android rotation and Back navigation — 2026-10-25
+
+Android launches with portrait as the project default, then enables Godot's Sensor
+orientation mode. The OS rotates the same running scene; ResponsiveCanvas updates
+logical dimensions, safe areas and density-aware hit targets. This respects the
+phone's system auto-rotate setting; no device settings are changed. Explicit
+portrait/landscape debug capture flags still lock only their preview run.
+
+Android Back and desktop Escape follow the same navigation path: close exit
+confirmation, return from a settings detail, close settings, then navigate the
+current lobby/menu level. Back collapses optional PIN/rules sections
+before leaving their menu. Back from a waiting room disconnects to setup; during
+an active match it opens settings with the existing leave-game action, without
+stopping the match. Back from the initial screen opens exit confirmation.
+
+The initial screen has an icon-only exit button at the upper-left safe corner,
+with localized tooltip/accessibility name. The responsive confirmation asks Yes/No;
+No is initially focused, Back cancels it, and only Yes exits. Underlying controls
+are hidden to prevent click/focus-through. Portrait and landscape preserve this
+modal state. Preview with scripts/capture-presentation.ps1 -View Exit.
+
+## Discovery-first participation — 2026-10-25
+
+Home labels are «Δημιουργία» / «Συμμετοχή». JoinFlow renders rooms, optional PIN
+popup, then name/eight-character choice. Back is an icon in the upper-left safe
+corner; refresh sits beside «Διαθέσιμες Αίθουσες»; join uses an entering-door icon.
+Icons have localized accessibility names/tooltips, without visible action text.
+Room rows show name and joined/max; full/started rooms remain disabled.
+
+CharacterPicker disables and dims occupied portraits and marks selection with a
+check plus an accessible selected state. The host owns final uniqueness, including
+host/local slots. A conflict keeps the name and refreshes choices. PIN errors
+return to the room list. Opening PIN hides background browser and navigation
+controls; focus remains within its form. The form is centered and scrollable.
+Android keyboard height reduces the usable scroll region and keeps focus visible.
+
+The original four portraits plus four original generated cutouts form one stable
+catalog. Art/CHARACTERS.md records IDs, atlas layout and exact generation prompt.
+Capture rooms/PIN/identity via scripts/capture-join-flow.ps1 at portrait/landscape
+sizes, using a real local discovery/PIN host. Debug flags never affect normal play.

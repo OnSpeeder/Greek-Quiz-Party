@@ -6,7 +6,7 @@ public readonly record struct LocalSlot(int Value);
 
 public sealed record Player
 {
-    public Player(PlayerId id, string displayName, ConnectionId? connectionId = null, LocalSlot? localSlot = null)
+    public Player(PlayerId id, string displayName, ConnectionId? connectionId = null, LocalSlot? localSlot = null, CharacterId? character = null)
     {
         if (id.Value == Guid.Empty) throw new ArgumentException("Player ID must not be empty.", nameof(id));
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
@@ -17,10 +17,13 @@ public sealed record Player
         DisplayName = displayName;
         ConnectionId = connectionId;
         LocalSlot = localSlot;
+        if (character is { } chosen && !Characters.IsValid((int)chosen)) throw new ArgumentOutOfRangeException(nameof(character));
+        Character = character;
     }
 
     public PlayerId Id { get; }
     public string DisplayName { get; }
     public ConnectionId? ConnectionId { get; }
     public LocalSlot? LocalSlot { get; }
+    public CharacterId? Character { get; init; }
 }

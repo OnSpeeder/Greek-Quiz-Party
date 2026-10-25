@@ -235,3 +235,111 @@ are delivered. Controls, fills, knobs and mascot parts have distinct IDs.
 No replacement of the existing runtime or new product behavior was requested
 or implemented. Direct Godot SVG import is unverified; selection PNG exports
 were observed and preserve shadow effects. Phase10 acceptance remains open.
+# Conversation review — 2026-10-25
+
+- The PDF's proposed Theme/Stage files were tracked empty placeholders. They now
+  implement the recipe and scene-owned motion; existing ShowtimeTheme remains the
+  preference-aware theme assembler. No Core/protocol changes.
+- Comfortaa already existed but was unused. Load its variable font at weight 700,
+  with 0.5 emboldening, include OFL in exports/credits, and test Greek glyphs.
+- Initial capture before resource import failed to load the font; run Godot import
+  before captures. Test builds also need global::Godot.Collections qualification
+  because QuizParty.Godot.Tests introduces a sibling namespace.
+- Fixed the ordinary wide capture's clipped lower row by reducing cast thumbnails
+  to 64. Explicit question/answer font overrides now register their larger-text
+  baseline even when assigned after NodeAdded. Reveal explanation gets a surface;
+  duplicate status/confidence controls are hidden during reveal.
+- Animation state belongs to PresentationShell.Juice, finishes on reduced motion
+  and is cancelled on control exit. Wrong-answer dimming remains a static cue.
+  Public scores are interpolated only for display, with exact endpoints; repeated
+  snapshots reuse rendered standings. Do not infer other players' private answers.
+- Keep optional art CLI probes, verified SDK and Compatibility renderer. No tracked
+  bin/obj files were found. Keep masked PIN semantics and native layout flexibility.
+- See docs/PDF_CONVERSATION_REVIEW.md for the complete assessment and build log
+  for verification; human aesthetic/touch approval and content scale remain open.
+
+## Android navigation follow-up — 2026-10-25
+
+- User requested portrait-default automatic rotation, hierarchical Android Back,
+  and icon-only home exit with Yes/No confirmation. Plan: phase-10-navigation-plan.md.
+- project.godot sets handheld/orientation=1 (portrait). PresentationShell enables
+  ScreenOrientation.Sensor at runtime unless a debug preview explicitly locks it.
+  Actual Android reports SCREEN_ORIENTATION_FULL_USER; respects OS auto-rotate.
+- Shell owns Back routing and exit modal. Lobby handles nested optional sections,
+  disconnect-to-setup and in-match settings. Never quit from a non-home screen.
+  ExitConfirmation emits events; shell calls Quit only from visible confirmation.
+- Android sensor changed the running viewport from portrait to landscape during
+  observation. Back, No (stay) and Yes (process exit) were exercised through device
+  key input. No global Android settings were changed.
+- Build cache caution: Android export restores net9.0 assets; restore before desktop
+  build. Source/binary timestamps were inconsistent during this run, so an explicit
+  Rebuild was used to refresh the preview assembly. Do not trust stale captures.
+
+## Participation revision — 2026-10-25
+
+- User approved discovery → optional PIN → name/eight unique characters → join;
+  then explicitly removed manual-IP UI while retaining transport functionality.
+  This supersedes the earlier user/AGENTS requirement to expose manual IP.
+- Protocol v7 separates connection-bound two-minute preflight from actual player
+  admission. No roster mutation/reservation on PIN success; final hello owns the
+  atomic Core character claim. Conflict keeps the connection/name and returns
+  current availability; refresh does not extend authorization.
+- Typed Core character identity is copied to lobby and match DTOs; departed match
+  participants retain their portrait via a fixed match map. Host and local slots
+  share the same uniqueness rules. Nullable/default choices exist for retained
+  direct/probe APIs, with host assignment; normal UI explicitly selects an ID.
+- JoinFlow/CharacterPicker are native components. PIN is a shell-owned centered
+  modal, with its own keyboard-safe scroll container; shell navigation/background
+  controls are hidden. ResponsiveCanvas reserves keyboard height on Android and
+  scrolls focus. Guard keyboard APIs on Windows/headless to avoid engine warnings.
+- Generated four additional transparent portraits using built-in imagegen; exact
+  prompt/layout/provenance in game Art/CHARACTERS.md. Output was 1254 square, not
+  requested 1024; derive 627-pixel quadrants from actual dimensions.
+- Existing large-content work was preserved. It exposed a stale greece.json CLI
+  fixture and a UI test assuming Athens in every selected question. Updated fixture
+  selection and kept the handoff test focused on independent valid submissions.
+  Pre-tokenized similarity sets and kept exact duplicate/Jaccard checks, removing
+  repeated per-pair token allocations that made room creation take ~66 seconds.
+  Boundary regression retains warning/error semantics; no review state changed.
+- Initial native ENet test had a mismatched host Transport node name; fixed the test
+  harness path (production RPC paths unchanged). UI visibility tests now check
+  actual visibility through parent JoinFlow. Failed/timeout logs are retained.
+- Android fixture-only issue found while checking UI: MatchProcessProbe treated
+  --match-ui-* preview flags as a match-role request, causing an unwanted localhost
+  join/timeout when entering Lobby. Restrict it to actual --match-host/--match-join
+  flags and cover this with a regression; normal navigation never starts a probe.
+- Physical landscape safe-area inset moved Back into the fixed wordmark. Position
+  the wordmark after the actual inset-aware Back rectangle instead of a fixed X.
+- Physical Android LAN discovery, wrong/correct PIN, name typing with keyboard
+  visible, character selection and final join to Windows were observed. No ADB
+  network tunnel, device setting or permission change. Temporary debug fixture is
+  removed after testing and normal sensor orientation is restored on relaunch.
+
+## Lobby setup revision — 2026-10-25
+
+Approved by the user: host starts unready; three players per row with icon readiness;
+header icon actions for game setup and rules; full category/card/mission selection
+pages. Difficulty is multi-select in three bands (1–2, 3, 4–5). User explicitly
+approved positive base/time scoring multipliers ×1 / ×1.5 / ×2, before confidence,
+streaks and cards; wrong penalties remain fixed. FullMatch applies these rules;
+the legacy low-level GameSession API can still opt into unscaled scoring.
+
+Selections are copied into immutable Core settings at match start. Deck filtering
+(including sudden death and category swaps) keeps only selected difficulties and
+categories. Card pools intersect the selected list with aggressive-card permission;
+mission assignment intersects selected missions with actual feasibility. Empty card
+or mission lists disable awards/assignments. Empty category/difficulty selections
+cannot start. Selecting cards/mission pools does not reveal any private assignment.
+
+The roster tile itself toggles readiness for an owned player. Local-player removal
+is available when the add/edit local-player controls are open. Existing team
+assignment controls remain available in team mode. Pages retain the shared theme,
+scene-owned tactile feedback, localized Greek/English and minimum touch targets.
+Scroll overflow supports thresholded dragging from buttons and page backgrounds.
+No publishing, content review-state changes or phase advance was authorized.
+
+Protocol compatibility advances to v8/app 0.8.0: positive per-question bounds rise
+to 2,000 base / 12,000 strategy due to the approved difficulty multiplier. Existing
+v7 clients would reject these valid reveals, so admission/discovery must reject
+mixed protocol versions. No new private payload is broadcast and manual-IP API
+remains intact. See `harness/phase-10-lobby-settings-plan.md`.

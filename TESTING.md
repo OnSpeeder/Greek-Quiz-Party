@@ -1,5 +1,13 @@
 # TESTING.md
 
+## Presentation revision checks (2026-10-25)
+
+GdUnit verifies Greek glyph coverage in the shipped display font, larger-text
+question/answer baselines, motion cancellation, exact score endpoints and cleanup
+of animated controls. Existing private handoff/card tests remain mandatory.
+`capture-match-presentation.ps1` also supports Scoreboard, -Motion, -LargeText and
+-HighContrast. Inspect actual captures; passing scripts cannot confer visual QA.
+
 ## 1. Testing philosophy
 
 A networked party game must be verified at several layers. Visual success in one manual session is not enough.
@@ -279,3 +287,37 @@ No bot is active in normal navigation. Synthetic fixtures confer no editorial
 review. Final public-state SHA256 digests avoid Android logcat line truncation;
 desktop helpers also compare full JSON and independently verify team sums.
 Run base-match and discovery/PIN regressions after the protocol change.
+
+## Participation revision verification
+
+Core CharacterTests cover atomic explicit claims, host/local collisions, release
+and eight automatic assignments. RoomPreparationTests cover no roster mutation
+before final hello, PIN privacy/throttling duplicates, simultaneous competing
+claims/retry, connection binding/expiry, malformed availability and v6 rejection.
+GdUnit JoinFlowTests use isolated real ENet peers to drive wrong PIN, correct PIN,
+identity, occupied portraits and final admission. Existing direct/manual transport
+regressions stay; approved UI assertions now require the manual-IP control hidden.
+
+capture-join-flow.ps1 uses an actual host and discovery, with rooms/pin/identity
+captures in both orientations. Observe Android keyboard overlap on real hardware.
+Question similarity checking pre-tokenizes each text while retaining exact duplicate
+and Jaccard warning criteria; regression covers boundary/repeated whitespace. The
+CLI draft fixture selects a real question file rather than the removed greece.json.
+No content-review state is granted by these tests.
+
+## Lobby setup revision checks (2026-10-25)
+
+`MatchSetupTests` in Core covers selected difficulty copying/filtering, three-band
+rounding, copied strategy pools, empty pools and impossible mission omission.
+`MatchSetupProtocolTests` covers host-unready start blocking, filtered content
+capacity and authoritative hard-question score reception without premature reveal.
+Godot `MatchSetupTests` covers three-column readiness tiles, full-page navigation,
+individual/all/none selection and thresholded dragging from a button without click.
+Existing readiness fixtures now explicitly ready the host before intended starts.
+
+Actual preview flags: `--ui-preview --ui-greek --ui-reduced-motion
+--ui-lobby-page=setup` (or `roster/categories/cards/missions/rules`) with the existing
+`--ui-capture=<absolute png path>`. They create debug-only local players, never new
+production content. Capture normal and larger text in both orientations; inspect
+Greek accents, clipping, privacy, touch targets and scrolling. No script replaces
+physical Android/human usability sign-off.

@@ -34,9 +34,23 @@ not mark the settings redesign implemented or accepted.
 - Build responsive Godot UI with localized text and reusable components; do not
   use the generated mockup as a single baked interface texture.
 - Start with 2D graphics; use Blender selectively when a specific asset benefits.
-- Palette values, fonts, avatar roster and individual assets remain to be designed.
+- Shared palette: navy #0F0A26, plum #1E1442, gold #FFC83B; answers coral
+  #FF4B6E, blue #2B95FF, amber #FFB800, emerald #1AD598.
+- Typography: bundled Comfortaa at weight 700, with verified Greek accent coverage.
+- Reuse illustrated stage background and transparent cast cutouts; the wide host
+  shows cast above the answer grid, while portrait prioritizes controls.
+- Require actual viewport inspection beside the concept. Automated import/tests
+  establish technical validity, never human visual approval.
 
 Selecting this direction does not advance the implementation phase. Complete the
 Phase 01 Windows/Android LAN spike before substantial visual production, as
 required by AGENTS.md. Product scope and game rules remain owned by their existing
 documents.
+
+## Eight-character participation catalog
+
+Stable character identities are Pink, Blue, Orange, Green, Purple, Yeti, Coral and
+Teal. Preserve the original atlas and use the additional transparent atlas for
+IDs 4–7. Do not recolor/reassign a player when roster ordering changes. Occupied
+portraits are disabled and greyed; selection includes a check/accessibility state.
+Discovery/PIN/identity use the same chunky surfaces and Greek display typography.

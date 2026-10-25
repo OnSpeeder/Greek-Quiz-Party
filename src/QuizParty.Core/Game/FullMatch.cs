@@ -10,7 +10,8 @@ public sealed record MatchSettings
     public int QuestionCount { get; }
     public TimeSpan QuestionDuration { get; }
     public StrategyRules? Strategy { get; }
-    public MatchSettings(int questionCount = 20, int questionSeconds = 20, StrategyRules? strategy = null)
+    public IReadOnlyList<int> Difficulties { get; }
+    public MatchSettings(int questionCount = 20, int questionSeconds = 20, StrategyRules? strategy = null, IEnumerable<int>? difficulties = null)
     {
         // One question remains an explicit content preview, not a full-game preset.
         if (questionCount is not (1 or 10 or 20 or 30)) throw new ArgumentOutOfRangeException(nameof(questionCount));
@@ -18,6 +19,9 @@ public sealed record MatchSettings
         QuestionCount = questionCount;
         QuestionDuration = TimeSpan.FromSeconds(questionSeconds);
         Strategy = strategy;
+        var levels = (difficulties ?? Enumerable.Range(1, 5)).Distinct().Order().ToArray();
+        if (levels.Length == 0 || levels.Any(d => d is < 1 or > 5)) throw new ArgumentException("Select valid difficulty levels.", nameof(difficulties));
+        Difficulties = Array.AsReadOnly(levels);
     }
 }
 
@@ -69,7 +73,7 @@ public sealed class FullMatch
     {
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
-        _deck = new(questions, random, categories);
+        _deck = new(questions, random, categories, settings.Difficulties);
         if (_deck.Remaining < settings.QuestionCount) throw new ArgumentException("Insufficient unique questions.", nameof(questions));
         _nextInstance = nextInstance ?? (() => new(Guid.NewGuid()));
         _clock = clock;
@@ -78,7 +82,7 @@ public sealed class FullMatch
         teams?.ValidateRoster(roster.Select(p => p.Id));
         _connected = roster.Select(p => p.Id).ToHashSet();
         _strategy = settings.Strategy is null ? null : new StrategySession(roster.Select(p => p.Id), random, _deck.Upcoming(settings.QuestionCount), settings.Strategy, nextCard);
-        _game = new(GameAuthority.Host, roster, clock, random, strategy: _strategy);
+        _game = new(GameAuthority.Host, roster, clock, random, strategy: _strategy, scaleDifficulty: true);
         _eligible = Snapshot.Scores.Select(s => s.PlayerId).ToArray();
         _stats = _eligible.ToDictionary(id => id, id => new PlayerStatistics(id, 0, 0, 0, 0, 0, 0));
         _streaks = _eligible.ToDictionary(id => id, _ => 0);

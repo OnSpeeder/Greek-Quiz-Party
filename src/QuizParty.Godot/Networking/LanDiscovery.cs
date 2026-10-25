@@ -1,4 +1,7 @@
 using Godot;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using QuizParty.Core.Time;
 using QuizParty.Infrastructure.Networking;
 
@@ -17,6 +20,7 @@ public partial class LanDiscovery : Node
     private int _discoveryPort;
     private TimeSpan _nextProbe;
     private bool _scanFinished;
+    private string[] _broadcasts = ["255.255.255.255"];
     private string _lastRooms = "";
     public event Action<IReadOnlyList<DiscoveredRoom>>? RoomsChanged;
     public event Action<string>? StatusChanged;
@@ -48,6 +52,20 @@ public partial class LanDiscovery : Node
         var error = Bind(0);
         if (error != Error.Ok) { Emit("Unavailable"); return error; }
         _discoveryPort = discoveryPort;
+        // Limited broadcast can select a VPN/virtual adapter on Windows. Also probe
+        // each active IPv4 subnet explicitly; replies still enter the same nonce gate.
+        if (OS.HasFeature("windows"))
+        {
+            try
+            {
+                _broadcasts = NetworkInterface.GetAllNetworkInterfaces().Where(n => n.OperationalStatus == OperationalStatus.Up)
+                    .SelectMany(n => n.GetIPProperties().UnicastAddresses)
+                    .Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(a.Address))
+                    .Select(a => SubnetBroadcast(a.Address, a.IPv4Mask)).Where(a => a is not null)
+                    .Cast<string>().Append("255.255.255.255").Distinct().Take(16).ToArray();
+            }
+            catch (NetworkInformationException networkError) { GD.PushWarning($"Subnet discovery unavailable: {networkError.Message}"); }
+        }
         _catalog = new(_clock); _catalog.BeginScan();
         _nextProbe = _clock.Now;
         RoomsChanged?.Invoke([]);
@@ -70,9 +88,13 @@ public partial class LanDiscovery : Node
         if (_catalog?.Scanning == true && _clock.Now >= _nextProbe)
         {
             _nextProbe = _clock.Now + TimeSpan.FromSeconds(1);
-            if (!Send("255.255.255.255", _discoveryPort, DiscoveryProtocol.Request(_catalog.Nonce)))
-            { Emit("Unavailable"); Stop(); return; }
-            GD.Print("DISCOVERY PROBE broadcast=255.255.255.255");
+            var sent = false;
+            foreach (var address in _broadcasts)
+            {
+                sent |= Send(address, _discoveryPort, DiscoveryProtocol.Request(_catalog.Nonce));
+                GD.Print($"DISCOVERY PROBE broadcast={address}");
+            }
+            if (!sent) { Emit("Unavailable"); Stop(); return; }
         }
         // Bound work per timer tick even under malformed-datagram floods.
         for (var count = 0; count < 16 && _socket is { } socket && socket.GetAvailablePacketCount() > 0; count++)
@@ -91,6 +113,14 @@ public partial class LanDiscovery : Node
         if (signature != _lastRooms) { _lastRooms = signature; RoomsChanged?.Invoke(rooms); }
         if (_catalog is not null && !_catalog.Scanning && !_scanFinished)
         { _scanFinished = true; Emit(rooms.Count == 0 ? "NoRooms" : "Finished"); }
+    }
+
+    public static string? SubnetBroadcast(IPAddress address, IPAddress mask)
+    {
+        var ip = address.GetAddressBytes(); var subnet = mask.GetAddressBytes();
+        if (ip.Length != 4 || subnet.Length != 4 || subnet.All(b => b == 0) || subnet.All(b => b == 255) ||
+            ip[0] is 0 or 127 or >= 224 || ip[0] == 169 && ip[1] == 254) return null;
+        return new IPAddress(ip.Select((value, i) => (byte)(value | (byte)~subnet[i])).ToArray()).ToString();
     }
 
     private bool Send(string address, int port, byte[] bytes)

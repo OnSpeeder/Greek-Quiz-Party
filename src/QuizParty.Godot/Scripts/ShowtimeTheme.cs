@@ -4,27 +4,20 @@ namespace QuizParty.Presentation;
 
 public static class ShowtimeTheme
 {
-    public static readonly Color Navy = new("101329");
+    public static readonly Color Navy = QuizShowTheme.Navy;
     public static readonly Color Cyan = new("71e3ef");
-    public static readonly Color Gold = new("ffd580");
+    public static readonly Color Gold = QuizShowTheme.Gold;
     public static readonly Color Ink = new("f6f5ff");
 
-    public static StyleBoxFlat Panel(Color fill, Color border, int width = 2)
+    public static StyleBoxFlat Panel(Color fill, Color border, int width = 3)
     {
-        return new StyleBoxFlat
-        {
-            BgColor = fill, BorderColor = border,
-            BorderWidthLeft = width, BorderWidthRight = width, BorderWidthTop = width, BorderWidthBottom = width,
-            CornerRadiusTopLeft = 22, CornerRadiusTopRight = 22, CornerRadiusBottomLeft = 22, CornerRadiusBottomRight = 22,
-            ShadowColor = new Color(0, 0, 0, .45f), ShadowSize = 5, ShadowOffset = new(0, 5),
-            ContentMarginLeft = 20, ContentMarginRight = 20, ContentMarginTop = 14, ContentMarginBottom = 14
-        };
+        return QuizShowTheme.Card(fill, border, width);
     }
 
     public static Theme Create(PresentationPreferences preferences, int minimumTarget = 64)
     {
         var theme = new Theme { DefaultFontSize = preferences.LargeText ? 27 : 22,
-            DefaultFont = new FontVariation { BaseFont = ThemeDB.FallbackFont, VariationEmbolden = .35f } };
+            DefaultFont = QuizShowTheme.DisplayFont() };
         var surface = new Color(preferences.HighContrast ? "080a16" : "242441");
         var border = preferences.HighContrast ? Ink : new Color("62668d");
         foreach (var type in new[] { "Button", "OptionButton", "CheckButton", "CheckBox" })
@@ -65,7 +58,7 @@ public static class ShowtimeTheme
         theme.SetStylebox("pressed", "PrimaryAction", Panel(Cyan, Cyan, 3));
         foreach (var state in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
             theme.SetColor(state, "PrimaryAction", Navy);
-        var accents = new[] { Cyan, new Color("f78bd0"), new Color("bd99ff"), Gold };
+        var accents = Enumerable.Range(0, 4).Select(QuizShowTheme.AnswerColor).ToArray();
         for (var index = 0; index < accents.Length; index++)
         {
             var type = "Answer" + index;

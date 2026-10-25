@@ -15,12 +15,22 @@ public partial class PresentationShell : Control
     private readonly Dictionary<Control, Tween> _fades = [];
     private readonly List<Control> _hidden = [];
     private bool _previousQuitOnBack;
+    private Button? _exit;
+    private Button? _back;
+    private HBoxContainer? _lobbyActions;
+    private bool _lobbyActionsAvailable;
+    private bool _navigationCovered;
+    private ExitConfirmation? _exitConfirmation;
+    public bool ExitConfirmationOpen => _exitConfirmation?.Visible == true;
+    public ShowtimeJuice Juice { get; private set; } = null!;
     public bool SettingsOpen => _overlay.Visible;
     public int MinimumTarget { get; private set; } = 64;
 
     public override void _Ready()
     {
         _root = (Control)GetParent();
+        Juice = new ShowtimeJuice { Name = "ShowtimeJuice" };
+        AddChild(Juice);
         var previewArgs = OS.IsDebugBuild() ? MatchProcessProbe.LaunchArguments().Select(argument =>
             argument.StartsWith("--match-ui-", StringComparison.Ordinal) ? "--ui-" + argument["--match-ui-".Length..] : argument).ToArray() : [];
         if (previewArgs.Contains("--ui-greek")) TranslationServer.SetLocale("el_GR");
@@ -28,6 +38,8 @@ public partial class PresentationShell : Control
         {
             if (previewArgs.Contains("--ui-portrait")) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.Portrait);
             if (previewArgs.Contains("--ui-landscape")) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.Landscape);
+            if (!previewArgs.Contains("--ui-portrait") && !previewArgs.Contains("--ui-landscape"))
+                DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.Sensor);
         }
         _previousQuitOnBack = GetTree().QuitOnGoBack;
         GetTree().QuitOnGoBack = false;
@@ -38,6 +50,7 @@ public partial class PresentationShell : Control
         if (previewArgs.Contains("--ui-english")) Preferences = Preferences with { Language = "en" };
         if (previewArgs.Contains("--ui-greek")) Preferences = Preferences with { Language = "el_GR" };
         TranslationServer.SetLocale(Preferences.Language);
+        Juice.SetReducedMotion(Preferences.ReducedMotion);
         _root.Theme = ShowtimeTheme.Create(Preferences);
         if (OS.IsDebugBuild() && OS.HasFeature("android")) GetTree().CreateTimer(.6).Timeout += () =>
         {
@@ -57,13 +70,32 @@ public partial class PresentationShell : Control
         _settings.OffsetLeft = -84; _settings.OffsetRight = -20; _settings.OffsetTop = 12; _settings.OffsetBottom = 76;
         if (_root is not AppRoot)
         {
-            var wordmark = new Label { Text = "APP_TITLE", MouseFilter = MouseFilterEnum.Ignore };
+            var wordmark = new Label { Name = "Wordmark", Text = "APP_TITLE", MouseFilter = MouseFilterEnum.Ignore };
             wordmark.AddThemeFontSizeOverride("font_size", 28);
             wordmark.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
-            AddChild(wordmark); wordmark.Position = new(28, 24); wordmark.Size = new(240, 52);
+            AddChild(wordmark); wordmark.Position = new(_root is LobbyScreen ? 112 : 28, 24); wordmark.Size = new(240, 52);
         }
         _settings.Pressed += OpenSettings;
         BuildSettings();
+        if (_root is AppRoot)
+        {
+            _exit = new Button { Name = "Exit", Icon = GD.Load<Texture2D>("res://Art/exit.svg"),
+                AccessibilityName = Tr("UI_EXIT"), TooltipText = Tr("UI_EXIT"), CustomMinimumSize = new(64, 64) };
+            AddChild(_exit);
+            _exit.SetAnchorsAndOffsetsPreset(LayoutPreset.TopLeft);
+            _exit.Position = new(20, 12);
+            _exit.Pressed += OpenExitConfirmation;
+            _exitConfirmation = new ExitConfirmation { Name = "ExitConfirmation", Visible = false };
+            AddChild(_exitConfirmation);
+            _exitConfirmation.Cancelled += CloseExitConfirmation;
+            _exitConfirmation.Confirmed += () => { if (ExitConfirmationOpen) GetTree().Quit(); };
+        }
+        if (_root is LobbyScreen && _back is null)
+        {
+            _back = new Button { Name = "Back", Icon = GD.Load<Texture2D>("res://Art/back.svg"),
+                AccessibilityName = Tr("SPIKE_BACK"), TooltipText = Tr("SPIKE_BACK"), CustomMinimumSize = new(64, 64) };
+            AddChild(_back); _back.Position = new(20, 12); _back.Pressed += NavigateBack;
+        }
         StyleTree(_root);
         if (_root is AppRoot home) home.FitTitle();
         GetTree().NodeAdded += OnNodeAdded;
@@ -84,6 +116,7 @@ public partial class PresentationShell : Control
                     if (args.Contains("--ui-gameplay")) _overlay.SelectSection(1);
                     if (args.Contains("--ui-help")) _overlay.SelectSection(2);
                 }).CallDeferred();
+                if (args.Contains("--ui-exit-confirmation")) Callable.From(OpenExitConfirmation).CallDeferred();
                 if (args.Contains("--ui-sound-preview")) GetTree().CreateTimer(.1).Timeout += () =>
                 { if (GodotObject.IsInstanceValid(this) && IsInsideTree()) PlayCue("reveal"); };
                 if (args.FirstOrDefault(a => a.StartsWith("--ui-capture=", StringComparison.Ordinal)) is { } capture)
@@ -96,7 +129,7 @@ public partial class PresentationShell : Control
     {
         try
         {
-            await ToSignal(GetTree().CreateTimer(.45), global::Godot.Timer.SignalName.Timeout);
+            await ToSignal(GetTree().CreateTimer(MatchProcessProbe.LaunchArguments().Any(a => a.Contains("ui-join-step=", StringComparison.Ordinal)) ? 4 : .45), global::Godot.Timer.SignalName.Timeout);
             if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
             if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
@@ -134,6 +167,7 @@ public partial class PresentationShell : Control
             control.SetMeta("presentation_minimum", control.CustomMinimumSize);
         if (control is Button button)
         {
+            button.Flat = false;
             var baseline = button.GetMeta("presentation_minimum").AsVector2();
             button.CustomMinimumSize = new(Math.Max(MinimumTarget, baseline.X), Math.Max(MinimumTarget, baseline.Y));
             button.AutowrapMode = button.HasMeta("presentation_no_wrap") ? TextServer.AutowrapMode.Off : TextServer.AutowrapMode.WordSmart;
@@ -142,6 +176,7 @@ public partial class PresentationShell : Control
             {
                 button.SetMeta("presentation_hooked", true);
                 button.Pressed += () => PlayCue("tap");
+                Juice.AttachTactileButtonFeedback(button);
             }
         }
         if (control is LineEdit edit)
@@ -159,6 +194,32 @@ public partial class PresentationShell : Control
             control.SetMeta("presentation_font", control.GetThemeFontSize("font_size"));
         if (control.HasMeta("presentation_font"))
             control.AddThemeFontSizeOverride("font_size", (int)Math.Round(control.GetMeta("presentation_font").AsInt32() * (Preferences.LargeText ? 1.2 : 1)));
+    }
+
+    public void ConfigureLobbyActions(Action setup, Action rules)
+    {
+        _lobbyActions = new HBoxContainer { Name = "LobbyActions", Visible = false };
+        AddChild(_lobbyActions); MoveChild(_lobbyActions, _overlay.GetIndex());
+        _lobbyActions.SetAnchorsAndOffsetsPreset(LayoutPreset.TopRight);
+        _lobbyActions.AddThemeConstantOverride("separation", 8);
+        foreach (var (name, icon, key, action) in new[] {
+            ("GameSetup", "setup", "SETUP_SETUP", setup), ("GameRules", "rules", "SETUP_RULES", rules) })
+        {
+            var button = new Button { Name = name, Icon = LobbyIcons.Texture(icon),
+                IconAlignment = HorizontalAlignment.Center, CustomMinimumSize = new(64, 64),
+                AccessibilityName = Tr(key), TooltipText = Tr(key) };
+            button.AddThemeConstantOverride("icon_max_width", 36);
+            button.Pressed += action; _lobbyActions.AddChild(button);
+        }
+        UpdateInsets(Vector4.Zero);
+    }
+    public void ShowLobbyActions(bool available, bool host = false)
+    {
+        _lobbyActionsAvailable = available;
+        if (_lobbyActions is null) return;
+        _lobbyActions.Visible = available && !_navigationCovered && !SettingsOpen;
+        _lobbyActions.GetNode<Button>("GameSetup").Visible = host;
+        if (GetNodeOrNull<Label>("Wordmark") is { } mark) mark.Visible = !available || _root.Size.X > 700;
     }
 
     private void BuildSettings()
@@ -180,12 +241,12 @@ public partial class PresentationShell : Control
     }
     public void OpenSettings()
     {
-        if (SettingsOpen) return;
+        if (SettingsOpen || ExitConfirmationOpen || _navigationCovered) return;
         _hidden.Clear();
         // Hidden scene content cannot receive keyboard focus or reveal private panels behind settings.
         foreach (var control in _root.GetChildren().OfType<Control>().Where(c => c != this && c is not StageBackdrop && c.Visible))
         { _hidden.Add(control); control.Hide(); }
-        _settings.Hide(); _overlay.Open();
+        _settings.Hide(); _exit?.Hide(); _back?.Hide(); _lobbyActions?.Hide(); _overlay.Open();
     }
 
     public void CloseSettings()
@@ -193,7 +254,48 @@ public partial class PresentationShell : Control
         if (!SettingsOpen) return;
         _overlay.Dismiss();
         foreach (var control in _hidden.Where(GodotObject.IsInstanceValid)) control.Show();
-        _hidden.Clear(); _settings.Show(); _settings.GrabFocus();
+        _hidden.Clear(); _settings.Show(); _exit?.Show(); _back?.Show();
+        if (_lobbyActions is not null) _lobbyActions.Visible = _lobbyActionsAvailable;
+        _settings.GrabFocus();
+    }
+
+    public void OpenExitConfirmation()
+    {
+        if (_exitConfirmation is null || SettingsOpen || ExitConfirmationOpen) return;
+        _hidden.Clear();
+        foreach (var control in _root.GetChildren().OfType<Control>().Where(c => c != this && c is not StageBackdrop && c.Visible))
+        { _hidden.Add(control); control.Hide(); }
+        _settings.Hide(); _exit?.Hide();
+        _exitConfirmation.Open();
+    }
+
+    public void CloseExitConfirmation()
+    {
+        if (!ExitConfirmationOpen) return;
+        _exitConfirmation!.Hide();
+        foreach (var control in _hidden.Where(GodotObject.IsInstanceValid)) control.Show();
+        _hidden.Clear(); _settings.Show(); _exit?.Show(); _exit?.GrabFocus();
+    }
+
+    public void SetNavigationCovered(bool covered)
+    {
+        _navigationCovered = covered;
+        _settings.Visible = !covered && !SettingsOpen;
+        if (_lobbyActions is not null) _lobbyActions.Visible = _lobbyActionsAvailable && !covered && !SettingsOpen;
+        if (_back is not null) _back.Visible = !covered && !SettingsOpen;
+    }
+
+    public void NavigateBack()
+    {
+        if (ExitConfirmationOpen) { CloseExitConfirmation(); return; }
+        if (SettingsOpen) { if (!_overlay.Back()) CloseSettings(); return; }
+        if (_root is AppRoot) OpenExitConfirmation();
+        else if (_root is LobbyScreen lobby) lobby.NavigateBack();
+        else
+        {
+            var error = GetTree().ChangeSceneToFile("res://Scenes/Main.tscn");
+            if (error != Error.Ok) GD.PushError($"Back navigation failed: {error}");
+        }
     }
 
     public void UpdateInsets(Vector4 inset)
@@ -210,15 +312,45 @@ public partial class PresentationShell : Control
         }
         _settings.OffsetLeft = -20 - MinimumTarget - inset.Z; _settings.OffsetRight = -20 - inset.Z;
         _settings.OffsetTop = 12 + inset.Y; _settings.OffsetBottom = 12 + MinimumTarget + inset.Y;
+        if (_lobbyActionsAvailable && GetNodeOrNull<Label>("Wordmark") is { } lobbyMark) lobbyMark.Visible = _root.Size.X > 700;
+        if (_lobbyActions is not null)
+        {
+            _lobbyActions.OffsetRight = _settings.OffsetLeft - 8;
+            _lobbyActions.OffsetLeft = _lobbyActions.OffsetRight - 2 * MinimumTarget - 8;
+            _lobbyActions.OffsetTop = _settings.OffsetTop; _lobbyActions.OffsetBottom = _settings.OffsetBottom;
+        }
+        if (GetNodeOrNull<MatchSetupPanel>("MatchSetup") is { } matchSetup)
+        {
+            matchSetup.OffsetLeft = inset.X; matchSetup.OffsetTop = inset.Y;
+            matchSetup.OffsetRight = -inset.Z; matchSetup.OffsetBottom = -inset.W;
+        }
         _overlay.OffsetLeft = inset.X; _overlay.OffsetTop = inset.Y;
         _overlay.OffsetRight = -inset.Z; _overlay.OffsetBottom = -inset.W;
+        if (_back is not null)
+        {
+            _back.Position = new(20 + inset.X, 12 + inset.Y); _back.Size = new(MinimumTarget, MinimumTarget);
+        }
+        if (GetNodeOrNull<Label>("Wordmark") is { } wordmark)
+            wordmark.Position = new(_back is null ? 28 + inset.X : _back.Position.X + _back.Size.X + 20, 24 + inset.Y);
+        if (_exit is not null)
+        {
+            _exit.Position = new(20 + inset.X, 12 + inset.Y);
+            _exit.Size = new(MinimumTarget, MinimumTarget);
+        }
+        if (_exitConfirmation is not null)
+        {
+            _exitConfirmation.OffsetLeft = inset.X; _exitConfirmation.OffsetTop = inset.Y;
+            _exitConfirmation.OffsetRight = -inset.Z; _exitConfirmation.OffsetBottom = -inset.W;
+        }
     }
 
     public void Apply(PresentationPreferences preferences, bool persist = true)
     {
         Preferences = preferences;
+        Juice.SetReducedMotion(preferences.ReducedMotion);
         TranslationServer.SetLocale(preferences.Language);
         _settings.AccessibilityName = Tr("UI_SETTINGS"); _settings.TooltipText = Tr("UI_SETTINGS");
+        if (_exit is not null) { _exit.AccessibilityName = Tr("UI_EXIT"); _exit.TooltipText = Tr("UI_EXIT"); }
         _root.Theme = ShowtimeTheme.Create(Preferences, MinimumTarget);
         var backdrop = _root.GetNode<StageBackdrop>("StageBackdrop");
         backdrop.HighContrast = preferences.HighContrast; backdrop.QueueRedraw();
@@ -244,7 +376,7 @@ public partial class PresentationShell : Control
         if (Preferences.ReducedMotion || !control.IsInsideTree()) return;
         control.Modulate = new Color(1, 1, 1, .82f);
         var tween = control.CreateTween(); _fades[control] = tween;
-        tween.TweenProperty(control, "modulate:a", 1.0, .16);
+        tween.TweenProperty(control, "modulate:a", 1.0, .16).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
         tween.Finished += () => _fades.Remove(control);
     }
 
@@ -278,14 +410,14 @@ public partial class PresentationShell : Control
 
     public override void _UnhandledKeyInput(InputEvent @event)
     {
-        if (SettingsOpen && @event is InputEventKey { Pressed: true, Keycode: Key.Escape })
-        { if (!_overlay.Back()) CloseSettings(); GetViewport().SetInputAsHandled(); }
+        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape })
+        { NavigateBack(); GetViewport().SetInputAsHandled(); }
     }
 
     public override void _Notification(int what)
     {
         if (what == NotificationWMGoBackRequest && IsInsideTree())
-        { if (SettingsOpen) { if (!_overlay.Back()) CloseSettings(); } else GetTree().Quit(); }
+            NavigateBack();
     }
 
     public override void _ExitTree()

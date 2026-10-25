@@ -49,7 +49,7 @@ All normal local/LAN gameplay must work without Internet access.
 
 ### 4.2 No account required
 
-A player enters a display name and optionally chooses an avatar/color. No mandatory registration.
+A player enters a display name and chooses one of eight characters. Characters are unique within a lobby, including host and local players. No mandatory registration.
 
 ### 4.3 Fast lobby
 
@@ -125,7 +125,7 @@ Multiple rounds, category variation, confidence choices, streaks, Chaos Cards, s
 ### 6.3 Discovery
 
 - UDP broadcast/multicast-style LAN discovery.
-- Manual IP fallback.
+- Discovery-first participation screen. Manual-IP implementation is retained internally and hidden from the normal UI by user decision (2026-10-25).
 - Display room name, player count, compatibility/protocol status and ping if practical.
 - Ignore incompatible protocol versions.
 
@@ -201,7 +201,7 @@ If reconnect proves unstable, shipping v1 with a clear “player disconnected”
 
 - Windows host.
 - Android client.
-- Manual IP + discovery.
+- LAN discovery; manual-IP transport retained internally with hidden UI.
 - Lobby.
 - 1–2 basic game modes.
 - Core question/score loop.
@@ -222,3 +222,22 @@ If reconnect proves unstable, shipping v1 with a clear “player disconnected”
 ### v1.0
 
 All target features in `README.md`, at least 1,000 reviewed questions, release-quality packaging, automated test gates and real-device Android verification.
+
+## Approved participation flow — 2026-10-25
+
+Home uses «Δημιουργία» and «Συμμετοχή». Participation opens «Διαθέσιμες Αίθουσες»
+with icon-only corner Back and refresh beside the heading. Room rows show name
+and joined/max count. PIN remains optional: protected rooms ask in a popup;
+unprotected rooms go directly through host preflight to identity selection.
+Wrong PIN closes the popup and shows an error in the rooms list.
+
+Successful preflight does not create a player, count a joined seat, or reserve a
+character. Identity screen collects name and character. Taken characters are
+visibly greyed and disabled. The host atomically validates the final join; a
+simultaneous loser keeps their name, sees a character-conflict message and chooses
+from refreshed availability. The join action uses an icon and accessible name.
+All eight slots, including host and shared-device players, obey uniqueness.
+
+Portrait/landscape Android inputs must remain visible above the virtual keyboard.
+These decisions explicitly authorize the necessary lobby/protocol changes within
+the current phase; manual-IP transport remains available for possible future UI.

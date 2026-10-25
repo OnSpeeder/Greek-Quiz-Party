@@ -22,6 +22,14 @@ public partial class StrategyPanel : VBoxContainer
     private HBoxContainer _bets = null!;
     private Label _betHint = null!;
     private readonly List<Button> _betButtons = [];
+    private bool _compact;
+    public void SetCompact(bool compact)
+    {
+        _compact = compact;
+        if (_bets is null) return;
+        // Confidence remains visible; verbose risk explanations stay accessible via tooltips.
+        _betHint.Visible = !_compact && _bets.Visible;
+    }
     public int Confidence => _snapshot?.Strategy?.Confidence == true && !_snapshot.IsTieBreaker ? _confidence.GetSelectedId() : 1;
 
     public override void _Ready()
@@ -80,8 +88,8 @@ public partial class StrategyPanel : VBoxContainer
         if (_question != snapshot.Question.InstanceId || _owner != own.PlayerId)
         { _question = snapshot.Question.InstanceId; _owner = own.PlayerId; _confidence.Select(0); _reason = "None"; }
         _confidence.Visible = false;
-        _bets.Visible = snapshot.Strategy!.Confidence && !snapshot.IsTieBreaker;
-        _betHint.Visible = _bets.Visible;
+        _bets.Visible = snapshot.Strategy!.Confidence && !snapshot.IsTieBreaker && snapshot.Phase is "QuestionActive" or "QuestionLocked";
+        _betHint.Visible = !_compact && _bets.Visible;
         _confidence.Disabled = snapshot.Phase != "QuestionActive" || _transport.OwnAnswerIndex is not null ||
             _transport.AnswerPending || _transport.CardPending || !snapshot.EligiblePlayers.Contains(own.PlayerId);
         UpdateBetButtons();
@@ -90,6 +98,9 @@ public partial class StrategyPanel : VBoxContainer
         _status.Visible = _status.Text.Length > 0;
         foreach (var child in _private.GetChildren()) { _private.RemoveChild(child); child.QueueFree(); }
         AddText(string.Format(Tr("STRATEGY_PROGRESS"), own.Streak, own.Meter));
+        _private.AddChild(new ProgressBar { Name = "ChaosMeter", MinValue = 0, MaxValue = 100,
+            Value = own.Meter, ShowPercentage = false, CustomMinimumSize = new(0, 16),
+            AccessibilityName = string.Format(Tr("STRATEGY_PROGRESS"), own.Streak, own.Meter) });
         if (own.Shield) AddText(Tr("STRATEGY_SHIELD_ACTIVE"));
         if (own.DoublePoints) AddText(Tr("STRATEGY_DOUBLE_ACTIVE"));
         if (own.Mission is { } mission) AddText(string.Format(Tr("STRATEGY_MISSION"),
@@ -100,14 +111,21 @@ public partial class StrategyPanel : VBoxContainer
         foreach (var card in own.Hand)
         {
             var kind = (CardKind)card.Kind;
-            AddText(Tr("STRATEGY_DESCRIPTION_" + kind));
+            var frame = new PanelContainer();
+            frame.AddThemeStyleboxOverride("panel", QuizShowTheme.Card(QuizShowTheme.Plum,
+                QuizShowTheme.AnswerColor(card.Kind % 4)));
+            _private.AddChild(frame);
+            var contents = new VBoxContainer(); frame.AddChild(contents);
+            var title = new Label { Text = Tr("STRATEGY_USE_" + kind), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            title.AddThemeColorOverride("font_color", QuizShowTheme.AnswerColor(card.Kind % 4)); contents.AddChild(title);
+            contents.AddChild(new Label { Text = Tr("STRATEGY_DESCRIPTION_" + kind), AutowrapMode = TextServer.AutowrapMode.WordSmart });
             OptionButton? options = null;
             Guid[] targets = [];
             if (kind == CardKind.CategorySwap)
             {
                 options = new OptionButton { CustomMinimumSize = new(0, 64) };
                 foreach (var category in own.SwapCategories) options.AddItem(CategoryName(category));
-                _private.AddChild(options);
+                contents.AddChild(options);
             }
             if (kind == CardKind.Steal)
             {
@@ -117,7 +135,7 @@ public partial class StrategyPanel : VBoxContainer
                     _transport.Snapshot?.Players.Any(p => p.PlayerId == s.PlayerId) == true).ToArray();
                 targets = others.Select(p => p.PlayerId).ToArray();
                 foreach (var player in others) options.AddItem(player.DisplayName);
-                _private.AddChild(options);
+                contents.AddChild(options);
             }
             var active = snapshot.Phase == "QuestionActive";
             var recap = snapshot.Phase is "Scoreboard" or "RoundEnd";
@@ -134,7 +152,7 @@ public partial class StrategyPanel : VBoxContainer
             button.Pressed += () => _transport.ActivateCard(card.Id,
                 kind == CardKind.Steal && options!.Selected >= 0 ? targets[options.Selected] : null,
                 kind == CardKind.CategorySwap && options!.Selected >= 0 ? own.SwapCategories[options.Selected] : null);
-            _private.AddChild(button);
+            contents.AddChild(button);
         }
     }
     private string CategoryName(string id)

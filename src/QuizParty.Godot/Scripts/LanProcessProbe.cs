@@ -36,6 +36,8 @@ public partial class LanProcessProbe : Node
         _transport.SnapshotChanged += snapshot =>
         {
             if (snapshot.Phase != "Lobby") return;
+            if (_transport.IsHost && Argument("--lan-start-players=") is not null && snapshot.Players.Any(p => p.IsHost && !p.Ready))
+            { _transport.SetReady(true); return; }
             if (!_transport.IsHost && !_ready) { _ready = true; _transport.SetReady(true); }
             if (_transport.IsHost && int.TryParse(Argument("--lan-start-players="), out var players) &&
                 snapshot.Players.Length == players && snapshot.Players.All(p => p.Ready)) _transport.StartGame();

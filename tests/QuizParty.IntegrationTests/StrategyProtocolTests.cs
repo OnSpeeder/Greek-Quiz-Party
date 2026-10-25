@@ -24,6 +24,7 @@ public class StrategyProtocolTests
                 ["yes", "no", "other", "last"], 0, categories[i % 5], 5, "Test only")).ToArray();
             Host = new("Room", "Host", Clock, questions, new(30, strategy: new(AllowSteal: true)), random: new FixedRandom(card));
             Deliver(Host.Handle(2, Client.BeginHello("Phone", "Android")));
+            Host.SetHostReady(true);
             Deliver(Host.Handle(2, Client.CreateReady(true)!)); Host.Start();
             foreach (var p in Host.Broadcast()) Client.Apply(p.Json);
             Assert.True(Host.BeginMatch()); Sync();

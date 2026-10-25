@@ -39,9 +39,9 @@ try {
     Wait-Log $hostProcess 'host' 'HostListening'
     $first = Start-LobbyProcess 'first' '--lobby-join=127.0.0.1 --lobby-name=Anna --lobby-test-start --lobby-exit-start'
     $second = Start-LobbyProcess 'second' '--lobby-join=127.0.0.1 --lobby-name=Maria --lobby-exit-start'
-    Wait-Log $hostProcess 'host' 'AUTO_STARTED revision=6 players=3'
-    Wait-Log $first 'first' 'AUTO_STARTED revision=6 players=3'
-    Wait-Log $second 'second' 'AUTO_STARTED revision=6 players=3'
+    Wait-Log $hostProcess 'host' 'AUTO_STARTED revision=7 players=3'
+    Wait-Log $first 'first' 'AUTO_STARTED revision=7 players=3'
+    Wait-Log $second 'second' 'AUTO_STARTED revision=7 players=3'
     foreach ($name in @('host', 'first', 'second')) {
         if (!(Select-String "$output/$name.log" -Pattern 'phase=GameStarting roster=Anna:True\|Host:True\|Maria:True' -Quiet)) {
             throw "$name did not observe the same ready roster."
@@ -54,7 +54,7 @@ try {
     if (!(Select-String "$output/late.log" -Pattern 'STATUS GameStarted' -Quiet)) { throw 'Late join was not rejected.' }
     Assert-ProcessExit $first 'first' 0
     Assert-ProcessExit $second 'second' 0
-    Wait-Log $hostProcess 'host' 'revision=8 phase=GameStarting roster=Host:True'
+    Wait-Log $hostProcess 'host' 'revision=9 phase=GameStarting roster=Host:True'
     $wrongVersion = Start-LobbyProcess 'rejected' '--lobby-join=127.0.0.1 --lobby-name=Rejected --lobby-protocol=99'
     Assert-ProcessExit $wrongVersion 'rejected' 2
     if (!(Select-String "$output/rejected.log" -Pattern 'IncompatibleVersion' -Quiet)) { throw 'Version mismatch was not rejected.' }
@@ -76,7 +76,7 @@ try {
     Assert-ProcessExit $cancelled 'cancelled' 0
     if (!(Select-String "$output/cancelled.log" -Pattern 'AUTO_CANCEL_PASS' -Quiet)) { throw 'Freed join transport callback was not safely canceled.' }
     if (Select-String "$output/*errors.log" -Pattern 'ERROR:|SCRIPT ERROR:|Unhandled exception') { throw 'Engine/runtime errors observed.' }
-    Write-Output 'PASS: ENet host + two clients share roster/readiness/start revision 6; duplicate setters safe; remote start, late join and version rejected; disconnect cleanup, host exit, no-host timeout and freed join cancellation verified.'
+    Write-Output 'PASS: ENet host + two clients share roster/readiness/start revision 7; duplicate setters safe; remote start, late join and version rejected; disconnect cleanup, host exit, no-host timeout and freed join cancellation verified.'
 } finally {
     foreach ($process in $processes) {
         if (!$process.HasExited) { Stop-Process -Id $process.Id; $process.WaitForExit(5000) | Out-Null }

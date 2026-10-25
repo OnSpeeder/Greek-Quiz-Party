@@ -21,6 +21,21 @@ public sealed record StrategyFinal(PlayerId Player, MissionView? Mission, int Mi
 public sealed record StrategyRules(bool Confidence = true, bool Streaks = true, bool Cards = true,
     bool Missions = true, bool AllowSteal = false)
 {
+    // Copy caller collections so a running match cannot be changed from its setup UI.
+    private IReadOnlyList<CardKind>? _enabledCards;
+    private IReadOnlyList<MissionKind>? _enabledMissions;
+    public IReadOnlyList<CardKind>? EnabledCards
+    {
+        get => _enabledCards;
+        init => _enabledCards = value is null ? null : Array.AsReadOnly(value.Distinct().Select(k =>
+            Enum.IsDefined(k) ? k : throw new ArgumentException("Unknown card.")).ToArray());
+    }
+    public IReadOnlyList<MissionKind>? EnabledMissions
+    {
+        get => _enabledMissions;
+        init => _enabledMissions = value is null ? null : Array.AsReadOnly(value.Distinct().Select(k =>
+            Enum.IsDefined(k) ? k : throw new ArgumentException("Unknown mission.")).ToArray());
+    }
     public const int ConfidentPenalty = 250, AllInPenalty = 500, MaxMultiplier = 6;
     public const int MeterThreshold = 100, CorrectMeter = 20, DifficultyMeter = 5, StreakMeter = 10, HandLimit = 2;
     public const int ExtraSeconds = 5, ExtraCutoffSeconds = 3, StealPoints = 100, MissionBonus = 500;
@@ -48,6 +63,7 @@ public sealed class StrategySession
         if (rules.Confidence && normalQuestions.Count >= 2) pool.Add(MissionKind.Gambler);
         if (normalQuestions.Count >= 3) pool.Add(MissionKind.Speedster);
         if (normalQuestions.Select(q => q.CategoryId).Distinct().Count() >= 5) pool.Add(MissionKind.Generalist);
+        pool.RemoveAll(kind => rules.EnabledMissions is not null && !rules.EnabledMissions.Contains(kind));
         if (rules.Missions && pool.Count > 0)
             foreach (var player in _players.Values) player.Mission = pool[Next(pool.Count)];
     }
@@ -112,6 +128,8 @@ public sealed class StrategySession
         var state = _players[id];
         if (state.Hand.Count >= StrategyRules.HandLimit) return;
         CardKind[] pool = Rules.AllowSteal ? Enum.GetValues<CardKind>() : [CardKind.DoublePoints, CardKind.FiftyFifty, CardKind.ExtraTime, CardKind.CategorySwap];
+        pool = pool.Where(kind => Rules.EnabledCards is null || Rules.EnabledCards.Contains(kind)).ToArray();
+        if (pool.Length == 0) return;
         var kind = pool[Next(pool.Length)];
         var cardId = _newCard();
         if (cardId == Guid.Empty || !_usedCardIds.Add(cardId)) throw new InvalidOperationException("Card instance IDs must be fresh and nonempty.");

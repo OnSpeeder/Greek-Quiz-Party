@@ -14,25 +14,24 @@ public partial class LobbyScreen : Control
     private Button _join = null!;
     private Button _ready = null!;
     private Button _start = null!;
+    private Button _disconnect = null!;
+    private GridContainer _actions = null!;
     private Label _roster = null!;
     private Label _status = null!;
-    private VBoxContainer _settings = null!;
-    private Label _capacity = null!;
-    private OptionButton _length = null!;
-    private VBoxContainer _categories = null!;
+    private MatchSetupPanel _matchSetup = null!;
     private LineEdit _pin = null!;
     private RoomBrowser _browser = null!;
+    private JoinFlow _joinFlow = null!;
+    private CharacterPicker _hostCharacter = null!;
     private RosterEditor _players = null!;
     private VBoxContainer _chooser = null!;
     private Button _switchPage = null!;
     private Button _manualIp = null!;
     private Button _pinOptions = null!;
-    private Button _ruleOptions = null!;
     private string _page = "choose";
     private bool _setupVisible = true;
     private bool _manualOpen;
     private bool _pinOpen;
-    private bool _rulesOpen;
 
     public override void _Ready()
     {
@@ -46,6 +45,7 @@ public partial class LobbyScreen : Control
         _join = GetNode<Button>(path + "Join");
         _ready = GetNode<Button>(path + "Ready");
         _start = GetNode<Button>(path + "Start");
+        _disconnect = GetNode<Button>(path + "Disconnect");
         _host.ThemeTypeVariation = "PrimaryAction";
         _start.ThemeTypeVariation = "PrimaryAction";
         _roster = GetNode<Label>(path + "Roster");
@@ -53,6 +53,12 @@ public partial class LobbyScreen : Control
         var content = GetNode<VBoxContainer>(path.TrimEnd('/'));
         _players = new RosterEditor { Name = "RosterEditor" };
         content.AddChild(_players); content.MoveChild(_players, _ready.GetIndex()); _players.Bind(_transport);
+        _actions = new GridContainer { Name = "LobbyActions", Columns = 1 };
+        content.AddChild(_actions); content.MoveChild(_actions, _start.GetIndex());
+        _players.MoveAddActionTo(_actions); _start.Reparent(_actions); _disconnect.Reparent(_actions);
+        _start.SizeFlagsHorizontal = SizeFlags.ExpandFill; _disconnect.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        Resized += () => _actions.Columns = Size.X > 850 ? 3 : 1;
+        _actions.Columns = Size.X > 850 ? 3 : 1;
         _pin = new LineEdit { Name = "RoomPin", MaxLength = 6, Secret = true, PlaceholderText = "LOBBY_PIN",
             CustomMinimumSize = new Vector2(0, 64), VirtualKeyboardType = LineEdit.VirtualKeyboardTypeEnum.Number };
         content.AddChild(_pin); content.MoveChild(_pin, _host.GetIndex());
@@ -64,39 +70,22 @@ public partial class LobbyScreen : Control
             field.VisibilityChanged += () => label.Visible = field.Visible;
         }
         content.MoveChild(_status, _pin.GetIndex() + 1);
-        _browser = new RoomBrowser { Name = "RoomBrowser" };
-        content.AddChild(_browser); content.MoveChild(_browser, _address.GetIndex());
-        _browser.Bind(_transport.Discovery, room =>
+        _joinFlow = new JoinFlow { Name = "JoinFlow" };
+        content.AddChild(_joinFlow); content.MoveChild(_joinFlow, _address.GetIndex());
+        _joinFlow.Bind(_transport); _browser = _joinFlow.GetNode<RoomBrowser>("RoomBrowser");
+        _hostCharacter = new CharacterPicker { Name = "HostCharacter" };
+        content.AddChild(_hostCharacter); content.MoveChild(_hostCharacter, _host.GetIndex());
+        _hostCharacter.Select(0);
+        _matchSetup = new MatchSetupPanel { Name = "MatchSetup", Visible = false };
+        var shellHost = GetNode<PresentationShell>("PresentationShell");
+        shellHost.AddChild(_matchSetup); _matchSetup.Bind(_transport);
+        _matchSetup.Closed += () =>
         {
-            if (room.Room.RequiresPin && _pin.Text.Length == 0)
-            { _pinOpen = true; ShowSetup(true); _status.Text = Tr("LOBBY_STATUS_PinRequired"); _status.Visible = true; _pin.GrabFocus(); RevealStatus(); return; }
-            _address.Text = room.Address;
-            ShowError(_transport.Join(room.Address, _name.Text.Trim(), room.Room.GamePort, _pin.Text));
-        });
-        _settings = new VBoxContainer { Name = "MatchSettings" };
-        GetNode<VBoxContainer>(path.TrimEnd('/')).AddChild(_settings);
-        GetNode<VBoxContainer>(path.TrimEnd('/')).MoveChild(_settings, _start.GetIndex());
-        _capacity = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        _settings.AddChild(_capacity);
-        var length = new OptionButton { Name = "Length", CustomMinimumSize = new Vector2(0, 64) };
-        _length = length;
-        length.AddItem(Tr("MATCH_PREVIEW"), 1);
-        foreach (var count in new[] { 10, 20, 30 }) length.AddItem(string.Format(Tr("MATCH_LENGTH"), count), count);
-        length.ItemSelected += index => _transport.QuestionCount = length.GetItemId((int)index);
-        _settings.AddChild(length);
-        var timer = new OptionButton { Name = "Duration", CustomMinimumSize = new Vector2(0, 64) };
-        foreach (var seconds in new[] { 10, 20, 30, 60 }) timer.AddItem(string.Format(Tr("MATCH_DURATION"), seconds), seconds);
-        timer.Select(1);
-        timer.ItemSelected += index => _transport.QuestionSeconds = timer.GetItemId((int)index);
-        _settings.AddChild(timer);
-        var strategy = new CheckButton { Name = "Strategy", Text = "STRATEGY_ENABLED", ButtonPressed = true,
-            CustomMinimumSize = new(0, 64) };
-        var steal = new CheckButton { Name = "AllowSteal", Text = "STRATEGY_ALLOW_STEAL", CustomMinimumSize = new(0, 64) };
-        strategy.Toggled += enabled => { _transport.StrategyEnabled = enabled; steal.Disabled = !enabled; };
-        steal.Toggled += enabled => _transport.AllowSteal = enabled;
-        _settings.AddChild(strategy); _settings.AddChild(steal);
-        _categories = new VBoxContainer { Name = "Categories" };
-        _settings.AddChild(_categories);
+            GetNode<Control>("Margin").Show(); shellHost.SetNavigationCovered(false);
+            if (_transport.Snapshot is { } snapshot && _transport.MatchSnapshot is null) Render(snapshot);
+        };
+        shellHost.ConfigureLobbyActions(() => OpenMatchPage("setup"), () => OpenMatchPage("rules"));
+        GetNode<ScrollContainer>("Margin/Scroll").AddChild(new PageDragScroll());
         _chooser = new VBoxContainer { Name = "PartyChoice" };
         content.AddChild(_chooser); content.MoveChild(_chooser, 1);
         var crew = new TextureRect { Texture = GD.Load<Texture2D>("res://Art/showtime-crew-v2.png"),
@@ -119,17 +108,9 @@ public partial class LobbyScreen : Control
         _pinOptions = new Button { Name = "PinOptions", Text = "UI_PIN_OPTIONS", Flat = true };
         content.AddChild(_pinOptions); content.MoveChild(_pinOptions, _pin.GetIndex());
         _pinOptions.Pressed += () => { _pinOpen = !_pinOpen; ShowSetup(true); };
-        _ruleOptions = new Button { Name = "RuleOptions", Text = "UI_RULES" };
-        content.AddChild(_ruleOptions); content.MoveChild(_ruleOptions, _settings.GetIndex());
-        _ruleOptions.Pressed += () =>
-        {
-            _rulesOpen = !_rulesOpen;
-            _settings.Visible = _transport.IsHost && _rulesOpen;
-            _players.ShowHostOptions(_rulesOpen);
-        };
         if (PresentationShell.For(this) is { } shell) shell.SetLeaveAction(() =>
         { _transport.Stop(); Reset(); shell.CloseSettings(); });
-        _host.Pressed += () => ShowError(_transport.Host(_room.Text.Trim(), _name.Text.Trim(), pin: _pin.Text));
+        _host.Pressed += () => ShowError(_transport.Host(_room.Text.Trim(), _name.Text.Trim(), pin: _pin.Text, character: _hostCharacter.Selected ?? 0));
         _join.Pressed += () => ShowError(_transport.Join(_address.Text.Trim(), _name.Text.Trim(), pin: _pin.Text));
         _ready.Pressed += () =>
         {
@@ -137,11 +118,12 @@ public partial class LobbyScreen : Control
             if (local is not null) _transport.SetReady(!local.Ready);
         };
         _start.Pressed += _transport.StartGame;
-        GetNode<Button>(path + "Disconnect").Pressed += () => { _transport.Stop(); Reset(); };
-        GetNode<Button>(path + "Back").Pressed += () => GetTree().ChangeSceneToFile("res://Scenes/Main.tscn");
+        _disconnect.Pressed += () => { _transport.Stop(); Reset(); };
+        GetNode<Button>(path + "Back").Pressed += NavigateBack;
         _transport.SnapshotChanged += Render;
         _transport.StatusChanged += reason =>
         {
+            if (_page == "join" && _setupVisible) { _status.Hide(); return; }
             if (_transport.Snapshot is null && reason != "Connecting") Reset();
             if (reason == "Connecting") { _host.Disabled = true; _join.Disabled = true; _browser.Visible = false; _pin.Editable = false; }
             _status.Text = Tr("LOBBY_STATUS_" + reason);
@@ -151,10 +133,10 @@ public partial class LobbyScreen : Control
         GetNode<MatchPanel>(path + "MatchPanel").Bind(_transport);
         _transport.MatchChanged += _ =>
         {
-            _settings.Visible = false;
-            _players.Visible = false;
-            _ruleOptions.Visible = false;
-            foreach (var name in new[] { "Title", "Addresses", "Roster", "Ready", "Start", "Status", "Disconnect", "Back" })
+            _matchSetup.Dismiss();
+            _players.Visible = false; _actions.Hide();
+            GetNode<PresentationShell>("PresentationShell").ShowLobbyActions(false);
+            foreach (var name in new[] { "Title", "Addresses", "Roster", "Ready", "Status", "Back" })
                 GetNode<Control>(path + name).Visible = false;
         };
         GetNode<Label>(path + "Addresses").Text = string.Format(Tr("SPIKE_ADDRESSES"), string.Join(", ",
@@ -162,7 +144,18 @@ public partial class LobbyScreen : Control
         Reset();
         if (OS.IsDebugBuild())
         {
-            var args = OS.GetCmdlineUserArgs();
+            var args = MatchProcessProbe.LaunchArguments().Select(a => a.StartsWith("--match-ui-", StringComparison.Ordinal) ? "--ui-" + a["--match-ui-".Length..] : a).ToArray();
+            if (int.TryParse(args.FirstOrDefault(a => a.StartsWith("--ui-discovery-port=", StringComparison.Ordinal))?["--ui-discovery-port=".Length..], out var discoveryPort) && discoveryPort is >= 1024 and <= 65535)
+                _transport.DiscoveryPort = discoveryPort;
+            if (args.FirstOrDefault(a => a.StartsWith("--ui-lobby-page=", StringComparison.Ordinal)) is { } preview)
+                Callable.From(() =>
+                {
+                    _transport.Host("Η παρέα μας", "Φίλιππος", 17861);
+                    foreach (var (name, slot) in new[] { ("Ελένη", 1), ("Νίκος", 2), ("Μαρία", 3), ("Γιώργος", 4), ("Άννα", 5), ("Δήμητρα", 6), ("Κώστας", 7) })
+                    { _transport.AddLocalPlayer(name, slot); if (slot % 2 == 1) _transport.SetReady(true, localSlot: slot); }
+                    var page = preview["--ui-lobby-page=".Length..];
+                    if (page != "roster") OpenMatchPage(page);
+                }).CallDeferred();
             if (args.Contains("--ui-create")) ShowSetupPage("create");
             if (args.Contains("--ui-join")) ShowSetupPage("join");
         }
@@ -177,11 +170,9 @@ public partial class LobbyScreen : Control
         _ready.Disabled = true;
         _start.Disabled = true;
         _start.Visible = false;
-        _settings.Visible = false;
-        _ruleOptions.Visible = false;
-        _rulesOpen = false;
-        _players.Visible = false;
-        foreach (var child in _categories.GetChildren()) { _categories.RemoveChild(child); child.QueueFree(); }
+        _matchSetup.Dismiss();
+        GetNode<PresentationShell>("PresentationShell").ShowLobbyActions(false);
+        _players.Visible = false; _actions.Hide();
         _name.Editable = true;
         _room.Editable = true;
         _address.Editable = true;
@@ -194,8 +185,8 @@ public partial class LobbyScreen : Control
         foreach (var name in new[] { "Title", "Roster", "Ready", "Status" }) GetNode<Control>("Margin/Scroll/Content/" + name).Visible = true;
         _ready.Visible = false;
         _roster.Visible = false;
-        GetNode<Button>("Margin/Scroll/Content/Back").Visible = _page == "choose";
-        GetNode<Button>("Margin/Scroll/Content/Disconnect").Visible = false;
+        GetNode<Button>("Margin/Scroll/Content/Back").Visible = false;
+        _disconnect.Visible = false;
     }
 
     private void ShowError(Error error)
@@ -207,7 +198,7 @@ public partial class LobbyScreen : Control
 
     private void RevealStatus() => Callable.From(() =>
     {
-        if (GodotObject.IsInstanceValid(this) && IsInsideTree() && GodotObject.IsInstanceValid(_status))
+        if (GodotObject.IsInstanceValid(this) && IsInsideTree() && GodotObject.IsInstanceValid(_status) && _status.IsVisibleInTree())
             GetNode<ScrollContainer>("Margin/Scroll").EnsureControlVisible(_status);
     }).CallDeferred();
 
@@ -222,26 +213,11 @@ public partial class LobbyScreen : Control
         _room.Editable = false;
         _address.Editable = false;
         _ready.Disabled = snapshot.Phase != "Lobby";
+        _actions.Show();
         _start.Visible = _transport.IsHost;
-        _settings.Visible = _transport.IsHost && snapshot.Phase == "Lobby" && _rulesOpen;
-        _ruleOptions.Visible = _transport.IsHost && snapshot.Phase == "Lobby";
-        _capacity.Text = string.Format(Tr("MATCH_CAPACITY"), _transport.AvailableQuestions);
-        _length.Select(_length.GetItemIndex(_transport.QuestionCount));
-        if (_transport.IsHost && _categories.GetChildCount() == 0)
-        {
-            _transport.EnabledCategories = _transport.QuestionCategories.Select(c => c.Id).ToHashSet();
-            foreach (var category in _transport.QuestionCategories)
-            {
-                var toggle = new CheckButton { Text = Tr(category.NameKey), ButtonPressed = true, CustomMinimumSize = new Vector2(0, 64) };
-                toggle.Toggled += enabled =>
-                {
-                    if (enabled) _transport.EnabledCategories?.Add(category.Id);
-                    else _transport.EnabledCategories?.Remove(category.Id);
-                };
-                _categories.AddChild(toggle);
-            }
-        }
+        GetNode<PresentationShell>("PresentationShell").ShowLobbyActions(snapshot.Phase == "Lobby", _transport.IsHost);
         _start.Disabled = snapshot.Phase != "Lobby" || snapshot.Players.Length < 2 || snapshot.Players.Any(player => !player.Ready) ||
+            _transport.IsHost && _transport.SelectedQuestionCapacity < _transport.QuestionCount ||
             snapshot.TeamMode && snapshot.Players.Select(p => p.TeamId).Distinct().Count() != 2;
         _roster.Text = snapshot.RoomName + "\n" + string.Join("\n", snapshot.Players.Select(player =>
             $"{player.DisplayName}{(player.IsHost ? " — " + Tr("LOBBY_HOST_MARK") : "")} — {Tr(player.Ready ? "LOBBY_READY_YES" : "LOBBY_READY_NO")}"));
@@ -249,7 +225,7 @@ public partial class LobbyScreen : Control
         _status.Visible = false;
         _roster.Visible = false; _ready.Visible = false;
         GetNode<Label>("Margin/Scroll/Content/Title").Text = snapshot.RoomName;
-        GetNode<Button>("Margin/Scroll/Content/Disconnect").Visible = true;
+        _disconnect.Visible = true;
         GetNode<Button>("Margin/Scroll/Content/Back").Visible = false;
     }
 
@@ -260,19 +236,22 @@ public partial class LobbyScreen : Control
         var join = visible && _page == "join";
         _chooser.Visible = visible && _page == "choose";
         _switchPage.Visible = visible && _page != "choose";
-        _name.Visible = create || join;
+        _name.Visible = create;
         _room.Visible = create;
         _host.Visible = create;
-        _address.Visible = join && _manualOpen;
-        _join.Visible = join && _manualOpen;
-        _pin.Visible = (join || create) && _pinOpen;
-        _pinOptions.Visible = create || join;
-        _manualIp.Visible = join;
-        _browser.Visible = join;
+        _address.Visible = false;
+        _join.Visible = false;
+        _pin.Visible = create && _pinOpen;
+        _pinOptions.Visible = create;
+        _manualIp.Visible = false;
+        _joinFlow.Visible = join;
+        _hostCharacter.Visible = create;
         if (visible) _status.Visible = false;
-        GetNode<Label>("Margin/Scroll/Content/Addresses").Visible = join && _manualOpen;
+        GetNode<Label>("Margin/Scroll/Content/Addresses").Visible = false;
         GetNode<Label>("Margin/Scroll/Content/Title").Text = Tr(create ? "UI_CREATE_TITLE" : join ? "UI_JOIN_TITLE" : "UI_PICK_PATH");
-        GetNode<Button>("Margin/Scroll/Content/Back").Visible = visible && _page == "choose";
+        GetNode<Button>("Margin/Scroll/Content/Back").Visible = false;
+        _switchPage.Visible = false;
+        GetNode<Label>("Margin/Scroll/Content/Title").Visible = !join;
     }
 
     public void ShowSetupPage(string page)
@@ -281,8 +260,17 @@ public partial class LobbyScreen : Control
         _page = page;
         if (page == "create" && string.IsNullOrWhiteSpace(_room.Text)) _room.Text = Tr("UI_ROOM_DEFAULT");
         ShowSetup(true);
-        if (page == "join") _transport.Discovery.Scan();
+        if (page == "join") { _joinFlow.ShowRooms(); _transport.Discovery.Scan(_transport.DiscoveryPort); }
         GetNode<ScrollContainer>("Margin/Scroll").ScrollVertical = 0;
+    }
+
+    public void OpenMatchPage(string page)
+    {
+        if (_transport.MatchSnapshot is not null || _transport.Snapshot?.Phase != "Lobby" ||
+            page != "rules" && !_transport.IsHost) return;
+        GetNode<Control>("Margin").Hide();
+        GetNode<PresentationShell>("PresentationShell").SetNavigationCovered(true);
+        _matchSetup.Open(page);
     }
 
     public void ReturnHome()
@@ -290,5 +278,20 @@ public partial class LobbyScreen : Control
         _transport.Stop();
         var error = GetTree().ChangeSceneToFile("res://Scenes/Main.tscn");
         if (error != Error.Ok) GD.PushError($"Home navigation failed: {error}");
+    }
+
+    public void NavigateBack()
+    {
+        if (_transport.MatchSnapshot is not null)
+        { PresentationShell.For(this)?.OpenSettings(); return; }
+        if (_page == "join" && _setupVisible)
+        { if (!_joinFlow.Back()) ReturnHome(); return; }
+        if (_matchSetup.Back()) return;
+        if (!_setupVisible || _host.Disabled)
+        { _transport.Stop(); Reset(); return; }
+        if (_pinOpen) { _pinOpen = false; ShowSetup(true); return; }
+        if (_manualOpen) { _manualOpen = false; ShowSetup(true); return; }
+        if (_page != "choose") { ShowSetupPage("choose"); return; }
+        ReturnHome();
     }
 }

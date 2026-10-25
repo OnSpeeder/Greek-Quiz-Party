@@ -8,7 +8,8 @@ public readonly record struct QuestionInstanceId(Guid Value);
 public sealed class QuestionDefinition
 {
     public QuestionDefinition(string id, string text, IEnumerable<string> answers,
-        int correctAnswerIndex, string categoryId, int difficulty, string explanation)
+        int correctAnswerIndex, string categoryId, int difficulty, string explanation,
+        IEnumerable<string>? funFacts = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
@@ -20,6 +21,7 @@ public sealed class QuestionDefinition
             throw new ArgumentException("Exactly four distinct nonblank answers are required.", nameof(answers));
         if (correctAnswerIndex is < 0 or > 3) throw new ArgumentOutOfRangeException(nameof(correctAnswerIndex));
         if (difficulty is < 1 or > 5) throw new ArgumentOutOfRangeException(nameof(difficulty));
+        var facts = funFacts?.Where(f => !string.IsNullOrWhiteSpace(f)).Take(5).ToArray() ?? Array.Empty<string>();
         Id = id;
         Text = text;
         Answers = Array.AsReadOnly(copy);
@@ -27,6 +29,7 @@ public sealed class QuestionDefinition
         CategoryId = categoryId;
         Difficulty = difficulty;
         Explanation = explanation;
+        FunFacts = Array.AsReadOnly(facts);
     }
 
     public string Id { get; }
@@ -36,6 +39,7 @@ public sealed class QuestionDefinition
     public string CategoryId { get; }
     public int Difficulty { get; }
     public string Explanation { get; }
+    public IReadOnlyList<string> FunFacts { get; }
 }
 
 public sealed record QuestionPresentation(QuestionInstanceId InstanceId, string Text,
@@ -58,9 +62,11 @@ internal sealed class QuestionInstance
             definition.CategoryId, definition.Difficulty, startedAt, startedAt + duration);
         CorrectAnswerIndex = Array.IndexOf(order, definition.CorrectAnswerIndex);
         Explanation = definition.Explanation;
+        FunFacts = definition.FunFacts;
     }
 
     public QuestionPresentation Presentation { get; }
     public int CorrectAnswerIndex { get; }
     public string Explanation { get; }
+    public IReadOnlyList<string> FunFacts { get; }
 }

@@ -310,3 +310,20 @@ a player's deadline. The host can choose 60 seconds for larger shared groups.
 One-device party play uses the same host coordinator without remote joins. No
 discussion timer, custom team names, balancing formula, host migration or secure
 reconnect was added. Functional UI remains separate from the Phase 10 visual pass.
+
+## Lobby setup and difficulty balance — 2026-10-25
+
+Hosts now start unready and must explicitly ready alongside all other players.
+Lobby player tiles use three columns; owned tiles toggle readiness through a check
+or hourglass pictogram. Header icons open game setup and a concise rules page.
+Category, card and mission pages support individual selection and select/clear all.
+
+The host may enable any combination of Low (1–2), Medium (3), High (4–5).
+FullMatch scales base correct + time bonus by ×1 / ×1.5 / ×2 respectively,
+rounding midpoint away from zero before strategy multipliers. Fixed wrong-answer
+penalties, mission bonuses and steals do not scale. Thus a perfect immediate hard
+answer is 2,000 before strategy; the x6 strategy cap permits at most 12,000.
+
+The host copies category/difficulty/card/mission selections into the match. Empty
+card/mission lists disable those systems; impossible selected missions are omitted.
+No enabled categories/difficulties or insufficient filtered questions blocks start.

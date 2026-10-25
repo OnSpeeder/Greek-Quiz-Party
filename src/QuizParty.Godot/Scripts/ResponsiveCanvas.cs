@@ -23,6 +23,8 @@ public partial class ResponsiveCanvas : Node
         _window.SizeChanged += UpdateScale;
         _root.Resized += UpdateMargins;
         UpdateScale();
+        var keyboard = new global::Godot.Timer { WaitTime = .1, Autostart = true };
+        keyboard.Timeout += () => { if (OS.HasFeature("android")) UpdateMargins(); }; AddChild(keyboard);
     }
 
     private void UpdateScale()
@@ -55,7 +57,7 @@ public partial class ResponsiveCanvas : Node
             margin.AddThemeConstantOverride("margin_left", side + (int)inset.X);
             margin.AddThemeConstantOverride("margin_right", side + (int)inset.Z);
             margin.AddThemeConstantOverride("margin_top", header + (int)inset.Y);
-            margin.AddThemeConstantOverride("margin_bottom", 24 + (int)inset.W);
+            margin.AddThemeConstantOverride("margin_bottom", 24 + (int)inset.W + KeyboardInset());
         }
         if (_root.GetNodeOrNull<Control>("Center") is { } center)
         {
@@ -64,6 +66,19 @@ public partial class ResponsiveCanvas : Node
         }
         if (_root.GetNodeOrNull<VBoxContainer>("Center/Frame/Content") is { } menu)
             menu.CustomMinimumSize = new(Math.Min(560, Math.Max(0, logicalWidth - 64)), 0);
+    }
+
+    private int KeyboardInset()
+    {
+        if (!OS.HasFeature("android")) return 0;
+        var pixels = DisplayServer.VirtualKeyboardGetHeight();
+        if (pixels <= 0) return 0;
+        var scale = PixelsPerUnit(_window.Size, _root.GetViewportRect().Size);
+        if (_root.GetViewport().GuiGetFocusOwner() is Control focus)
+            for (Node? current = focus.GetParent(); current is not null; current = current.GetParent())
+                if (current is ScrollContainer scroll)
+                { scroll.EnsureControlVisible(focus); break; }
+        return (int)Math.Ceiling(pixels / Math.Max(.01f, scale));
     }
 
     public override void _ExitTree()

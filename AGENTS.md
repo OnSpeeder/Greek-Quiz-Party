@@ -67,7 +67,7 @@ Do not load every document for unrelated trivial edits.
 - Validate every client request on host.
 - State-changing requests must be idempotent or duplicate-safe.
 - Bound inbound strings/lists/indices.
-- Preserve manual-IP join even after discovery is implemented.
+- Preserve the manual-IP transport API and regression coverage. User decision (2026-10-25): hide manual-IP controls from the normal join UI; retain implementation for possible reintroduction.
 - Protocol changes require tests and protocol-version compatibility review.
 - Never trust client-supplied timestamps for scoring deadlines.
 
@@ -175,3 +175,18 @@ A feature is not done because code was written. It is done only when:
 When a Godot MCP server is available, use it for editor/scene inspection, controlled scene edits, running the project and screenshots when that is more reliable than editing `.tscn` text blindly. File edits and normal C# refactors may still use the filesystem/editor directly.
 
 Use Git/GitHub tools only for repository workflows. Do not use them as a substitute for local build/test evidence.
+
+## Visual verification workflow
+
+- Reuse `QuizShowTheme`, `ShowtimeTheme` and scene-owned `ShowtimeJuice`; do not
+  create a competing theme or motion system. Preserve custom illustrated skins.
+- Use the approved cutout art/reference for characters and stages. Primitive
+  geometry is a labelled blockout, not finished art. Blender/Inkscape scripts
+  remain valid for asset cleanup, export and intentional icons/skins.
+- Check distinct wide-host and portrait-controller compositions in actual Godot
+  viewports. Keep questions readable on phones; never sacrifice privacy or touch
+  targets for fixed percentage layouts. Respect larger text and reduced motion.
+- Inspect captures for clipping, Greek accents, spacing and hierarchy; record
+  concrete findings. Build/import/headless tests cannot grant visual sign-off.
+- Prefer tweens for transient feedback; authored AnimationPlayer tracks remain
+  appropriate when timeline choreography benefits. Neither tool guarantees taste.

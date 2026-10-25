@@ -20,6 +20,8 @@ public partial class MatchProcessProbe : Node
     private string _cardReason = "None";
     private bool _captured;
     private bool Live => GodotObject.IsInstanceValid(this) && IsInsideTree();
+    public static bool ShouldRun(IReadOnlyList<string> args) => !args.Contains("--match-mixed") &&
+        args.Any(value => value == "--match-host" || value.StartsWith("--match-join=", StringComparison.Ordinal));
 
     // Android's exported launcher deliberately strips CLI extras. A debug-only,
     // app-private fixture enables actual-hardware regression without input injection.
@@ -44,7 +46,7 @@ public partial class MatchProcessProbe : Node
     public override void _Ready()
     {
         _args = LaunchArguments();
-        if (!_args.Contains("--match-mixed") && _args.Any(value => value.StartsWith("--match-", StringComparison.Ordinal))) Callable.From(Begin).CallDeferred();
+        if (ShouldRun(_args)) Callable.From(Begin).CallDeferred();
     }
 
     private string? Argument(string prefix) => _args.FirstOrDefault(value => value.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];
@@ -59,12 +61,14 @@ public partial class MatchProcessProbe : Node
         _transport.PlayMatch = true;
         _transport.StrategyEnabled = _args.Contains("--match-strategy");
         _transport.AllowSteal = _args.Contains("--match-steal");
+        if (_transport.AllowSteal) _transport.EnabledCards = Enum.GetValues<QuizParty.Core.Game.CardKind>().ToHashSet();
         if (int.TryParse(Argument("--match-seed="), out var seed)) _transport.DebugStrategySeed = seed;
         _transport.CardInputChanged += reason => _cardReason = reason;
         if (int.TryParse(Argument("--match-fixture="), out var count)) _transport.UseSyntheticQuestions(count);
         _transport.SnapshotChanged += snapshot =>
         {
             if (!_auto || snapshot.Phase != "Lobby") return;
+            if (_transport.IsHost && snapshot.Players.Any(p => p.IsHost && !p.Ready)) { _transport.SetReady(true); return; }
             if (_transport.IsHost && snapshot.Players.Length == _players && snapshot.Players.All(player => player.Ready)) _transport.StartGame();
             else if (!_transport.IsHost && !_ready) { _ready = true; _transport.SetReady(true); }
         };

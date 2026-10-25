@@ -73,7 +73,7 @@ try {
     if (!$wrong.WaitForExit(15000) -or $wrong.ExitCode -ne 2 -or !(Select-String "$output/windows-wrong-pin.log" -Pattern 'WrongPin' -Quiet)) { throw 'Android host did not reject wrong PIN.' }
     $client = Start-Windows 'windows-discovered-join' '--lan-find --lan-pin=1234 --lan-name=Windows --lan-stay'
     Wait-Windows $client 'windows-discovered-join' 'LAN JOINED'
-    Wait-Phone 'phone-host' 'roster=PhoneHost:True\|Windows:True'; Capture-Phone 'phone-host-lobby'
+    Wait-Phone 'phone-host' 'roster=PhoneHost:False\|Windows:True'; Capture-Phone 'phone-host-lobby'
     if (Select-String "$output/*errors.log","$output/phone-*.log" -Pattern 'ERROR:|SCRIPT ERROR:|Unhandled exception|FATAL EXCEPTION') { throw 'Runtime errors observed.' }
     Write-Output 'PASS: physical Android/Windows discover each other via actual LAN broadcast; both hosts reject wrong PIN and admit correct PIN; phone manual IP, fresh lobby rejoin and host-exit behavior verified. No network tunnel.'
 } finally {

@@ -32,6 +32,10 @@ public partial class LocalControllerPanel : VBoxContainer
             var confirmed = _transport.AnswerForSlot(player.LocalSlot) is not null;
             var button = new Button { Text = string.Format(Tr(confirmed && snapshot.Phase == "QuestionActive" ? "LOCAL_SUBMITTED" : "LOCAL_PLAY_AS"), player.DisplayName),
                 CustomMinimumSize = new(0, 64), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            button.Icon = GameArt.AvatarTexture(player.CharacterId ?? player.LocalSlot);
+            button.ExpandIcon = true;
+            button.AddThemeConstantOverride("icon_max_width", 56);
+            button.ThemeTypeVariation = "PrimaryAction";
             button.Disabled = snapshot.Phase != "Scoreboard" && snapshot.Phase != "RoundEnd" &&
                 (confirmed || _transport.AnswerPendingForSlot(player.LocalSlot) || !snapshot.EligiblePlayers.Contains(player.PlayerId) || snapshot.Phase != "QuestionActive");
             button.Pressed += () =>

@@ -88,7 +88,7 @@ public sealed class MatchClientState
     private static bool Forward(MatchSnapshotDto old, MatchSnapshotDto next)
     {
         if (next.Revision <= old.Revision || old.Phase == "GameOver" || next.TotalQuestions != old.TotalQuestions || next.Strategy != old.Strategy ||
-            next.LocalSlot != old.LocalSlot || !SameTeams(old.Teams, next.Teams) ||
+            next.LocalSlot != old.LocalSlot || next.Scores.Any(s => old.Scores.FirstOrDefault(p => p.PlayerId == s.PlayerId)?.CharacterId != s.CharacterId) || !SameTeams(old.Teams, next.Teams) ||
             !old.Scores.Select(s => s.PlayerId).Order().SequenceEqual(next.Scores.Select(s => s.PlayerId).Order()) ||
             (next.Strategy is null && next.Scores.Any(s => s.Total < old.Scores.Single(p => p.PlayerId == s.PlayerId).Total)) ||
             (Rank(next.Phase) < 2 && next.Scores.Any(s => s.Total != old.Scores.Single(p => p.PlayerId == s.PlayerId).Total))) return false;
@@ -106,7 +106,8 @@ public sealed class MatchClientState
             question.StartedAtTicks < 0 || question.DeadlineTicks <= question.StartedAtTicks ||
             question.DeadlineTicks - question.StartedAtTicks > TimeSpan.TicksPerMinute ||
             next.Scores is not { Length: >= 1 and <= 8 } scores ||
-            scores.Any(score => score is null || score.PlayerId == Guid.Empty || !LobbyProtocol.ValidName(score.DisplayName) || score.Total < 0) ||
+            scores.Any(score => score is null || score.PlayerId == Guid.Empty || !LobbyProtocol.ValidName(score.DisplayName) || score.Total < 0 || score.CharacterId is { } character && !Core.Players.Characters.IsValid(character)) ||
+            scores.Where(score => score.CharacterId is not null).Select(score => score.CharacterId).Distinct().Count() != scores.Count(score => score.CharacterId is not null) ||
             scores.Select(score => score.PlayerId).Distinct().Count() != scores.Length || !scores.Any(score => score.PlayerId == localPlayer) ||
             next.AcceptedAnswerCount < 0 || next.AcceptedAnswerCount > scores.Length ||
             question.CategoryId is not { Length: > 0 and <= 128 } || question.Difficulty is < 1 or > 5 ||
@@ -125,9 +126,11 @@ public sealed class MatchClientState
         if (Rank(next.Phase) < 2) return next.Reveal is null;
         var reveal = next.Reveal;
         return reveal is not null && reveal.CorrectAnswerIndex is >= 0 and <= 3 &&
-            reveal.Explanation is { Length: > 0 and <= 4096 } && reveal.Players is { } players && players.Length == scores.Length &&
+            reveal.Explanation is { Length: > 0 and <= 4096 } &&
+            (reveal.FunFacts is null || reveal.FunFacts.Length <= 5 && reveal.FunFacts.All(f => f is { Length: > 0 and <= 1024 })) &&
+            reveal.Players is { } players && players.Length == scores.Length &&
             players.All(player => player is not null && player.AnswerIndex is null or >= 0 and <= 3 &&
-                player.Points >= (next.Strategy is null ? 0 : -500) && player.Points <= (next.Strategy is null ? 1000 : 6000)) &&
+                player.Points >= (next.Strategy is null ? 0 : -500) && player.Points <= (next.Strategy is null ? 2000 : 12000)) &&
             players.Select(player => player.PlayerId).Order().SequenceEqual(scores.Select(score => score.PlayerId).Order());
     }
 

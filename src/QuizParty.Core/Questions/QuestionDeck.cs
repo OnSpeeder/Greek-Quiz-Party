@@ -10,7 +10,7 @@ public sealed class QuestionDeck
     public int Remaining => _remaining.Count;
 
     public QuestionDeck(IEnumerable<QuestionDefinition> questions, IRandomSource random,
-        IReadOnlyCollection<string>? categories = null)
+        IReadOnlyCollection<string>? categories = null, IReadOnlyCollection<int>? difficulties = null)
     {
         ArgumentNullException.ThrowIfNull(questions);
         ArgumentNullException.ThrowIfNull(random);
@@ -19,6 +19,7 @@ public sealed class QuestionDeck
         if (source.Any(q => q is null) || source.Select(q => q.Id).Distinct(StringComparer.Ordinal).Count() != source.Length)
             throw new ArgumentException("Question IDs must be unique.", nameof(questions));
         var buckets = source.Where(q => categories is null || categories.Contains(q.CategoryId))
+            .Where(q => difficulties is null || difficulties.Contains(q.Difficulty))
             .GroupBy(q => (q.CategoryId, q.Difficulty)).OrderBy(g => g.Key.CategoryId, StringComparer.Ordinal)
             .ThenBy(g => g.Key.Difficulty).Select(g => g.OrderBy(q => q.Id, StringComparer.Ordinal).ToList()).ToList();
         foreach (var bucket in buckets) Shuffle(bucket, random);

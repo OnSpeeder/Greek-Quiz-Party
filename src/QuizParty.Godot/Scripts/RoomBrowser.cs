@@ -13,10 +13,11 @@ public partial class RoomBrowser : VBoxContainer
     private VBoxContainer _rooms = null!;
     public override void _Ready()
     {
-        AddChild(new Label { Text = Tr("DISCOVERY_TITLE") });
-        var refresh = new Button { Name = "Refresh", Text = Tr("DISCOVERY_REFRESH"), CustomMinimumSize = new Vector2(0, 64) };
+        var heading = new HBoxContainer(); AddChild(heading);
+        heading.AddChild(new Label { Text = "DISCOVERY_TITLE", SizeFlagsHorizontal = SizeFlags.ExpandFill, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        var refresh = new Button { Name = "Refresh", Icon = GD.Load<Texture2D>("res://Art/refresh.svg"), AccessibilityName = Tr("DISCOVERY_REFRESH"), TooltipText = Tr("DISCOVERY_REFRESH"), CustomMinimumSize = new Vector2(0, 64) };
         refresh.Pressed += () => _discovery?.Scan();
-        AddChild(refresh);
+        heading.AddChild(refresh); refresh.Name = "Refresh"; heading.Name = "Header";
         _status = new Label { Name = "Status", Text = Tr("DISCOVERY_HELP"), AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_status);
         _rooms = new VBoxContainer { Name = "Rooms" };
@@ -30,9 +31,11 @@ public partial class RoomBrowser : VBoxContainer
         discovery.RoomsChanged += Render;
     }
 
-    private void OnStatus(string reason) => _status.Text = Tr("DISCOVERY_STATUS_" + reason);
-    private void Render(IReadOnlyList<DiscoveredRoom> rooms)
+    private void OnStatus(string reason)
+    { _status.Text = Tr("DISCOVERY_STATUS_" + reason); _status.Visible = _rooms.GetChildCount() == 0; }
+    public void Render(IReadOnlyList<DiscoveredRoom> rooms)
     {
+        _status.Visible = rooms.Count == 0;
         if (rooms.Count == 0) _status.Text = Tr("DISCOVERY_STATUS_NoRooms");
         foreach (var child in _rooms.GetChildren()) { _rooms.RemoveChild(child); child.QueueFree(); }
         foreach (var room in rooms)

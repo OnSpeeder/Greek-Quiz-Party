@@ -28,7 +28,7 @@ public partial class AppRoot : Control
         title.AddThemeConstantOverride("outline_size", 10);
         title.AddThemeColorOverride("font_shadow_color", new("4c236b"));
         title.AddThemeConstantOverride("shadow_offset_y", 5);
-        title.AddThemeFontOverride("font", new FontVariation { BaseFont = ThemeDB.FallbackFont, VariationEmbolden = 1.1f });
+        title.AddThemeFontOverride("font", QuizShowTheme.DisplayFont());
         title.AutowrapMode = TextServer.AutowrapMode.Off;
         Resized += FitTitle;
         FitTitle();

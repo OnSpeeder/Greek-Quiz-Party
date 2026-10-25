@@ -1,4 +1,4 @@
-param([ValidateSet('Menu','Lobby','Create','Join','Settings')][string]$View = 'Menu',
+param([ValidateSet('Menu','Lobby','Create','Join','Settings','Exit')][string]$View = 'Menu',
     [ValidateRange(320,7680)][int]$Width = 1152, [ValidateRange(320,7680)][int]$Height = 648, [switch]$LargeText,
     [switch]$HighContrast, [switch]$ReducedMotion, [switch]$SoundPreview, [switch]$Mute,
     [ValidateSet('Audio','Gameplay','Help')][string]$SettingsSection = 'Audio',
@@ -12,6 +12,7 @@ $scene = if ($View -in @('Lobby','Create','Join')) { 'res://Scenes/Lobby.tscn' }
 $flags = @('--ui-preview')
 if ($ReducedMotion) { $flags += '--ui-reduced-motion' }
 if ($View -eq 'Settings') { $flags += '--ui-settings' }
+if ($View -eq 'Exit') { $flags += '--ui-exit-confirmation' }
 if ($View -eq 'Settings' -and $SettingsSection -eq 'Gameplay') { $flags += '--ui-gameplay' }
 if ($View -eq 'Settings' -and $SettingsSection -eq 'Help') { $flags += '--ui-help' }
 if ($Locale -eq 'en') { $flags += '--ui-english' }

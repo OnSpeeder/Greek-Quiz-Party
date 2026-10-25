@@ -45,9 +45,9 @@ public class StrategyTests
     {
         var f = new Fixture();
         f.Answer(false, ConfidenceLevel.AllIn); Assert.Equal(0, f.Match.Snapshot.Scores[0].Total); f.Next();
-        f.Answer(true, ConfidenceLevel.Confident); Assert.Equal(2000, f.Match.Snapshot.Scores[0].Total); f.Next();
+        f.Answer(true, ConfidenceLevel.Confident); Assert.Equal(4000, f.Match.Snapshot.Scores[0].Total); f.Next();
         f.Answer(false, ConfidenceLevel.AllIn);
-        Assert.Equal(-500, f.Match.Snapshot.Reveal!.Players[0].Points); Assert.Equal(1500, f.Match.Snapshot.Scores[0].Total); f.Next();
+        Assert.Equal(-500, f.Match.Snapshot.Reveal!.Players[0].Points); Assert.Equal(3500, f.Match.Snapshot.Scores[0].Total); f.Next();
         var id = f.Match.Snapshot.Question!.InstanceId;
         Assert.Equal(SubmissionError.None, f.Match.Submit(new(f.Base.Players[0].Id, id, f.Correct, ConfidenceLevel.AllIn), f.Base.Clock.Now));
         Assert.Equal(SubmissionError.AlreadyAnswered, f.Match.Submit(new(f.Base.Players[0].Id, id, f.Correct, ConfidenceLevel.Safe), f.Base.Clock.Now));
@@ -61,7 +61,7 @@ public class StrategyTests
         for (var i = 1; i <= 7; i++)
         {
             f.Answer();
-            Assert.Equal(i >= 5 ? 1150 : i >= 3 ? 1100 : 1000, f.Match.Snapshot.Reveal!.Players[0].Points);
+            Assert.Equal(i >= 5 ? 2300 : i >= 3 ? 2200 : 2000, f.Match.Snapshot.Reveal!.Players[0].Points);
             Assert.InRange(f.Private().Meter, 0, 99); Assert.InRange(f.Private().Hand.Count, 0, 2);
             f.Next();
         }
@@ -69,7 +69,7 @@ public class StrategyTests
         var card = f.Private().Hand.First(c => c.Kind == CardKind.DoublePoints);
         Assert.Equal(CardError.None, f.Play(0, card.Id));
         f.Answer(confidence: ConfidenceLevel.AllIn);
-        Assert.Equal(6000, f.Match.Snapshot.Reveal!.Players[0].Points); // x3*x2*1.15 capped at6.
+        Assert.Equal(12000, f.Match.Snapshot.Reveal!.Players[0].Points); // x3*x2*1.15 capped at6.
         Assert.False(f.Match.Poll());
         f.Next(); f.Answer(false); Assert.Equal(0, f.Private().Streak);
     }
@@ -121,7 +121,7 @@ public class StrategyTests
         Assert.Equal(SubmissionError.None, f.Match.Submit(new(f.Base.Players[0].Id, original.InstanceId, f.Correct), f.Base.Clock.Now));
         // An already-answered extended player must not keep expired unanswered seats open.
         Assert.True(f.Match.Poll()); Assert.True(f.Match.Poll());
-        Assert.Equal(575, f.Match.Snapshot.Reveal!.Players[0].Points); // base500 * streak1.15, no time bonus.
+        Assert.Equal(1150, f.Match.Snapshot.Reveal!.Players[0].Points); // base500 * difficulty2 * streak1.15, no time bonus.
         f.Next(); card = f.Private().Hand[0]; f.Base.Clock.Advance(TimeSpan.FromSeconds(17) + TimeSpan.FromTicks(1));
         Assert.Equal(CardError.Late, f.Play(0, card.Id)); Assert.Contains(card, f.Private().Hand);
     }
@@ -212,7 +212,7 @@ public class StrategyTests
         var f = new Fixture(); f.EarnCard(); f.Answer(); f.Match.Advance();
         Assert.Equal(CardError.None, f.Play(0, f.Private().Hand[0].Id));
         f.Match.Advance(); if (f.Match.Snapshot.Phase == GamePhase.RoundEnd) f.Match.Advance();
-        f.Answer(); Assert.Equal(2300, f.Match.Snapshot.Reveal!.Players[0].Points); f.Next();
+        f.Answer(); Assert.Equal(4600, f.Match.Snapshot.Reveal!.Players[0].Points); f.Next();
         Assert.False(f.Private().DoublePoints);
         var card = f.Private().Hand[0];
         Assert.Equal(CardError.InvalidReceiveTime, f.Play(0, card.Id, received: f.Base.Clock.Now + TimeSpan.FromTicks(1)));

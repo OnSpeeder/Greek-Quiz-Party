@@ -15,7 +15,7 @@ public class LobbySessionTests
     {
         var lobby = new LobbySession(Player(1));
         Assert.Equal(GamePhase.Lobby, lobby.GetSnapshot().Phase);
-        Assert.True(lobby.GetSnapshot().Players.Single().Ready);
+        Assert.False(lobby.GetSnapshot().Players.Single().Ready);
         Assert.Equal(LobbyError.NotReady, lobby.Start(new(1)));
         Assert.Equal(LobbyError.None, lobby.Join(Player(2)));
         Assert.Equal(LobbyError.NotHost, lobby.Start(new(2)));

@@ -55,9 +55,11 @@ Client input is a request, never truth.
 
 ## 4. Protocol version
 
-Current production version (Phase 07):
+Current production version (approved participation revision):
 
-`ProtocolVersion = 4`
+`ProtocolVersion = 7`
+
+See the v7 contract below. Earlier phase contracts are retained as history.
 
 Phase 03 used version 1; Phases 04–05 used version 2; Phase 06 used version 3.
 Version 4 adds the optional PIN field to ClientHello and LAN discovery. Strict
@@ -239,7 +241,7 @@ Do not trust an advertised address blindly if source endpoint provides the corre
 
 ## 12. Manual IP fallback
 
-Join screen must support manual IPv4/hostname input for routers or environments where broadcast discovery is blocked.
+The transport retains manual IPv4/hostname joining and its regression probes. By explicit user decision (2026-10-25), the normal participation screen exposes discovery only; manual IP can be reintroduced without rebuilding the transport.
 
 Provide clear errors:
 
@@ -683,3 +685,63 @@ strike limits remain. Tests cross 256 requests and exercise the byte gate.
 The 7000-byte question-content budget is unchanged. Eight-player final packets
 with team membership, two cards, full missions/Greek names/category/stats remain
 within 16 KiB. No reconnect, encryption, transport identity exposure or new service.
+
+## Participation revision — production v7 / app 0.7.0
+
+All peers upgrade together. Versions 1–6 are rejected/ignored by handshake and
+discovery. Existing reliable RPC paths, 16 KiB/depth8 bounds, receipt caching,
+rate/PIN throttling, source ConnectionId and host receipt clocks remain.
+
+### Preflight without admission
+
+`CheckRoom` carries AppVersion (1–32), Platform (existing allowlist), and Pin
+(empty or 4–6 ASCII digits), with the discovered SessionId. Wrong sessions,
+started/full rooms and invalid/throttled PINs reject. Success authorizes only that
+actual transport connection for two minutes on the injected host clock. It creates
+no PlayerId, controller, roster mutation, character reservation or joined seat.
+The connection cap remains 12; unadmitted peers time out. PIN is never broadcast.
+
+`RoomAccessResult`, correlated to CheckRoom/RoomAvailability, carries Accepted,
+Reason, Revision and TakenCharacters (0–8 distinct indices 0–7). A failed preflight
+returns no occupied-character list. No correct answers/private gameplay are sent.
+`RoomAvailability` has an empty payload, the same SessionId and requires unexpired
+connection-bound authorization. It does not extend authorization. UI polls at
+most once per second while choosing identity and not submitting a join.
+
+### Final admission and uniqueness
+
+ClientHello adds nullable CharacterId (0–7) and UsePreflight (default false).
+UsePreflight=true requires the same connection's unexpired authorization; no PIN
+is resent. Direct transport/probe joins retain the ordinary PIN gate. Omitted
+character means host assigns a free character for retained direct/probe callers;
+normal UI always supplies an explicit choice. This is a supported v7 behavior,
+not wire compatibility with old versions.
+
+Core assigns/validates characters atomically with roster mutation on the host
+receive loop. Two final requests for one character produce one admission and one
+CharacterTaken rejection. Rejected ServerHello includes refreshed TakenCharacters
+only for an authorized preflight peer. That client stays connected, retains its
+name and retries a fresh request with a different available character. Duplicate
+requests return their original receipt and never create another player. Expired
+access, full/start/disconnect errors return the UI to room selection.
+
+LobbyPlayer and MatchScore add nullable CharacterId. Production host snapshots
+always populate it; nullable supports explicitly synthetic/retained API fixtures.
+Clients validate range and uniqueness when present; match identity cannot change
+between snapshots. Match retains the roster's IDs for departed-player results.
+AddLocalPlayer also accepts a character; host/local slots use the same Core gate.
+Characters release on lobby departure/local removal, never by client speculation.
+
+## Protocol v8 — lobby setup scoring compatibility (2026-10-25)
+
+Current protocol: 8; app version: 0.8.0. Reject earlier versions at admission and
+discovery as usual. DTO shape is unchanged. The host now starts unready. Match
+setup filters questions by host-selected difficulty levels as well as categories;
+card/mission pools stay host-owned and preserve private assignment routing.
+
+Approved difficulty bands multiply positive base/time points by 1 / 1.5 / 2 before
+strategy. Client reveal validation permits up to 2,000 base or 12,000 strategy points
+per answer, with existing negative penalties unchanged. The client only validates
+bounds and renders authoritative totals. v7's 1,000/6,000 reveal bounds would reject
+valid v8 results, requiring the version increment despite unchanged payload shape.
+Manual-IP joining and duplicate-safe ready/answer/card routing remain supported.

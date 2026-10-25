@@ -21,6 +21,7 @@ public class MatchProtocolTests
                 ["Αθήνα", "Θεσσαλονίκη", "Πάτρα", "Ηράκλειο"], 0, "greece", 1, "Η Αθήνα είναι η πρωτεύουσα της Ελλάδας."));
             Deliver(Host.Handle(2, Client.BeginHello("Phone", "Android")));
             Deliver(Host.Handle(2, Client.CreateReady(true)!));
+            Host.SetHostReady(true);
             Assert.Equal(LobbyError.None, Host.Start());
             foreach (var packet in Host.Broadcast()) Client.Apply(packet.Json);
             Assert.True(Host.BeginMatch());

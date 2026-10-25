@@ -1,5 +1,5 @@
 param([int]$Port = 17781, [switch]$Packaged, [switch]$TimeoutCase, [ValidateSet(1,20,30)][int]$QuestionCount = 1,
-    [switch]$Capture, [switch]$Strategy, [switch]$Steal, [int]$Seed = 8)
+    [switch]$Capture, [switch]$Strategy, [switch]$Steal, [int]$Seed = 42)
 . "$PSScriptRoot/common.ps1"
 $output = Join-Path $RepoRoot $(if ($Packaged) { 'artifacts/phase04-network-packaged' } else { 'artifacts/phase04-network' })
 if ($TimeoutCase) { $output += '-timeout' }

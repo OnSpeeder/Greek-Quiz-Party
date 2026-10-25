@@ -627,3 +627,191 @@ Append observed implementation and verification evidence here. Plans are not evi
   scripts/create-settings-vector-study.py. git diff --check passed.
 - Art-only follow-up: no game code, content or protocol changes; game tests
   and runtime import were not rerun. Phase10 and human approval remain open.
+
+## 2026-10-25 — Phase 10 — PDF conversation assessment and presentation revision
+- Commit/worktree: local changes on 891f9fd, C:/chatgpt_projects/QuizParty; initially clean. No push/publication.
+- Read all eight pages of the supplied conversation and checked recommendations against actual sources. Detailed accepted/adapted/rejected inventory: docs/PDF_CONVERSATION_REVIEW.md. Plan: harness/phase-10-pdf-review-plan.md.
+- Implemented: filled empty theme/juice/stage placeholders; reused bold Greek Comfortaa with license/export/credits; centralized chunky styles and shaped answer icons; scene-owned cancellable tactile/entrance/reveal/score tweens; wide host cast vs compact portrait; framed strategy cards/meter and avatar handoff; labelled readiness/team borders; improved reveal readability and larger-text baselines.
+- Preserved: Core, Infrastructure, protocol, SDK, renderer, masked PIN, existing art and optional asset tool probes. No tracked bin/obj found. Export-generated lockfile target churn restored to original content.
+- Verification: scripts/build.ps1 and final production rebuild -> 0 warnings/errors. scripts/test.ps1 -IncludeGodot -> 252 Core + 100 integration + 19 Godot tests pass; final focused Godot run including larger-text assertions -> 19/19. Content validator and invalid-content CLI gates pass. Logs: artifacts/pdf-review-tests.log, pdf-review-godot-final.log, pdf-review-build-final.log.
+- Test maintenance: existing card-action/privacy assertions retained; queries now search descendants because cards have deliberate PanelContainer wrappers. No test skipped or weakened. Added font coverage and reduced-motion/callback cleanup regression coverage.
+- Runtime: actual host/client captures pass at 1152x648 QuestionActive, 420x900 QuestionActive/AnswerReveal/Scoreboard, large-text/high-contrast and motion-enabled QuestionActive. Logs: artifacts/pdf-review-{landscape,portrait,reveal,scoreboard,accessibility,motion}.log. No runtime stderr in passing captures.
+- Visual critique: first landscape clipped the lower answer row; reduced cast height, recaptured and inspected all four choices within viewport. Reveal explanation originally crossed bright backdrop; added opaque panel and removed duplicate status/disabled strategy controls. Final portrait reveal and large-text/high-contrast captures inspected. Motion screenshot is not an animation trajectory/performance benchmark; automated tests exercise cancellation and exact endpoints.
+- Packaging/device: scripts/export.ps1 -Platform Android and -Platform Windows pass. Font and OFL inclusion observed in export log. Updated APK installed and launched on connected Android device. scripts/test-android-presentation.ps1 -StandardAppearance passes all four portrait/landscape menu/settings captures; inspected portrait settings and landscape menu. scripts/test-android-match.ps1 -HostAddress 192.168.68.105 passes physical Android client + packaged Windows host over LAN, all phases/final agreement (Host 876, Phone 848); inspected physical active/final captures. Logs: artifacts/pdf-review-android-{export,install,presentation,match}.log and pdf-review-windows-export.log. Device interaction was automated, not human touch/listening QA.
+- Initial issues resolved: pre-import capture could not load the previously unused font; imported before passing runs. Test-only namespace collision corrected with global::Godot.Collections. git diff --check EOF whitespace corrected; final gate passes.
+- Existing diagnostic caveats: editor/export teardown still logs the documented EditorSettings shutdown_adb_on_exit error. GdUnit's separate editor-import process also logs socket-bind messages and an unclaimed Node StringName at shutdown; retained verbatim in logs, not represented as clean editor output. The runtime test runner and physical match pass without gameplay errors. No test/log failure filter was weakened.
+- Known limitations: human visual/accessibility/touch sign-off, wider device coverage, motion aesthetics/performance benchmarks and 1,000+ reviewed questions remain open. No Phase 11 work begun. User visual review is the next phase-10 gate.
+
+## 2026-10-25 — Phase 10 — Android rotation, Back and exit confirmation
+- Worktree: existing local presentation changes preserved; no commit/push.
+- Implemented: portrait launch + runtime Sensor orientation; hierarchical Back/Escape;
+  in-match Back opens existing settings without disconnecting; home icon-only exit;
+  localized responsive Yes/No modal with No focus and isolated underlying controls.
+- Verification: build and explicit production Rebuild pass, zero warnings/errors.
+  scripts/test.ps1 -IncludeGodot passes 252 Core, 100 integration, 22 Godot tests
+  (374 total). Three new tests cover home Back/cancellation/focus, modal confirmation
+  and rotation sizing, and lobby/match Back routing. Logs: artifacts/navigation-tests.log
+  and navigation-build-final.log. Existing editor shutdown diagnostic remains as
+  previously documented; no test weakened or skipped.
+- Visual: actual 420x900 larger-text and 1152x648 exit-dialog captures inspected,
+  plus home icon screenshot. Updated capture helper supports -View Exit. Initial
+  captures were stale because desktop no-restore build encountered Android target
+  assets; restore + explicit Rebuild corrected this. Final logs/captures:
+  artifacts/navigation-exit-{portrait,landscape}.log and artifacts/phase10-exit-*.
+- Device: Android export succeeded, APK installed and launched. Observed portrait
+  startup and sensor-driven landscape rendering without restart. App's requested
+  orientation reported FULL_USER. Physical captures: navigation-android-back.png
+  (portrait home), navigation-android-confirmation.png (landscape modal),
+  navigation-android-no.png (home after No). Actual injected Back opened modal;
+  Enter on initially focused No kept process 24572 alive. Back, Tab, Enter chose
+  Yes; pidof returned no process. Relaunched normally afterward. No device rotation
+  setting or permission changed. Android export retains the existing engine
+  EditorSettings shutdown warning. No broader performance claim.
+- Rotation back to portrait is covered by scene-layout tests; a physical reverse
+  rotation was not separately observed during this run. Human touch/visual and
+  Phase 10 content gates remain open. git diff --check passes after final docs.
+
+## 2026-10-25 — Phase 10 — discovery-first join and unique character admission
+- Scope: user approved Creation/Participation labels, corner icon Back, rooms +
+  count/icon refresh, optional PIN popup, name/eight-character selection, atomic
+  conflict retry and Android keyboard visibility. User explicitly hid manual-IP
+  UI while preserving its implementation. Plan: phase-10-join-flow-plan.md.
+- Preserved preceding uncommitted presentation/content work. Baselines for touched
+  components are in ignored artifacts/join-flow-baseline. No question edits,
+  dependency additions, commit, push or publication in this task.
+- Implemented Core typed character IDs/uniqueness for host, local and remote
+  players; stable lobby/match DTO identities. v7 connection-bound, clock-expiring
+  PIN preflight creates no roster member/reservation. Final claim handles races,
+  duplicate requests, expiry and malformed input. Direct/manual transport remains.
+- Implemented JoinFlow, CharacterPicker and centered keyboard-aware PIN modal;
+  hidden occupied portraits use a greyscale material and disabled controls.
+  Host/local selection uses the same catalog. Added Back/refresh/join vector icons,
+  Greek/English text and accessibility labels; eight stable portrait identities.
+- Built-in imagegen produced one four-portrait transparent atlas. Verified RGBA
+  alpha and actual 1254x1254 size; project copy and exact prompt/provenance are in
+  game Art/CHARACTERS.md and showtime-extra-crew-v1.png. Original art retained.
+- Verification: local Core 254/254, Infrastructure 107/107, final Godot 25/25
+  (386 tests). Full scripts/test.ps1 -IncludeGodot passed before the final one-test
+  preview-role addition; final Godot suite then passed. No tests skipped/weakened.
+  Logs: join-all-final.log, join-godot-final.log, join-build-production.log.
+- Added explicit race/retry, PIN privacy/duplicate throttle, no preflight player,
+  connection-bound expiry, malformed character/availability and old-version tests.
+  GdUnit drives real isolated ENet host/client through wrong/correct PIN and final
+  character claim. Existing UI assertions updated to approved hidden manual-IP UI.
+- Real separate-process ENet host/two clients lobby regression passes, including
+  readiness, duplicate safety, late/version rejection, departure/host loss,
+  unreachable host and cancelled callback. Log: join-network-lobby.log.
+- Desktop captures: real LAN discovery/PIN rooms, centered PIN and identity at
+  420x900 and identity at 1152x648 inspected. Logs/captures: join-capture-*.log and
+  artifacts/join-flow-*. Final icon centering/greyscale changes also observed on
+  Android. No UI overflow in inspected name/choice layouts.
+- Android: debug APK exported, installed, launched and then final revision exported/
+  installed again. Actual LAN discovery to Windows at 192.168.68.105, wrong PIN
+  returns to rooms with error, correct PIN shows identity, name entry and Purple
+  selection admitted JoinTest at host roster revision 2. Physical landscape PIN
+  and name fields visibly remain above the open Android keyboard. Back hid the
+  keyboard while retaining name/selection screen. Captures: join-android-*.png;
+  host/runtime logs preserved. No network tunnel, permissions or device-setting
+  changes. Temporary fixture/screenshots removed and app relaunched normally.
+- Physical QA found safe-area Back overlapping wordmark; wordmark now follows the
+  actual inset-aware Back rectangle. Final installed screenshot confirms the fix.
+  Fixture-only --match-ui-* flags also incorrectly started the old match probe;
+  restricted it to actual host/join roles, added regression, and observed final
+  preview produces discovery without phantom localhost connection/timeout.
+- Initial verification blockers: existing content migration removed greece.json,
+  so the CLI negative fixture now selects an actual question file with the same
+  draft/usage failure assertions. Existing handoff test assumed an Athens answer;
+  it now submits a valid index independent of content. Validator repeated token
+  allocations caused ~66s room initialization and suite timeout; pre-tokenized
+  sets retain exact duplicate/Jaccard rules, with a boundary/duplicate regression.
+  New large pack validates with editorial warnings retained; no review status
+  was changed by this task. Failed/timeout logs are retained in artifacts.
+- Native ENet test initially used a different Transport node name from production;
+  corrected test harness path. Guarded keyboard APIs on desktop/headless after
+  initial captures reported unsupported-keyboard warnings. Final gameplay/capture
+  logs are clean. The existing Godot editor/export shutdown_adb_on_exit diagnostic
+  persists and is not represented as clean editor output.
+- Docs updated: AGENTS, PRODUCT, ARCHITECTURE, NETWORK_PROTOCOL, README, TESTING,
+  lobby/presentation/asset/visual/QA docs, current phase plan/context. Phase 10 human
+  visual/accessibility acceptance remains open; no later phase begun. Final
+  git diff --check passes. Matching v7 peers are required.
+- Final Windows export also succeeded; packaged QuizParty.exe headless startup
+  printed C# startup ready, exited 0 and produced empty runtime stderr. Evidence:
+  join-windows-export.log and join-windows-smoke*.log.
+
+### 2026-10-25 — user-approved lobby/setup revision
+
+- Implemented initially unready host, three-column compact roster and icon ready
+  states; own tile sends ready intent. Header actions open full game setup/rules.
+  Full category/card/mission pages support individual/all/none selection, existing
+  Greek catalogue pictograms, immutable host-selected pools and feasible missions.
+- User explicitly approved Low 1–2 ×1, Medium 3 ×1.5, High 4–5 ×2. FullMatch filters
+  selected difficulties and applies the multiplier before existing strategy. Wrong
+  penalties, mission bonus and steals stay fixed. Host validates filtered capacity.
+  Protocol/app moved to v8/0.8.0 because old clients reject the higher reveal bounds.
+- Preserved pre-existing dirty work, custom themes/art, manual-IP transport,
+  private assignment/answer handling, team and shared-controller behavior. No push,
+  commit, publication, production-content editing or phase advance.
+- Local verification: solution build passed; 261 Core tests and 108 infrastructure
+  tests passed. Full Godot suite: 27 passed. After final layout/resource cleanup,
+  both focused MatchSetup Godot tests passed without orphan warnings, followed by
+  a successful production rebuild. Final solution build has no errors and two
+  pre-existing xUnit2031 warnings in QuestionPackTests.
+- ENet process regressions: lobby host + two clients passed (expected revisions
+  now 7 at start and 9 after disconnects); 5-player/20-question teams+strategy mixed
+  match passed; 3-player/30-question strategy+aggressive cards passed all six card
+  activation assertions with identical host/client final scores. Initial 20-question
+  seed-8 strategy run completed with agreed scores but did not award/use CategorySwap,
+  failing that coverage assertion; it was not weakened or removed. Logs retained in
+  artifacts/lobby-settings-network-*.log.
+- Inspected actual portrait/landscape Godot captures and corrected clipping/wrapping,
+  roster height/footer, card description overflow, and an unattached rules grid.
+  See docs/PHASE10_QA.md. Final default pages fit the inspected viewports; larger
+  text, player editing and team-control overflow use drag scrolling. Physical Android
+  and human touch/accessibility acceptance remain outstanding; no new APK installed.
+- `git diff --check` passed. Evidence: artifacts/lobby-settings-*.log,
+  artifacts/lobby-settings/*.png and the Godot TRX. Editor import's Android shutdown
+  EditorSettings diagnostic is recorded; final runtime screenshots have clean stderr.
+- Follow-up: the 20-question strategy+all-six-cards process scenario passed with
+  seed 42 and unchanged coverage assertions. Set the helper's default seed to 42
+  so the standard 20-question coverage fixture draws/activates all required cards
+  under the revised scoring/steal path; seed 8 remains selectable. The 30-question
+  run above used seed 8. Final viewport stderr files were empty.
+
+### 2026-10-25 — physical Android verification before host-role extension
+
+User requested real hardware verification and a GitHub checkpoint before new
+creation/headless/UI work. Exported fresh Windows and Android debug packages and
+installed successfully on physical Android 15 model 23013PC75G. Physical menu and
+settings captures in portrait/landscape were inspected: Greek accents, primary
+controls, settings frame and mascot fit; no crash observed.
+
+Hardware discovery checks found two real regressions, fixed before checkpoint:
+- Runtime/editorial similarity checks scanned every previous question, delaying
+  room creation with the existing 14,760-question collection. A rare-word posting
+  index now narrows candidates while retaining the exact Jaccard >= .8 predicate.
+  Exhaustive-equivalence regression and all 109 infrastructure tests pass; CLI
+  QuestionValidator also passes, with editorial/layout warnings retained.
+- Windows limited broadcast selected virtual/VPN adapters. Discovery now probes
+  active IPv4 subnet broadcasts too, retaining nonce/source/rate validation. Delayed
+  admission cleanup now checks transport membership before disconnecting a peer
+  that has already gone. Directed-subnet/selection/drag Godot checks: 3 passed.
+
+Physical LAN checks passed: discovery in both directions, both host PIN rejection
+and admission, manual-IP transport, fresh identity on rejoin and host-exit behavior.
+20-question strategy/aggressive-card match with Windows host/Android client passed;
+both sides agreed on totals, winners, statistics, missions and card/confidence
+results. Screenshots/logs: artifacts/pre-host-android-*.log,
+artifacts/phase07-android/, artifacts/phase08-android-20-steal/ and
+artifacts/phase10-qa/android-standard/. No ADB networking tunnel was used.
+
+Existing content review flags and editorial assertions were preserved; validator
+success is structural evidence, not a fresh factual review of 14,760 entries.
+Pre-existing temporary tools/generators scripts are left locally, outside the
+checkpoint; production JSON/art/source/docs changes are included. Known tooltip,
+header overlap and creation-flow issues are explicitly the user's next requested
+scope, not claimed fixed by this hardware checkpoint.
+- Additional physical run passed with Android as host and packaged Windows as
+  client: 20 questions, strategy, aggressive cards, identical authoritative totals
+  and final personal results. Evidence: artifacts/pre-host-android-host-match.log and
+  artifacts/phase08-android-20-steal-phone-host/. All debug argument fixtures cleaned.

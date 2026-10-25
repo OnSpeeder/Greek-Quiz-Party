@@ -13,6 +13,7 @@
       "categoryId": { "type": "string", "minLength": 1 },
       "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 },
       "explanation": { "type": "string", "minLength": 1, "maxLength": 4096 },
+      "funFacts": { "type": "array", "maxItems": 5, "items": { "type": "string", "minLength": 1, "maxLength": 1024 } },
       "source": { "type": "string", "format": "uri" },
       "locale": { "type": "string", "minLength": 1 },
       "tags": { "type": "array", "maxItems": 32, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },

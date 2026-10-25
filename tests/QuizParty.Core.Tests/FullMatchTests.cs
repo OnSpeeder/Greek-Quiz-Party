@@ -26,6 +26,7 @@ public class FullMatchTests
         var instances = new HashSet<QuestionInstanceId>();
         var texts = new HashSet<string>();
         var rounds = new HashSet<int>();
+        long expectedTotal = 0;
         for (var q = 1; q <= count; q++)
         {
             Assert.Equal(q, match.QuestionNumber);
@@ -40,7 +41,8 @@ public class FullMatchTests
             fixture.Clock.Advance(TimeSpan.FromSeconds(19));
             Assert.True(match.Poll()); // Unanswered third player times out under host clock.
             Reveal(match);
-            Assert.Equal(q * 950, match.Snapshot.Scores[0].Total);
+            expectedTotal += QuizParty.Core.Scoring.DifficultyScore.Scale(950, match.Snapshot.Question!.Difficulty);
+            Assert.Equal(expectedTotal, match.Snapshot.Scores[0].Total);
             Assert.Equal(GameError.None, match.Advance());
             Assert.Equal(GameError.None, match.Advance());
             if (match.Snapshot.Phase == GamePhase.RoundEnd) Assert.Equal(GameError.None, match.Advance());
@@ -61,6 +63,7 @@ public class FullMatchTests
     {
         var f = new SessionFixture();
         var match = new FullMatch(f.Players, f.Clock, new SeededRandomSource(8), Questions(4), new(1));
+        var normalPoints = QuizParty.Core.Scoring.DifficultyScore.Scale(1000, match.Snapshot.Question!.Difficulty);
         // First two tie for first, third is wrong.
         for (var i = 0; i < 3; i++) Assert.Equal(SubmissionError.None,
             match.Submit(new(f.Players[i].Id, match.Snapshot.Question!.InstanceId, i == 2 ? (Correct(match) + 1) % 4 : Correct(match)), f.Clock.Now));
@@ -81,7 +84,7 @@ public class FullMatchTests
         Reveal(match); match.Advance(); match.Advance();
         Assert.Equal(GamePhase.GameOver, match.Snapshot.Phase);
         Assert.Equal(f.Players[1].Id, Assert.Single(match.Winners));
-        Assert.Equal(1000, match.Snapshot.Scores[0].Total); Assert.Equal(1000, match.Snapshot.Scores[1].Total);
+        Assert.Equal(normalPoints, match.Snapshot.Scores[0].Total); Assert.Equal(normalPoints, match.Snapshot.Scores[1].Total);
         Assert.Equal(1, match.Statistics.Single(s => s.PlayerId == f.Players[2].Id).Wrong);
     }
 

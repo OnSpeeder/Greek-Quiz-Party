@@ -1,5 +1,16 @@
 keys,el_GR,en
 CATEGORY_GREECE,Ελλάδα,Greece
+CATEGORY_HISTORY,Ιστορία,History
+CATEGORY_GEOGRAPHY,Γεωγραφία,Geography
+CATEGORY_SCIENCE,Επιστήμη,Science
+CATEGORY_TECHNOLOGY,Τεχνολογία,Technology
+CATEGORY_CINEMA_TV,Κινηματογράφος & TV,Cinema & TV
+CATEGORY_MUSIC,Μουσική,Music
+CATEGORY_SPORTS,Αθλητισμός,Sports
+CATEGORY_GAMING,Gaming,Gaming
+CATEGORY_POP_CULTURE,Pop Culture,Pop Culture
+CATEGORY_LOGIC,Γρίφοι & Λογική,Logic & Riddles
+CATEGORY_WTF_FACTS,Παράξενα & WTF,WTF Facts
 LOBBY_STATUS_ContentError,Το πακέτο ερωτήσεων δεν είναι διαθέσιμο,Question pack is unavailable
 APP_TITLE,QuizParty,QuizParty
 SETUP_READY,Το περιβάλλον ανάπτυξης είναι έτοιμο,Development environment ready
@@ -34,14 +45,14 @@ LOBBY_READY_YES,έτοιμος,ready
 LOBBY_READY_NO,περιμένουμε ετοιμότητα,not ready
 LOBBY_READY_TOGGLE,Αλλαγή ετοιμότητας,Toggle ready
 LOBBY_START,Έναρξη παιχνιδιού,Start game
-LOBBY_STATUS_Idle,Δημιούργησε αίθουσα ή συνδέσου με IP,Create a room or join by IP
+LOBBY_STATUS_Idle,Δημιούργησε αίθουσα ή επίλεξε Συμμετοχή,Create a room or choose Join
 LOBBY_STATUS_None,Η ενέργεια επιβεβαιώθηκε,Action confirmed
 LOBBY_STATUS_HostListening,Η αίθουσα είναι ανοιχτή — περιμένουμε παίκτες,Room open — waiting for players
 LOBBY_STATUS_Connecting,Σύνδεση με την αίθουσα…,Connecting to the room…
 LOBBY_STATUS_Joined,Δήλωσε ετοιμότητα για να ξεκινήσουμε,Set ready to begin
 LOBBY_STATUS_GameStarting,Όλοι έτοιμοι — η έναρξη επιβεβαιώθηκε,Everyone ready — start confirmed
 LOBBY_STATUS_PlayerLeft,Ένας παίκτης αποσυνδέθηκε,A player disconnected
-LOBBY_STATUS_InvalidInput,Έλεγξε όνομα και αίθουσα ή διεύθυνση IP,Check your name and room name or IP address
+LOBBY_STATUS_InvalidInput,Έλεγξε το όνομα και τα στοιχεία της αίθουσας,Check the name and room details
 LOBBY_STATUS_NotReady,Χρειάζονται τουλάχιστον δύο παίκτες και όλοι έτοιμοι,At least two players must all be ready
 LOBBY_STATUS_NotHost,Μόνο ο οικοδεσπότης ξεκινά το παιχνίδι,Only the host can start the game
 LOBBY_STATUS_IncompatibleVersion,Η έκδοση δικτύου δεν είναι συμβατή,Incompatible network protocol version
@@ -55,8 +66,8 @@ LOBBY_STATUS_RequestConflict,Το αίτημα έχει ήδη χρησιμοπ�
 LOBBY_STATUS_RequestLimit,Πάρα πολλά αιτήματα — συνδέσου ξανά,Too many requests — connect again
 LOBBY_STATUS_UnknownConnection,Η σύνδεση δεν είναι ενεργή,Connection is no longer active
 LOBBY_STATUS_InvalidPlayer,Το όνομα ή η τοπική θέση παίκτη δεν είναι έγκυρα,Player name or local slot is invalid
-LOBBY_STATUS_ConnectionTimeout,Η σύνδεση έληξε — έλεγξε IP και δίκτυο,Connection timed out — check IP and network
-LOBBY_STATUS_ConnectionFailed,Αποτυχία σύνδεσης — έλεγξε IP και δίκτυο,Connection failed — check IP and network
+LOBBY_STATUS_ConnectionTimeout,Η σύνδεση έληξε — έλεγξε το δίκτυο και δοκίμασε ξανά,Connection timed out — check the network and try again
+LOBBY_STATUS_ConnectionFailed,Αποτυχία σύνδεσης — έλεγξε το δίκτυο,Connection failed — check the network
 LOBBY_STATUS_ServerDisconnected,Η αίθουσα έκλεισε — δημιούργησε ή βρες νέα αίθουσα. Το παιχνίδι δεν συνεχίζεται μετά την αποσύνδεση.,Room closed — create or find a new room. This match cannot be resumed after disconnect.
 MATCH_TITLE,Δοκιμαστικός γύρος,Practice round
 MATCH_FINAL,Τελικά αποτελέσματα,Final results
@@ -96,14 +107,14 @@ LOBBY_STATUS_PinFormat,Το PIN πρέπει να είναι κενό ή 4–6 �
 LOBBY_STATUS_PinRequired,Πληκτρολόγησε το PIN της αίθουσας και πάτησε ξανά την αίθουσα,Enter the room PIN then select the room again
 LOBBY_STATUS_WrongPin,Λάθος PIN — έλεγξε τον κωδικό με τον οικοδεσπότη,Wrong PIN — check with the host
 LOBBY_STATUS_PinRateLimited,Πολλές προσπάθειες PIN — περίμενε έως 30 δευτερόλεπτα,Too many PIN attempts — wait up to 30 seconds
-DISCOVERY_TITLE,Αίθουσες στο τοπικό δίκτυο,Rooms on your local network
+DISCOVERY_TITLE,Διαθέσιμες Αίθουσες,Available Rooms
 DISCOVERY_REFRESH,Αναζήτηση αιθουσών,Find rooms
-DISCOVERY_HELP,Βρες αίθουσες στο ίδιο δίκτυο ή σύνδεσε με IP παρακάτω,Find rooms on the same network or join by IP below
+DISCOVERY_HELP,Βρες αίθουσες στο ίδιο δίκτυο,Find rooms on the same network
 DISCOVERY_STATUS_Scanning,Αναζήτηση στο δίκτυο…,Searching the local network…
 DISCOVERY_STATUS_Finished,Επίλεξε αίθουσα ή ανανέωσε την αναζήτηση,Select a room or refresh the search
-DISCOVERY_STATUS_NoRooms,Δεν βρέθηκαν αίθουσες — έλεγξε το ίδιο Wi-Fi ή σύνδεσε με IP παρακάτω,No rooms found — check the same Wi-Fi or join by IP below
-DISCOVERY_STATUS_Unavailable,Η αναζήτηση δεν είναι διαθέσιμη — χρησιμοποίησε IP,Discovery is unavailable — join by IP
-DISCOVERY_ROOM,{0} · {1}/{2} · {3},{0} · {1}/{2} · {3}
+DISCOVERY_STATUS_NoRooms,Δεν βρέθηκαν αίθουσες — έλεγξε ότι είστε στο ίδιο Wi-Fi,No rooms found — check that you are on the same Wi-Fi
+DISCOVERY_STATUS_Unavailable,Η αναζήτηση δεν είναι διαθέσιμη — έλεγξε το δίκτυο και δοκίμασε ξανά,Discovery is unavailable — check the network and try again
+DISCOVERY_ROOM,{0} — {1}/{2},{0} — {1}/{2}
 DISCOVERY_STARTED,Παιχνίδι σε εξέλιξη,Match in progress
 DISCOVERY_FULL,Γεμάτη αίθουσα,Room full
 DISCOVERY_PIN,Απαιτείται PIN,PIN required
@@ -214,8 +225,8 @@ UI_SHOW_PRIVATE,Οι κάρτες και η αποστολή μου,My cards and
 UI_HIDE_PRIVATE,Απόκρυψη καρτών και αποστολής,Hide cards and mission
 UI_PARTY_BADGE,2–8 ΠΑΙΚΤΕΣ  ·  ΧΩΡΙΣ INTERNET,2–8 PLAYERS  ·  OFFLINE
 UI_HOME_TAGLINE,Γνώσεις • Ρίσκο • Ανατροπές,Knowledge • Risk • Comebacks
-UI_CREATE_PARTY,Δημιουργώ παρέα,Create a party
-UI_JOIN_PARTY,Μπαίνω στην παρέα,Join the party
+UI_CREATE_PARTY,Δημιουργία,Create
+UI_JOIN_PARTY,Συμμετοχή,Join
 UI_PICK_PATH,Πάρε θέση στη σκηνή!,Take your place on stage!
 UI_CREATE_TITLE,Η δική σου παρέα,Your party
 UI_JOIN_TITLE,Βρες την παρέα σου,Find your party
@@ -272,3 +283,87 @@ UI_SETTINGS_HELP_TAB,Βοήθεια,Help & Legal
 UI_SETTINGS_SFX,Εφέ,SFX
 UI_SETTINGS_LEAVE_SHORT,Αποχώρηση,Leave party
 UI_SETTINGS_RESET_SHORT,Επαναφορά,Reset defaults
+UI_EXIT,Κλείσιμο παιχνιδιού,Close game
+UI_EXIT_QUESTION,Θέλεις σίγουρα να κλείσεις το παιχνίδι;,Are you sure you want to close the game?
+UI_YES,Ναι,Yes
+UI_NO,Όχι,No
+JOIN_IDENTITY,Το όνομά σου,Your name
+JOIN_CHARACTER,Επίλεξε χαρακτήρα,Choose your character
+JOIN_LOBBY,Συμμετοχή στην αίθουσα,Join room
+JOIN_PIN_PROMPT,Πληκτρολόγησε το PIN της αίθουσας,Enter the room PIN
+JOIN_CHECK_PIN,Έλεγχος PIN,Check PIN
+JOIN_CHARACTER_CONFLICT,Ο χαρακτήρας επιλέχθηκε από άλλον παίκτη. Επίλεξε κάποιον από τους διαθέσιμους.,Another player selected that character. Choose an available character.
+CHARACTER_TAKEN,Μη διαθέσιμος,Unavailable
+CHARACTER_SELECTED,Επιλεγμένος,Selected
+LOBBY_STATUS_CharacterTaken,Ο χαρακτήρας επιλέχθηκε από άλλον παίκτη,Character selected by another player
+LOBBY_STATUS_AccessExpired,Η επιλογή αίθουσας έληξε. Επίλεξε ξανά την αίθουσα.,Room selection expired. Select the room again.
+CHARACTER_0,Ροζ,Pink
+CHARACTER_1,Μπλε,Blue
+CHARACTER_2,Πορτοκαλί,Orange
+CHARACTER_3,Πράσινος,Green
+CHARACTER_4,Μοβ,Purple
+CHARACTER_5,Γέτι,Yeti
+CHARACTER_6,Κοραλλί,Coral
+CHARACTER_7,Τιρκουάζ,Teal
+JOIN_PIN_FIELD,PIN (4–6 ψηφία),PIN (4–6 digits)
+SETUP_SETUP,Ρυθμίσεις παιχνιδιού,Game setup
+SETUP_RULES,Πώς παίζεται,How to play
+SETUP_DONE,Εντάξει ✓,Done ✓
+SETUP_CATEGORIES,Κατηγορίες,Categories
+SETUP_CARDS,Κάρτες,Cards
+SETUP_MISSIONS,Αποστολές,Missions
+SETUP_ALL,Επιλογή όλων,Select all
+SETUP_NONE,Απαλοιφή όλων,Clear all
+SETUP_LENGTH,Ερωτήσεις,Questions
+SETUP_PREVIEW,1,1
+SETUP_SECONDS,Δευτερόλεπτα,Seconds
+SETUP_DIFFICULTY,Δυσκολία · πολλαπλή επιλογή,Difficulty · select any
+SETUP_LOW,"Χαμηλή
+×1","Easy
+×1"
+SETUP_MEDIUM,"Μέτρια
+×1,5","Medium
+×1.5"
+SETUP_HIGH,"Υψηλή
+×2","Hard
+×2"
+SETUP_CAPACITY,Διαθέσιμες: {0} · Απαιτούνται: {1},Available: {0} · Required: {1}
+SETUP_RULES_BODY,"Στόχος: συγκέντρωσε τους περισσότερους πόντους!
+
+Απάντησε πριν λήξει ο χρόνος. Σωστή απάντηση: 500 πόντοι + έως 500 μπόνους ταχύτητας. Δυσκολία: Χαμηλή ×1 · Μέτρια ×1,5 · Υψηλή ×2.
+
+Με στρατηγική: διάλεξε αυτοπεποίθηση ×1, ×2 ή ×3. Λάθος με ×2: −250, με ×3: −500. Το σύνολο δεν πέφτει κάτω από 0. Σερί 3/5 σωστών: +10%/+15%.
+
+Οι σωστές απαντήσεις γεμίζουν τον μετρητή καρτών. Κράτησε έως 2 κάρτες και χρησιμοποίησέ τες στο κατάλληλο σημείο. Οι μυστικές αποστολές δίνουν +500 όταν ολοκληρωθούν.
+
+Ο host επιλέγει ερωτήσεις, χρόνο, δυσκολίες, κατηγορίες, κάρτες και αποστολές. Κενή επιλογή καρτών ή αποστολών τις απενεργοποιεί. Η στρατηγική ενεργοποιεί αυτοπεποίθηση, σερί, κάρτες και αποστολές.
+
+Σε ομάδες αθροίζονται οι ατομικοί πόντοι. Σε ισοπαλία παίζετε επιπλέον ερωτήσεις· κερδίζει η πιο γρήγορη σωστή απάντηση. Όλοι, μαζί και ο host, δηλώνουν ✓ πριν την έναρξη.","Goal: earn the most points!
+
+Answer before time expires. Correct: 500 points + up to 500 speed bonus. Difficulty: Easy ×1 · Medium ×1.5 · Hard ×2.
+
+With strategy: choose confidence ×1, ×2 or ×3. Wrong at ×2: −250; at ×3: −500. Totals floor at 0. Streaks of 3/5 correct: +10%/+15%.
+
+Correct answers fill the card meter. Hold up to 2 cards and use each in its allowed window. Completed secret missions award +500.
+
+The host chooses length, time, difficulty, categories, cards and missions. Empty card or mission selections disable them. Strategy enables confidence, streaks, cards and missions.
+
+Team scores sum individual points. Ties use extra questions; fastest correct wins. Everyone, including the host, must select ✓ before starting."
+SETUP_CARD_NAME_DoublePoints,Διπλοί πόντοι,Double points
+SETUP_CARD_NAME_FiftyFifty,50/50,50/50
+SETUP_CARD_NAME_ExtraTime,Έξτρα χρόνος,Extra time
+SETUP_CARD_NAME_CategorySwap,Αλλαγή κατηγορίας,Category swap
+SETUP_CARD_NAME_Shield,Ασπίδα,Shield
+SETUP_CARD_NAME_Steal,Κλοπή,Steal
+SETUP_MISSION_NAME_Historian,Ιστορικός,Historian
+SETUP_MISSION_NAME_HotStreak,Καυτό σερί,Hot streak
+SETUP_MISSION_NAME_Gambler,Τζογαδόρος,Gambler
+SETUP_MISSION_NAME_Speedster,Ταχύτατος,Speedster
+SETUP_MISSION_NAME_Generalist,Παντογνώστης,Generalist
+SETUP_CINEMA,Σινεμά & TV,Cinema & TV
+SETUP_CARD_HELP_DoublePoints,×2 θετικοί πόντοι. Πριν απαντήσεις ή για την επόμενη ερώτηση στη βαθμολογία.,×2 positive points. Before answering or arm for the next question during recap.
+SETUP_CARD_HELP_FiftyFifty,"Κρύβει δύο λάθος επιλογές μόνο στη δική σου οθόνη, πριν απαντήσεις.","Hides two wrong options privately, before you answer."
+SETUP_CARD_HELP_ExtraTime,"+5 δευτερόλεπτα. Χρήση πριν απαντήσεις, με τουλάχιστον 3″ να απομένουν.",+5 seconds. Use before answering with at least 3 seconds left.
+SETUP_CARD_HELP_CategorySwap,Αλλάζει την επόμενη κατηγορία στη βαθμολογία. Ο host δίνει έγκυρες επιλογές.,Swap the next category during recap. The host offers eligible alternatives.
+SETUP_CARD_HELP_Shield,Μπλοκάρει μία Κλοπή. Ενεργοποίηση πριν απαντήσεις ή στη βαθμολογία.,Blocks one Steal. Arm before answering or during recap.
+SETUP_CARD_HELP_Steal,Έως 100 πόντοι από αντίπαλο στη βαθμολογία. Μία στόχευση ανά παίκτη.,Up to 100 points from an opponent during recap. Each victim can be targeted once.

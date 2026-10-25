@@ -1,5 +1,27 @@
 # LAN lobby, discovery and PIN
 
+## Current user flow — 2026-10-25
+
+1. Home: «Δημιουργία» / «Συμμετοχή».
+2. Participation: «Διαθέσιμες Αίθουσες», icon-only Back/refresh, room name and count.
+3. Protected room: PIN popup; wrong PIN returns to rooms with an error. Unprotected
+   rooms skip the prompt. PIN is optional and rate limited, not encryption.
+4. Successful host preflight opens name + eight-character selection. Occupied
+   characters are greyed/disabled and refreshed. No player or reservation exists yet.
+5. Icon-only join submits the final claim. Host resolves races; a losing claim
+   stays at character selection with an error, refreshed choices and the name intact.
+6. Host/shared-device players use the same character catalog and uniqueness rule.
+
+Back closes the PIN popup or returns identity selection to rooms. From rooms it
+returns home. Input fields stay scrollable above Android keyboard in either
+orientation. Manual IP is intentionally absent from the normal menu; the retained
+transport API and test probes still support it. All peers require production v7.
+
+The sections below retain earlier implementation/test history. References to a
+visible manual-IP control or entering the name before discovery describe the old
+flow and are superseded by this section.
+
+
 From the main menu choose **Παιχνίδι στο τοπικό δίκτυο / LAN party lobby**.
 
 1. Host enters their name/room name and optionally a 4–6 digit PIN, then creates

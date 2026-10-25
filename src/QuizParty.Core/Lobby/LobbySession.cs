@@ -3,7 +3,7 @@ using QuizParty.Core.Players;
 
 namespace QuizParty.Core.Lobby;
 
-public enum LobbyError { None, InvalidPlayer, AlreadyJoined, RoomFull, GameStarted, UnknownConnection, NotHost, NotReady, InvalidTeam }
+public enum LobbyError { None, InvalidPlayer, AlreadyJoined, RoomFull, GameStarted, UnknownConnection, NotHost, NotReady, InvalidTeam, CharacterTaken }
 public sealed record LobbyPlayer(Player Player, bool IsHost, bool Ready, TeamId? TeamId = null);
 public sealed record LobbySnapshot(long Revision, GamePhase Phase, IReadOnlyList<LobbyPlayer> Players, bool TeamMode = false);
 
@@ -21,7 +21,7 @@ public sealed class LobbySession
     {
         ArgumentNullException.ThrowIfNull(host);
         if (host.ConnectionId != HostConnection || (host.LocalSlot?.Value ?? 0) != 0) throw new ArgumentException("Host must own connection1/slot0.", nameof(host));
-        _players.Add(host.Id, new(host, true, true));
+        _players.Add(host.Id, new(host with { Character = host.Character ?? CharacterId.Pink }, true, false));
         _state.TryTransition(GameTrigger.Initialize); _state.TryTransition(GameTrigger.OpenLobby);
     }
     public LobbyError Join(Player player)
@@ -45,6 +45,11 @@ public sealed class LobbySession
         if (_players.ContainsKey(player.Id) || (primary && slot != 0)) return LobbyError.InvalidPlayer;
         if (_players.Values.Any(p => p.Player.ConnectionId == player.ConnectionId && (p.Player.LocalSlot?.Value ?? 0) == slot)) return LobbyError.AlreadyJoined;
         if (_players.Count >= MaxPlayers) return LobbyError.RoomFull;
+        var character = player.Character ?? Enumerable.Range(0, Characters.Count).Select(i => (CharacterId)i)
+            .First(id => _players.Values.All(p => p.Player.Character != id));
+        if (!Characters.IsValid((int)character)) return LobbyError.InvalidPlayer;
+        if (_players.Values.Any(p => p.Player.Character == character)) return LobbyError.CharacterTaken;
+        player = player with { Character = character };
         var team = !_teamMode ? (TeamId?)null : LeastPopulatedTeam();
         _players.Add(player.Id, new(player, false, false, team)); _revision++; return LobbyError.None;
     }

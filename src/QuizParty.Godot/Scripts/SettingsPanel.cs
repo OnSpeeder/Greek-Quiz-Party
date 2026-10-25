@@ -79,7 +79,7 @@ public partial class SettingsPanel : Control
         _title = Label("UI_SETTINGS_BANNER");
         _title.HorizontalAlignment = HorizontalAlignment.Center;
         _title.VerticalAlignment = VerticalAlignment.Center;
-        _title.AddThemeFontOverride("font", new FontVariation { BaseFont = ThemeDB.FallbackFont, VariationEmbolden = 1.6f });
+        _title.AddThemeFontOverride("font", QuizShowTheme.DisplayFont());
         _title.AddThemeColorOverride("font_color", new Color("55cff5"));
         _title.AddThemeColorOverride("font_outline_color", ShowtimeTheme.Gold);
         _title.AddThemeConstantOverride("outline_size", 5);
@@ -430,7 +430,9 @@ public partial class SettingsPanel : Control
 
     private static string EngineNotices()
     {
-        var notices = new System.Text.StringBuilder(Engine.GetLicenseText());
+        var notices = new System.Text.StringBuilder("Comfortaa\n");
+        notices.AppendLine(global::Godot.FileAccess.GetFileAsString("res://Art/Fonts/OFL.txt"));
+        notices.AppendLine().AppendLine(Engine.GetLicenseText());
         foreach (var component in Engine.GetCopyrightInfo())
         {
             notices.AppendLine().AppendLine(component["name"].AsString());

@@ -36,7 +36,7 @@ public class MixedTeamProtocolTests
         }
         public void Deliver(IEnumerable<LobbyOutbound> messages) { foreach (var p in messages.Where(m => m.ConnectionId == 2)) Client.Apply(p.Json); }
         public void Sync() => Deliver(Host.BroadcastMatch());
-        public void Start() { Assert.Equal(Core.Lobby.LobbyError.None, Host.Start()); Deliver(Host.Broadcast()); Assert.True(Host.BeginMatch()); Sync(); }
+        public void Start() { Host.SetHostReady(true); Assert.Equal(Core.Lobby.LobbyError.None, Host.Start()); Deliver(Host.Broadcast()); Assert.True(Host.BeginMatch()); Sync(); }
         public void Advance() { Host.AdvanceMatch(); Sync(); }
         public int Correct => Array.IndexOf(Host.MatchSnapshot()!.Question.Answers, "yes");
     }

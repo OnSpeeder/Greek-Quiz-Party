@@ -368,3 +368,20 @@ Every new NuGet/plugin dependency must have:
 - No service locator in domain code.
 - No reflection-based magic unless justified.
 - Async cancellation tokens for long-running async operations.
+
+## Participation and character ownership — 2026-10-25
+
+Core Player carries typed CharacterId; LobbySession atomically enforces one of
+eight identities across all connections/local slots. Unspecified legacy API
+choices are assigned a free character by the host. Infrastructure LobbyHost owns
+preflight authorization on the actual connection and injected clock, independently
+of roster admission; LobbyClientState correlates/validates availability and final
+claims. DTOs remain separate. See production v7 in NETWORK_PROTOCOL.md.
+
+Godot JoinFlow composes RoomBrowser, PIN popup and CharacterPicker. It sends
+intents, retains name on conflicts, polls availability and renders authoritative
+occupied IDs. LobbyScreen keeps creation/waiting-room navigation. GameArt maps
+stable IDs to the original atlas and four additional portraits; standings, cast
+and handoff use those IDs. ResponsiveCanvas reserves virtual-keyboard height and
+scrolls focused fields into view; PIN modal has its own keyboard-safe scroll area.
+Manual-IP UI is hidden; LobbyTransport.Join remains supported internally.

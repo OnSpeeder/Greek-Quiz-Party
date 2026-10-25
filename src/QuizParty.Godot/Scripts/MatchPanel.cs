@@ -23,10 +23,13 @@ public partial class MatchPanel : VBoxContainer
     private Button _statisticsToggle = null!;
     private Button _newParty = null!;
     private bool _showStatistics;
+    private ShowtimeStageView _stage = null!;
 
     public override void _Ready()
     {
         AddThemeConstantOverride("separation", 8);
+        _stage = new ShowtimeStageView { Name = "ShowtimeStage", Visible = false };
+        AddChild(_stage); MoveChild(_stage, 0);
         _progress = new Label { Name = "Progress", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         AddChild(_progress);
         MoveChild(_progress, 1);
@@ -62,6 +65,7 @@ public partial class MatchPanel : VBoxContainer
             var choice = index;
             _answers[index] = GetNode<Button>($"Answers/Answer{index}");
             _answers[index].ThemeTypeVariation = "Answer" + index;
+            _answers[index].Icon = QuizShowTheme.AnswerBadge(index);
             _answers[index].CustomMinimumSize = new(0, 80);
             _answers[index].AddThemeFontSizeOverride("font_size", 26);
             _answers[index].Pressed += () => _transport?.SubmitAnswer(choice, confidence: _snapshot?.IsTieBreaker == true ? 1 : _strategy.Confidence);
@@ -78,6 +82,12 @@ public partial class MatchPanel : VBoxContainer
         GetNode<Label>("Question").AddThemeStyleboxOverride("normal", ShowtimeTheme.Panel(new("211235"), ShowtimeTheme.Gold, 3));
         GetNode<Label>("Question").AddThemeFontSizeOverride("font_size", 30);
         GetNode<Label>("Question").HorizontalAlignment = HorizontalAlignment.Center;
+        QuizShowTheme.StyleQuestion(GetNode<Label>("Question"));
+        GetNode<Label>("Reveal").AddThemeStyleboxOverride("normal", QuizShowTheme.Card(QuizShowTheme.Plum, ShowtimeTheme.Cyan));
+        // These explicit sizes are assigned after NodeAdded styling; register their
+        // baselines so larger text applies both now and on later preference changes.
+        foreach (var answer in _answers) QuizShowTheme.SetFontSize(answer, 26);
+        QuizShowTheme.SetFontSize(GetNode<Label>("Question"), 30);
         var meta = new HBoxContainer { Name = "Meta" }; AddChild(meta); MoveChild(meta, 0);
         _progress.Reparent(meta); _progress.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _progress.AddThemeColorOverride("font_color", ShowtimeTheme.Cyan);
@@ -91,7 +101,14 @@ public partial class MatchPanel : VBoxContainer
         GetNode<Label>("Meta/Countdown").AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
     }
 
-    private void UpdateAnswerLayout() => GetNode<GridContainer>("Answers").Columns = Size.X >= 700 ? 2 : 1;
+    private void UpdateAnswerLayout()
+    {
+        var wide = Size.X >= 700;
+        GetNode<GridContainer>("Answers").Columns = wide ? 2 : 1;
+        _stage.Visible = wide && _transport?.IsHost == true && _snapshot?.Phase is "QuestionActive" or "QuestionLocked" or "AnswerReveal";
+        // Keep confidence immediately before choices, but private cards after choices.
+        if (_strategy is not null) _strategy.SetCompact(!wide);
+    }
 
     public void Bind(LobbyTransport transport)
     {
@@ -132,6 +149,8 @@ public partial class MatchPanel : VBoxContainer
         var phaseChanged = _snapshot?.Phase != snapshot.Phase || _snapshot.Question.InstanceId != snapshot.Question.InstanceId;
         if (_snapshot?.Question.InstanceId != snapshot.Question.InstanceId) _reason = "None";
         _snapshot = snapshot;
+        UpdateAnswerLayout();
+        _stage.Render(snapshot.Scores, phaseChanged && snapshot.Phase == "AnswerReveal");
         _controllers.Refresh();
         _strategy.Render(snapshot);
         if (_transport?.Snapshot is { } lobby) OnLobbyChanged(lobby);
@@ -165,7 +184,8 @@ public partial class MatchPanel : VBoxContainer
                 s.AllInCorrect + s.AllInWrong == 0 ? 0 : 100.0 * s.AllInCorrect / (s.AllInCorrect + s.AllInWrong))));
         for (var i = 0; i < 4; i++) _answers[i].Text = $"{Tr("UI_ANSWER_" + i)}   {snapshot.Question.Answers[i]}";
         GetNode<Label>("Reveal").Text = snapshot.Reveal is null ? "" :
-            string.Format(Tr("MATCH_CORRECT"), snapshot.Question.Answers[snapshot.Reveal.CorrectAnswerIndex]) + "\n" + snapshot.Reveal.Explanation;
+            string.Format(Tr("MATCH_CORRECT"), snapshot.Question.Answers[snapshot.Reveal.CorrectAnswerIndex]) + "\n" + snapshot.Reveal.Explanation +
+            (snapshot.Reveal.FunFacts is { Length: > 0 } ? "\n\n" + string.Join("\n", snapshot.Reveal.FunFacts.Select(f => "• " + f)) : "");
         GetNode<Label>("Scores").Text = snapshot.Reveal is null ? "" : Tr("MATCH_SCORES") + "\n" +
             string.Join("\n", snapshot.Scores.OrderByDescending(score => score.Total).Select(score =>
                 string.Format(Tr("MATCH_PLAYER_SCORE"), score.DisplayName, score.Total)));
@@ -176,14 +196,18 @@ public partial class MatchPanel : VBoxContainer
         GetNode<Label>("Question").Visible = snapshot.Phase is "QuestionActive" or "QuestionLocked" or "AnswerReveal";
         GetNode<Label>("Reveal").Visible = snapshot.Phase == "AnswerReveal";
         GetNode<Label>("Scores").Visible = false;
-        _standings.Visible = snapshot.Reveal is not null;
-        if (_standings.Visible) _standings.Render(snapshot.Scores);
+        _standings.Visible = snapshot.Phase is "Scoreboard" or "RoundEnd" or "GameOver";
+        if (_standings.Visible) _standings.Render(snapshot.Scores, snapshot.SessionId);
         _statistics.Visible = _showStatistics && snapshot.Phase == "GameOver";
         _statisticsToggle.Visible = snapshot.Phase == "GameOver";
         _newParty.Visible = snapshot.Phase == "GameOver";
         if (snapshot.Phase == "GameOver") GetNode<Label>("Status").Visible = false;
         if (phaseChanged && PresentationShell.For(this) is { } shell)
         {
+            foreach (var answer in _answers) { shell.Juice.Finish(answer); answer.Scale = Vector2.One; answer.Modulate = Colors.White; }
+            if (snapshot.Phase == "QuestionActive") shell.Juice.StaggerInControls(_answers);
+            if (snapshot.Phase == "AnswerReveal" && snapshot.Reveal is { } reveal)
+                shell.Juice.Reveal(_answers, reveal.CorrectAnswerIndex);
             // Only animate public text. Private panel hiding and answer input remain immediate.
             shell.Fade(snapshot.Phase == "GameOver" ? _winner : GetNode<Label>(snapshot.Reveal is null ? "Question" : "Reveal"));
             if (snapshot.Phase is "AnswerReveal" or "GameOver") shell.PlayCue(snapshot.Phase == "GameOver" ? "final" : "reveal");
@@ -200,7 +224,7 @@ public partial class MatchPanel : VBoxContainer
         if (_snapshot is null || _transport is null) return;
         _controllers.Refresh();
         var active = _snapshot.Phase == "QuestionActive";
-        _strategy.Visible = _controllers.Open && _snapshot.Strategy is not null && _snapshot.Phase != "GameOver";
+        _strategy.Visible = _controllers.Open && _snapshot.Strategy is not null && _snapshot.Phase is not ("GameOver" or "AnswerReveal");
         for (var i = 0; i < 4; i++)
         {
             _answers[i].Visible = _snapshot.Phase == "AnswerReveal" || _controllers.Open && _snapshot.Phase is "QuestionActive" or "QuestionLocked";
@@ -228,7 +252,8 @@ public partial class MatchPanel : VBoxContainer
                 _transport.OwnAnswerIndex is not null ? "MATCH_ACCEPTED" : _reason is "None" or "Pending" ? "MATCH_CHOOSE" : "MATCH_ERROR_" + _reason
         };
         GetNode<Label>("Status").Text = Tr(key);
-        GetNode<Label>("Status").Visible = !active || _transport.AnswerPending || _transport.OwnAnswerIndex is not null || _reason is not ("None" or "Pending");
+        GetNode<Label>("Status").Visible = _snapshot.Phase != "AnswerReveal" &&
+            (!active || _transport.AnswerPending || _transport.OwnAnswerIndex is not null || _reason is not ("None" or "Pending"));
     }
 
     private void UpdateCountdown()

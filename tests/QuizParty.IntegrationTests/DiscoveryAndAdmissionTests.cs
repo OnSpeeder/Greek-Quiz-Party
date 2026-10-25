@@ -141,6 +141,7 @@ public class DiscoveryAndAdmissionTests
         var original = first.PlayerId; host.Disconnect(2);
         second.Apply(host.Handle(3, second.BeginHello("Phone", "Android", "1234")).Messages[0].Json);
         Assert.NotEqual(original, second.PlayerId); Assert.False(host.Snapshot().Players.Single(p => !p.IsHost).Ready);
+        host.SetHostReady(true);
         host.Handle(3, second.CreateReady(true)!); host.Start(); host.Disconnect(3);
         Assert.Equal("GameStarted", Reason(host.Handle(4, new LobbyClientState().BeginHello("Phone", "Android", "1234"))));
     }
@@ -161,6 +162,7 @@ public class DiscoveryAndAdmissionTests
         var host = new LobbyHost("Room", "Host", clock, new("q", "Question", ["yes", "no", "other", "last"], 0, "test", 1, "Test only"));
         var client = new LobbyClientState();
         client.Apply(host.Handle(2, client.BeginHello("Phone", "Android")).Messages[0].Json);
+        host.SetHostReady(true);
         host.Handle(2, client.CreateReady(true)!); host.Start(); host.BeginMatch();
         foreach (var packet in host.BroadcastMatch()) client.Apply(packet.Json);
         var correct = Array.IndexOf(host.MatchSnapshot()!.Question.Answers, "yes");

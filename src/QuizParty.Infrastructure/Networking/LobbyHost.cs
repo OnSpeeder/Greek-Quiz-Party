@@ -19,9 +19,11 @@ public sealed class LobbyHost
     private readonly IGameClock _clock;
     private readonly RoomAdmission _admission;
     public bool RequiresPin => _admission.RequiresPin;
+    public bool HasRoomAccess(long connection) => _peers.TryGetValue(connection, out var peer) && peer.AdmittedUntil > _clock.Now;
     private readonly Dictionary<long, PeerRequests> _peers = new();
     private readonly Dictionary<long, Guid> _controllers = new() { [1] = Guid.NewGuid() };
     private FullMatch? _match;
+    private readonly Dictionary<Guid, int> _matchCharacters = new();
     private readonly IReadOnlyList<QuestionDefinition> _questions;
     private MatchSettings _settings = new(1);
     private string[]? _categories;
@@ -29,7 +31,7 @@ public sealed class LobbyHost
     public Guid SessionId { get; } = Guid.NewGuid();
     public string RoomName { get; }
 
-    public LobbyHost(string roomName, string hostName, IGameClock clock, QuestionDefinition? question = null, string pin = "")
+    public LobbyHost(string roomName, string hostName, IGameClock clock, QuestionDefinition? question = null, string pin = "", int hostCharacter = 0)
     {
         if (!LobbyProtocol.ValidName(roomName)) throw new ArgumentException("Invalid room name.", nameof(roomName));
         if (!LobbyProtocol.ValidName(hostName)) throw new ArgumentException("Invalid host name.", nameof(hostName));
@@ -38,11 +40,11 @@ public sealed class LobbyHost
         _clock = clock;
         _admission = new(pin, clock);
         _questions = question is null ? [] : [question];
-        _lobby = new(new(new(Guid.NewGuid()), hostName, LobbySession.HostConnection, new(0)));
+        _lobby = new(new(new(Guid.NewGuid()), hostName, LobbySession.HostConnection, new(0), (CharacterId)hostCharacter));
     }
 
     public LobbyHost(string roomName, string hostName, IGameClock clock, IReadOnlyList<QuestionDefinition> questions,
-        MatchSettings settings, string pin = "", IRandomSource? random = null) : this(roomName, hostName, clock, pin: pin)
+        MatchSettings settings, string pin = "", IRandomSource? random = null, int hostCharacter = 0) : this(roomName, hostName, clock, pin: pin, hostCharacter: hostCharacter)
     {
         _questions = Array.AsReadOnly(questions.ToArray());
         _settings = settings;
@@ -52,7 +54,7 @@ public sealed class LobbyHost
     public bool ConfigureMatch(MatchSettings settings, IReadOnlyCollection<string>? categories = null)
     {
         if (_match is not null || _lobby.GetSnapshot().Phase != GamePhase.Lobby ||
-            _questions.Count(q => categories is null || categories.Contains(q.CategoryId)) < settings.QuestionCount) return false;
+            _questions.Count(q => (categories is null || categories.Contains(q.CategoryId)) && settings.Difficulties.Contains(q.Difficulty)) < settings.QuestionCount) return false;
         _settings = settings;
         _categories = categories?.ToArray();
         return true;
@@ -63,24 +65,25 @@ public sealed class LobbyHost
         var snapshot = _lobby.GetSnapshot();
         return new(SessionId, snapshot.Revision, RoomName, snapshot.Phase.ToString(), snapshot.Players.Select(player =>
             new LobbyPlayerDto(player.Player.Id.Value, player.Player.DisplayName, player.IsHost, player.Ready,
-                _controllers[player.Player.ConnectionId!.Value.Value], player.Player.LocalSlot?.Value ?? 0, (int?)player.TeamId)).ToArray(), snapshot.TeamMode);
+                _controllers[player.Player.ConnectionId!.Value.Value], player.Player.LocalSlot?.Value ?? 0, (int?)player.TeamId, (int?)player.Player.Character)).ToArray(), snapshot.TeamMode);
     }
 
     public LobbyError SetHostReady(bool ready, int localSlot = 0) => localSlot is < 0 or > 7 ? LobbyError.InvalidPlayer : _lobby.SetReady(LobbySession.HostConnection, ready, new(localSlot));
-    public LobbyError AddHostLocal(string name, int slot) => AddLocal(1, new(name, slot));
+    public LobbyError AddHostLocal(string name, int slot, int? character = null) => AddLocal(1, new(name, slot, character));
     public LobbyError RemoveHostLocal(int slot) => slot is < 1 or > 7 ? LobbyError.InvalidPlayer : _lobby.RemoveLocal(new(1), new(slot));
     public LobbyError SetTeamMode(bool enabled) => _lobby.SetTeamMode(new(1), enabled);
     public LobbyError AssignTeam(Guid player, int team) => _lobby.SetTeam(new(1), new(player), (TeamId)team);
 
     private LobbyError AddLocal(long connection, AddLocalPlayerDto request)
     {
-        if (!LobbyProtocol.ValidName(request.DisplayName) || request.LocalSlot is < 1 or > 7) return LobbyError.InvalidPlayer;
-        return _lobby.AddLocal(new(new(Guid.NewGuid()), request.DisplayName, new(connection), new(request.LocalSlot)));
+        if (!LobbyProtocol.ValidName(request.DisplayName) || request.LocalSlot is < 1 or > 7 || request.CharacterId is { } character && !Characters.IsValid(character)) return LobbyError.InvalidPlayer;
+        return _lobby.AddLocal(new(new(Guid.NewGuid()), request.DisplayName, new(connection), new(request.LocalSlot), (CharacterId?)request.CharacterId));
     }
     public LobbyError Start() => _lobby.Start(LobbySession.HostConnection);
     public bool BeginMatch()
     {
         if (_match is not null || _questions.Count < _settings.QuestionCount || _lobby.GetSnapshot().Phase != GamePhase.GameStarting) return false;
+        foreach (var player in GetPlayers()) _matchCharacters[player.Id.Value] = (int)player.Character!.Value;
         _match = new(GetPlayers(), _clock, _random ?? new SeededRandomSource(Random.Shared.Next()), _questions, _settings, _categories, teams: _lobby.Teams());
         return true;
     }
@@ -96,10 +99,11 @@ public sealed class LobbyHost
         return new(SessionId, _match.Revision, game.Phase.ToString(), _clock.Now.Ticks,
             new(question.InstanceId.Value, question.Text, question.Answers.ToArray(), question.CategoryId,
                 question.Difficulty, question.StartedAt.Ticks, question.Deadline.Ticks), game.AcceptedAnswerCount,
-            game.Scores.Select(score => new MatchScoreDto(score.PlayerId.Value, score.DisplayName, score.Total)).ToArray(),
+            game.Scores.Select(score => new MatchScoreDto(score.PlayerId.Value, score.DisplayName, score.Total, _matchCharacters[score.PlayerId.Value])).ToArray(),
             game.Reveal is null ? null : new(game.Reveal.CorrectAnswerIndex, game.Reveal.Explanation,
                 game.Reveal.Players.Select(player => new MatchPlayerResultDto(player.PlayerId.Value,
-                    player.AnswerIndex, player.IsCorrect, player.Points)).ToArray()),
+                    player.AnswerIndex, player.IsCorrect, player.Points)).ToArray(),
+                game.Reveal.FunFacts?.ToArray()),
             _match.QuestionNumber, _match.TotalQuestions, _match.RoundNumber, _match.IsTieBreaker,
             _match.Eligible.Select(id => id.Value).ToArray(), _match.Winners.Select(id => id.Value).ToArray(),
             _match.ContentExhausted, game.Phase == GamePhase.GameOver ? _match.Statistics.Select(s =>
@@ -188,12 +192,20 @@ public sealed class LobbyHost
         var before = Snapshot().Revision;
         var matchBefore = _match?.Revision;
         string reply;
-        if (packet.MessageType == "ClientHello")
+        if (packet.MessageType is "CheckRoom" or "RoomAvailability")
+        {
+            var reason = CheckRoom(peer, packet, sourceAddress);
+            reply = LobbyProtocol.Encode("RoomAccessResult", SessionId,
+                new RoomAccessResultDto(reason == "None", reason, Snapshot().Revision,
+                    reason == "None" ? TakenCharacters() : []), packet.MessageId);
+        }
+        else if (packet.MessageType == "ClientHello")
         {
             var reason = Join(connection, packet, sourceAddress, out var playerId);
             reply = LobbyProtocol.Encode("ServerHello", SessionId,
                 new ServerHelloDto(reason == "None", reason, playerId, reason == "None" ? Snapshot() : null,
-                    reason == "None" ? _controllers[connection] : null), packet.MessageId);
+                    reason == "None" ? _controllers[connection] : null,
+                    peer.AdmittedUntil > _clock.Now ? TakenCharacters() : null), packet.MessageId);
         }
         else
         {
@@ -220,19 +232,36 @@ public sealed class LobbyHost
         return new(messages, false);
     }
 
+    private int[] TakenCharacters() => _lobby.GetSnapshot().Players.Select(p => (int)p.Player.Character!.Value).ToArray();
+
+    private string CheckRoom(PeerRequests peer, LobbyEnvelope packet, string sourceAddress)
+    {
+        if (packet.SessionId != SessionId) return "WrongSession";
+        if (Snapshot().Phase != "Lobby") return "GameStarted";
+        if (Snapshot().Players.Length >= LobbySession.MaxPlayers) return "RoomFull";
+        if (packet.MessageType == "RoomAvailability")
+            return LobbyProtocol.TryPayload<RoomAvailabilityRequestDto>(packet, out _) && peer.AdmittedUntil > _clock.Now ? "None" : "AccessExpired";
+        if (!LobbyProtocol.TryPayload<RoomAccessRequestDto>(packet, out var request) || request is null ||
+            request.AppVersion is not { Length: > 0 and <= 32 } || request.Platform is not ("Windows" or "Android" or "Linux" or "macOS") ||
+            !RoomAdmission.ValidPin(request.Pin)) return "MalformedRequest";
+        var reason = _admission.Admit(request.Pin, sourceAddress);
+        if (reason == "None") peer.AdmittedUntil = _clock.Now + TimeSpan.FromMinutes(2);
+        return reason;
+    }
+
     private string Join(long connection, LobbyEnvelope packet, string sourceAddress, out Guid? playerId)
     {
         playerId = null;
         if (packet.SessionId != Guid.Empty || !LobbyProtocol.TryPayload<ClientHelloDto>(packet, out var hello) || hello is null ||
             !LobbyProtocol.ValidName(hello.DisplayName) || hello.AppVersion is not { Length: > 0 and <= 32 } ||
-            hello.Platform is not ("Windows" or "Android" or "Linux" or "macOS") || !RoomAdmission.ValidPin(hello.Pin)) return "MalformedRequest";
+            hello.Platform is not ("Windows" or "Android" or "Linux" or "macOS") || !RoomAdmission.ValidPin(hello.Pin) || hello.CharacterId is { } chosen && !Characters.IsValid(chosen)) return "MalformedRequest";
         if (_lobby.FindPlayer(new(connection)) is not null) return "AlreadyJoined";
         var snapshot = _lobby.GetSnapshot();
         if (snapshot.Phase != GamePhase.Lobby) return "GameStarted";
         if (snapshot.Players.Count >= LobbySession.MaxPlayers) return "RoomFull";
-        var admission = _admission.Admit(hello.Pin, sourceAddress);
+        var admission = hello.UsePreflight ? _peers[connection].AdmittedUntil > _clock.Now ? "None" : "AccessExpired" : _admission.Admit(hello.Pin, sourceAddress);
         if (admission != "None") return admission;
-        var player = new Player(new(Guid.NewGuid()), hello.DisplayName, new(connection), new(0));
+        var player = new Player(new(Guid.NewGuid()), hello.DisplayName, new(connection), new(0), (CharacterId?)hello.CharacterId);
         var error = _lobby.Join(player);
         if (error == LobbyError.None) { playerId = player.Id.Value; _controllers.Add(connection, Guid.NewGuid()); }
         return error.ToString();
@@ -274,6 +303,7 @@ public sealed class LobbyHost
     private sealed record CachedReply(string Request, string Reply);
     private sealed class PeerRequests
     {
+        public TimeSpan AdmittedUntil;
         public TimeSpan WindowStart { get; set; }
         public int MessagesInWindow { get; set; }
         public int Violations { get; set; }

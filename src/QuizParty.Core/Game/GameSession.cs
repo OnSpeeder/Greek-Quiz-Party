@@ -17,6 +17,7 @@ public sealed class GameSession
     private readonly IGameClock _clock;
     private readonly IRandomSource _random;
     private readonly ScoreCalculator _scoring;
+    private readonly bool _scaleDifficulty;
     private readonly Player[] _players;
     private readonly Dictionary<PlayerId, long> _scores;
     private readonly Dictionary<PlayerId, ReceivedAnswer> _answers = new();
@@ -29,7 +30,7 @@ public sealed class GameSession
     private readonly Dictionary<PlayerId, TimeSpan> _deadlines = new();
 
     public GameSession(GameAuthority authority, IEnumerable<Player> players, IGameClock clock,
-        IRandomSource random, ScoringRules? scoringRules = null, StrategySession? strategy = null)
+        IRandomSource random, ScoringRules? scoringRules = null, StrategySession? strategy = null, bool scaleDifficulty = false)
     {
         ArgumentNullException.ThrowIfNull(players);
         ArgumentNullException.ThrowIfNull(clock);
@@ -44,7 +45,8 @@ public sealed class GameSession
         _random = random;
         _scoring = new(scoringRules ?? new ScoringRules());
         _strategy = strategy;
-        if (strategy is not null && (long)MaximumRawScore(scoringRules) * StrategyRules.MaxMultiplier > int.MaxValue)
+        _scaleDifficulty = scaleDifficulty;
+        if ((long)MaximumRawScore(scoringRules) * (scaleDifficulty ? 2 : 1) * (strategy is null ? 1 : StrategyRules.MaxMultiplier) > int.MaxValue)
             throw new ArgumentOutOfRangeException(nameof(scoringRules));
         _scores = _players.ToDictionary(player => player.Id, _ => 0L);
     }
@@ -137,7 +139,7 @@ public sealed class GameSession
         if (error != GameError.None) return error;
         foreach (var total in totals) _scores[total.Key] = total.Value;
         _reveal = new(question.Presentation.InstanceId, question.CorrectAnswerIndex,
-            question.Explanation, Array.AsReadOnly(results));
+            question.Explanation, Array.AsReadOnly(results), question.FunFacts);
         if (_awardPoints) _strategy?.RecordResults(question.Presentation.CategoryId, question.Presentation.Difficulty, results);
         return GameError.None;
     }
@@ -150,6 +152,7 @@ public sealed class GameSession
         var duration = view.Deadline - view.StartedAt;
         var elapsed = answer.ReceivedAt - view.StartedAt;
         var raw = _scoring.Calculate(correct, elapsed > duration ? duration : elapsed, duration);
+        if (_scaleDifficulty) raw = DifficultyScore.Scale(raw, view.Difficulty);
         var points = _strategy?.Delta(playerId, correct, raw, answer.Confidence, _scores[playerId]) ?? raw;
         return new(playerId, answer.AnswerIndex, correct, _awardPoints ? points : 0, elapsed, answer.Confidence);
     }

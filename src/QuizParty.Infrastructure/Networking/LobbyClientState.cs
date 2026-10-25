@@ -2,11 +2,15 @@ using QuizParty.Core.Lobby;
 
 namespace QuizParty.Infrastructure.Networking;
 
-public enum LobbyClientUpdate { Ignored, Rejected, Joined, Snapshot, RequestResult, MatchSnapshot, AnswerReceipt, CardReceipt }
+public enum LobbyClientUpdate { Ignored, Rejected, Joined, Snapshot, RequestResult, MatchSnapshot, AnswerReceipt, CardReceipt, RoomAccess }
 
 public sealed class LobbyClientState
 {
     private Guid _helloId;
+    private Guid _roomRequest;
+    private Guid _roomSession;
+    private RoomAccessResultDto? _access;
+    public RoomAccessResultDto? Access => _access is null ? null : _access with { TakenCharacters = _access.TakenCharacters.ToArray() };
     private LobbySnapshotDto? _snapshot;
     private readonly HashSet<Guid> _pending = new();
     public Guid? PlayerId { get; private set; }
@@ -25,7 +29,7 @@ public sealed class LobbyClientState
         .Where(p => (p.ControllerId ?? p.PlayerId) == ControllerId).OrderBy(p => p.LocalSlot).ToArray() ?? []);
     public LobbySnapshotDto? Snapshot => _snapshot is null ? null : _snapshot with { Players = _snapshot.Players.ToArray() };
 
-    public string BeginHello(string name, string platform, string pin = "")
+    public string BeginHello(string name, string platform, string pin = "", int? character = null)
     {
         _helloId = Guid.NewGuid();
         _snapshot = null;
@@ -35,13 +39,34 @@ public sealed class LobbyClientState
         _matches.Clear(); LastMatchSlot = 0;
         LastReason = "None";
         return LobbyProtocol.Encode("ClientHello", Guid.Empty,
-            new ClientHelloDto(LobbyProtocol.AppVersion, name, platform, pin), messageId: _helloId);
+            new ClientHelloDto(LobbyProtocol.AppVersion, name, platform, pin, character), messageId: _helloId);
     }
+
+    public string BeginAccess(Guid session, string pin, string platform)
+    {
+        _roomSession = session; _access = null; _roomRequest = Guid.NewGuid();
+        return LobbyProtocol.Encode("CheckRoom", session, new RoomAccessRequestDto(LobbyProtocol.AppVersion, platform, pin), messageId: _roomRequest);
+    }
+    public string? RefreshAvailability()
+    {
+        if (_access?.Accepted != true || _roomRequest != Guid.Empty || PlayerId is not null) return null;
+        _roomRequest = Guid.NewGuid();
+        return LobbyProtocol.Encode("RoomAvailability", _roomSession, new RoomAvailabilityRequestDto(), messageId: _roomRequest);
+    }
+    public string? BeginPreparedHello(string name, string platform, int character)
+    {
+        if (_access?.Accepted != true || !LobbyProtocol.ValidName(name) || !Core.Players.Characters.IsValid(character)) return null;
+        _helloId = Guid.NewGuid();
+        return LobbyProtocol.Encode("ClientHello", Guid.Empty,
+            new ClientHelloDto(LobbyProtocol.AppVersion, name, platform, "", character, true), messageId: _helloId);
+    }
+    private static bool ValidCharacters(int[]? taken) => taken is { Length: <= 8 } &&
+        taken.All(Core.Players.Characters.IsValid) && taken.Distinct().Count() == taken.Length;
 
     public string? CreateReady(bool ready, int slot = 0) => OwnedPlayers.Any(p => p.LocalSlot == slot)
         ? CreateRequest("SetReady", new ReadyRequestDto(ready, slot)) : null;
-    public string? CreateAddLocal(string name, int slot) => LobbyProtocol.ValidName(name) && slot is >= 1 and <= 7 &&
-        !OwnedPlayers.Any(p => p.LocalSlot == slot) ? CreateRequest("AddLocalPlayer", new AddLocalPlayerDto(name, slot)) : null;
+    public string? CreateAddLocal(string name, int slot, int? character = null) => LobbyProtocol.ValidName(name) && slot is >= 1 and <= 7 &&
+        !OwnedPlayers.Any(p => p.LocalSlot == slot) ? CreateRequest("AddLocalPlayer", new AddLocalPlayerDto(name, slot, character)) : null;
     public string? CreateRemoveLocal(int slot) => slot != 0 && OwnedPlayers.Any(p => p.LocalSlot == slot)
         ? CreateRequest("RemoveLocalPlayer", new RemoveLocalPlayerDto(slot)) : null;
     public string? CreateStartRequest() => CreateRequest("StartGame", new StartRequestDto());
@@ -58,6 +83,14 @@ public sealed class LobbyClientState
     {
         if (!LobbyProtocol.TryDecode(json, out var packet) || packet is null || packet.ProtocolVersion != LobbyProtocol.Version)
             return LobbyClientUpdate.Ignored;
+        if (packet.MessageType == "RoomAccessResult" && _roomRequest != Guid.Empty && packet.CorrelationId == _roomRequest &&
+            packet.SessionId == _roomSession && LobbyProtocol.TryPayload<RoomAccessResultDto>(packet, out var access) && access is not null &&
+            access.Revision > 0 && ValidCharacters(access.TakenCharacters) && (!access.Accepted || access.Reason == "None"))
+        {
+            _roomRequest = Guid.Empty; LastReason = BoundedReason(access.Reason);
+            _access = access with { TakenCharacters = access.TakenCharacters.ToArray() };
+            return LobbyClientUpdate.RoomAccess;
+        }
         if (packet.MessageType == "ServerHello")
         {
             if (_helloId == Guid.Empty || packet.CorrelationId != _helloId || PlayerId is not null ||
@@ -66,6 +99,8 @@ public sealed class LobbyClientState
             if (!hello.Accepted)
             {
                 LastReason = BoundedReason(hello.Reason);
+                if (LastReason == "CharacterTaken" && packet.SessionId == _roomSession && _access?.Accepted == true && ValidCharacters(hello.TakenCharacters))
+                    _access = _access with { TakenCharacters = hello.TakenCharacters!.ToArray() };
                 return LobbyClientUpdate.Rejected;
             }
             if (hello.PlayerId is not { } player || player == Guid.Empty || !ValidSnapshot(hello.Lobby) ||
@@ -113,8 +148,9 @@ public sealed class LobbyClientState
         snapshot.Revision > 0 && LobbyProtocol.ValidName(snapshot.RoomName) && snapshot.Phase is "Lobby" or "GameStarting" &&
         snapshot.Players is { Length: >= 1 and <= LobbySession.MaxPlayers } players &&
         players.All(player => player is not null && player.PlayerId != Guid.Empty && LobbyProtocol.ValidName(player.DisplayName) &&
-            player.ControllerId != Guid.Empty && player.LocalSlot is >= 0 and <= 7 && (!player.IsHost || player.LocalSlot == 0) &&
+            (player.CharacterId is null || Core.Players.Characters.IsValid(player.CharacterId.Value)) && player.ControllerId != Guid.Empty && player.LocalSlot is >= 0 and <= 7 && (!player.IsHost || player.LocalSlot == 0) &&
             (snapshot.TeamMode ? player.TeamId is 1 or 2 : player.TeamId is null)) &&
+        players.Where(p => p.CharacterId is not null).Select(p => p.CharacterId).Distinct().Count() == players.Count(p => p.CharacterId is not null) &&
         players.Count(player => player.IsHost) == 1 && players.Select(player => player.PlayerId).Distinct().Count() == players.Length &&
         players.GroupBy(p => p.ControllerId ?? p.PlayerId).All(group => group.Any(p => p.LocalSlot == 0) && group.Select(p => p.LocalSlot).Distinct().Count() == group.Count());
 }

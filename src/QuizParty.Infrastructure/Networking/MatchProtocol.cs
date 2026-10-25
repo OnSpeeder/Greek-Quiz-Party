@@ -7,9 +7,9 @@ public sealed record AnswerRequestDto(Guid QuestionInstanceId, [property: JsonRe
 public sealed record AnswerReceiptDto(bool Accepted, string Reason, Guid QuestionInstanceId, int LocalSlot = 0);
 public sealed record MatchQuestionDto(Guid InstanceId, string Text, string[] Answers, string CategoryId,
     int Difficulty, long StartedAtTicks, long DeadlineTicks);
-public sealed record MatchScoreDto(Guid PlayerId, string DisplayName, long Total);
+public sealed record MatchScoreDto(Guid PlayerId, string DisplayName, long Total, int? CharacterId = null);
 public sealed record MatchPlayerResultDto(Guid PlayerId, int? AnswerIndex, bool IsCorrect, int Points);
-public sealed record MatchRevealDto(int CorrectAnswerIndex, string Explanation, MatchPlayerResultDto[] Players);
+public sealed record MatchRevealDto(int CorrectAnswerIndex, string Explanation, MatchPlayerResultDto[] Players, string[]? FunFacts = null);
 public sealed record MatchStatisticsDto(Guid PlayerId, int Correct, int Wrong, int Unanswered,
     int BestStreak, long ResponseTicks, int Responses);
 public sealed record StrategyRulesDto(bool Confidence, bool Streaks, bool Cards, bool Missions, bool AllowSteal);

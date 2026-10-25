@@ -96,7 +96,7 @@ public class MixedTeamTests
         Assert.Equal(GamePhase.GameOver, f.Match.Snapshot.Phase);
         Assert.Equal(new[] { TeamId.A }, f.Match.WinningTeams);
         Assert.Equal(f.Players.Take(2).Select(p => p.Id), f.Match.Winners);
-        Assert.Equal(1000, f.Match.TeamScores[0].Total); Assert.Equal(750, f.Match.TeamScores[1].Total);
+        Assert.Equal(2000, f.Match.TeamScores[0].Total); Assert.Equal(1500, f.Match.TeamScores[1].Total);
         Assert.Equal(f.Players[2].Id, f.Match.Snapshot.Scores.MaxBy(s => s.Total)!.PlayerId);
     }
 

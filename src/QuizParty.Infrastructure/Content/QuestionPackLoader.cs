@@ -18,7 +18,7 @@ public static class QuestionPackLoader
     public const int MaxFiles = 64;
     public const int MaxEncodedQuestionBytes = 7000;
     private static readonly string[] ManifestFields = ["schemaVersion", "locale", "packVersion", "categories"];
-    private static readonly string[] QuestionFields = ["id", "text", "answers", "correctAnswerIndex", "categoryId", "difficulty", "explanation", "source", "locale", "tags", "status", "verifiedAt", "expiresAfter"];
+    private static readonly string[] QuestionFields = ["id", "text", "answers", "correctAnswerIndex", "categoryId", "difficulty", "explanation", "funFacts", "source", "locale", "tags", "status", "verifiedAt", "expiresAfter"];
 
     public static PackValidation Validate(string manifest, IReadOnlyDictionary<string, string> files, string expectedLocale,
         bool release = true, DateOnly? today = null)
@@ -27,7 +27,9 @@ public static class QuestionPackLoader
         var categories = new List<QuestionCategory>();
         var questions = new List<QuestionDefinition>();
         var ids = new HashSet<string>(StringComparer.Ordinal);
-        var texts = new List<(string Text, string Id)>();
+        var texts = new HashSet<string>(StringComparer.Ordinal);
+        var textWords = new List<HashSet<string>>();
+        var wordIndex = new Dictionary<string, List<int>>(StringComparer.Ordinal);
         var distractors = new HashSet<string>(StringComparer.Ordinal);
         var version = "";
         var date = today ?? DateOnly.FromDateTime(DateTime.UtcNow);
@@ -92,13 +94,39 @@ public static class QuestionPackLoader
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     var normalized = Normalize(text);
-                    if (texts.Any(item => item.Text == normalized)) Issue(file, id, "duplicate-text", "Normalized question text is repeated.");
-                    else if (texts.Any(item => Similar(item.Text, normalized))) Issue(file, id, "similar-text", "Question text is suspiciously similar to another entry.", true);
-                    texts.Add((normalized, id));
+                    if (!texts.Add(normalized)) Issue(file, id, "duplicate-text", "Normalized question text is repeated.");
+                    else
+                    {
+                        var words = normalized.Split(' ').ToHashSet(StringComparer.Ordinal);
+                        // At Jaccard >= .8, at most floor(n/5) query words can be absent.
+                        // Any such match must share one of n/5+1 words. Probe the rarest
+                        // postings first, then retain the exact existing similarity check.
+                        var candidates = words.OrderBy(word => wordIndex.GetValueOrDefault(word)?.Count ?? 0)
+                            .Take(words.Count / 5 + 1).Where(wordIndex.ContainsKey)
+                            .SelectMany(word => wordIndex[word]).Distinct();
+                        if (words.Count >= 4 && candidates.Any(candidate => Similar(textWords[candidate], words)))
+                            Issue(file, id, "similar-text", "Question text is suspiciously similar to another entry.", true);
+                        var index = textWords.Count;
+                        textWords.Add(words);
+                        foreach (var word in words)
+                        {
+                            if (!wordIndex.TryGetValue(word, out var matches)) wordIndex[word] = matches = [];
+                            matches.Add(index);
+                        }
+                    }
                 }
                 if (text.Length > 300 || answers.Any(answer => answer.Length > 150)) Issue(file, id, "long-text", "Long question or answer; check layout.", true);
+                var funFacts = Array.Empty<string>();
+                if (value.TryGetProperty("funFacts", out var funFactsElement))
+                {
+                    if (funFactsElement.ValueKind != JsonValueKind.Array || funFactsElement.GetArrayLength() > 5 ||
+                        funFactsElement.EnumerateArray().Any(f => f.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(f.GetString()) || f.GetString()!.Length > 1024))
+                        Issue(file, id, "fun-facts", "funFacts must be an array of at most 5 nonblank strings (max 1024 chars each).");
+                    else
+                        funFacts = funFactsElement.EnumerateArray().Select(f => f.GetString()!).ToArray();
+                }
                 if (text.Length > 2048 || explanation.Length > 4096 || answers.Any(answer => answer.Length > 512)) Issue(file, id, "wire-limit", "Text exceeds current game DTO bounds.");
-                if (JsonSerializer.SerializeToUtf8Bytes(new { text, answers, explanation }).Length > MaxEncodedQuestionBytes) Issue(file, id, "wire-limit", "Encoded content exceeds reserved match packet budget.");
+                if (JsonSerializer.SerializeToUtf8Bytes(new { text, answers, explanation, funFacts }).Length > MaxEncodedQuestionBytes) Issue(file, id, "wire-limit", "Encoded content exceeds reserved match packet budget.");
                 var source = Text(value, "source");
                 if (value.TryGetProperty("source", out var sourceValue) && sourceValue.ValueKind != JsonValueKind.String) Issue(file, id, "source", "source must be a string URL.");
                 if (string.IsNullOrWhiteSpace(source)) Issue(file, id, "source", "Factual source is missing.", true);
@@ -111,14 +139,14 @@ public static class QuestionPackLoader
                         if (!DateOnly.TryParseExact(Text(value, field), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var metadataDate)) Issue(file, id, "date", $"{field} must be YYYY-MM-DD.");
                         else if (field == "expiresAfter" && metadataDate < date || field == "verifiedAt" && metadataDate < date.AddYears(-2)) Issue(file, id, "stale", $"{field} indicates stale content.", true);
                     }
-                if (text.Contains('\uFFFD') || explanation.Contains('\uFFFD') || answers.Any(answer => answer.Contains('\uFFFD'))) Issue(file, id, "encoding", "Replacement character found; inspect encoding.", true);
+                if (text.Contains('\uFFFD') || explanation.Contains('\uFFFD') || answers.Any(answer => answer.Contains('\uFFFD')) || funFacts.Any(f => f.Contains('\uFFFD'))) Issue(file, id, "encoding", "Replacement character found; inspect encoding.", true);
                 if (answers.Length == 4 && correct is >= 0 and <= 3)
                 {
                     var signature = string.Join('|', answers.Where((_, index) => index != correct).Select(Normalize).Order());
                     if (!distractors.Add(signature)) Issue(file, id, "distractors", "Repeated distractor set; check variety.", true);
                 }
                 if (issues.Count(issue => !issue.Warning) == before && status == "reviewed")
-                    questions.Add(new(id, text, answers, correct, category, difficulty, explanation));
+                    questions.Add(new(id, text, answers, correct, category, difficulty, explanation, funFacts));
             }
         }
         if (questions.Count == 0 && !issues.Any(issue => !issue.Warning)) Issue("manifest.json", "", "empty", "Pack contains no reviewed playable questions.");
@@ -170,10 +198,13 @@ public static class QuestionPackLoader
     { result = 0; return value.TryGetProperty(name, out var item) && item.ValueKind == JsonValueKind.Number && item.TryGetInt32(out result); }
     private static bool Identifier(string value) => !string.IsNullOrWhiteSpace(value) && value.Length <= 128 && !value.Any(char.IsControl);
     private static string Normalize(string value) => string.Join(' ', value.Normalize(NormalizationForm.FormC).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToUpperInvariant();
-    private static bool Similar(string first, string second)
+    private static bool Similar(IReadOnlySet<string> left, IReadOnlySet<string> right)
     {
-        var left = first.Split(' ').ToHashSet();
-        var right = second.Split(' ').ToHashSet();
-        return left.Count >= 4 && right.Count >= 4 && (double)left.Intersect(right).Count() / left.Union(right).Count() >= 0.8;
+        if (left.Count < 4 || right.Count < 4 || 5 * Math.Min(left.Count, right.Count) < 4 * Math.Max(left.Count, right.Count)) return false;
+        var smaller = left.Count <= right.Count ? left : right;
+        var larger = left.Count <= right.Count ? right : left;
+        var intersection = 0;
+        foreach (var word in smaller) if (larger.Contains(word)) intersection++;
+        return (double)intersection / (left.Count + right.Count - intersection) >= 0.8;
     }
 }

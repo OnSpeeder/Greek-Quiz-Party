@@ -1,5 +1,10 @@
 # Asset tools and workflow
 
+Character-catalog update (2026-10-25): four additional original portraits were
+generated with built-in imagegen against the existing style reference. The
+project-bound RGBA atlas, dimensions, stable IDs and exact prompt are documented
+in `src/QuizParty.Godot/Art/CHARACTERS.md`. No paid service or package was added.
+
 Verified on 2026-10-17. Inkscape and Blender were already installed; no reinstall,
 upgrade, paid dependency, additional plugin, or user-preference reset was needed.
 
@@ -51,9 +56,25 @@ verified; GPU rendering and any future third-party addons remain unverified.
 - Test advanced SVG features against Godot; use a PNG export when fidelity requires
   rasterization. Keep simple icons vector-based where practical.
 - Do not copy verification assets into the game. They establish tooling only;
-  the game's art direction has not been selected.
+  the selected Cartoon Showtime direction is defined in design/VISUAL_DIRECTION.md.
 
 Official references:
 - https://wiki.inkscape.org/wiki/Using_the_Command_Line
 - https://docs.blender.org/manual/en/latest/advanced/command_line/launch/windows.html
 - https://docs.godotengine.org/en/stable/tutorials/assets_pipeline/importing_3d_scenes/available_formats.html
+
+## Production quality boundary — 2026-10-25
+
+The Blender/Inkscape wrappers and verification fixtures test tool access, export
+and import, not artistic quality. They are not part of the game's build/test gate
+and must not be used as proof that production artwork is approved. Keep them for
+cleanup, export, reproducible vector skins and deliberate geometric icons.
+
+Use the existing illustrated PNG cutouts/stage as the visual baseline. New complex
+characters or stages need a visual reference and image/art production followed by
+in-engine inspection; stacks of primitives are acceptable only as labelled
+blockouts. Do not replace illustrated settings skins with generic flat boxes.
+Keep editable sources, provenance/license and export dimensions with new assets.
+External generation services require an actual asset need and dependency review;
+no upload or paid service is implied by this workflow. A file-existence check alone
+is insufficient: verify imports, texture transparency, bounds and device rendering.

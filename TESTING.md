@@ -6,8 +6,9 @@
 reduced-motion completion, silent playback, cleanup, transparent puppet gutters
 and audio duration. `scripts/capture-living-show.ps1` captures four real viewport
 beats; use 1280×720, 420×900, `-LargeText`, and `-ReducedMotion`. Inspect the images.
-`scripts/run-living-show.ps1` opens the interactive scene. Debug home also exposes
-`SHOW_OPEN`. The preview is fictional and never connects to a match.
+`scripts/run-living-show.ps1` opens the interactive scene. The debug launch flag
+`--match-show-preview` also opens it; the home menu no longer exposes an entry.
+The preview is fictional and never connects to a match.
 
 Device entry uses `--match-show-preview` through the existing debug-only private
 argument fixture. Preserve existing device fixtures. Physical Android and human
@@ -398,3 +399,11 @@ A physical Android app force-stop/relaunch was observed returning to the origina
 question and a second restart/leave removed its seat on the running host. The offline
 queued-leave persistence/retry is covered by automated tests, not a physical outage.
 See harness/build-log.md for runtime captures and limitations.
+
+## Settings and music revision (2026-10-28)
+
+`SettingsPageTests` covers portrait/landscape drag and icon names, music phase mapping, repeated phases and mute/resume; `MatchSetupTests` exercises pointer and touch dragging across buttons. Inspect Godot viewport captures and test touch and the mix on physical devices. Scene music is suppressed on the headless display server used for network probes.
+
+## Character, source and music revision (2026-10-28)
+
+`FullMatchProtocolTests.SourceIsPrivateUntilRevealAndRejectsUnsafeWireValues` checks reveal-only transmission, invalid URLs and protocol 13 rejection; `QuestionPackTests` covers source loading and validation. `MatchFlowSceneTests` checks confirmation, cancellation, failed opening and a stubbed successful browser request. `SettingsPageTests` covers tension timing, mute and music phase changes. `JoinFlowTests` exercises the new identity IDs over ENet. Live OS browser behavior and audio listening still require device checks.

@@ -14,10 +14,6 @@ public partial class AppRoot : Control
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             CustomMinimumSize = new(0, 150), MouseFilter = MouseFilterEnum.Ignore };
         content.AddChild(crew); content.MoveChild(crew, 1);
-        var badge = new Label { Text = "UI_PARTY_BADGE", HorizontalAlignment = HorizontalAlignment.Center };
-        badge.AddThemeColorOverride("font_color", ShowtimeTheme.Cyan);
-        badge.AddThemeFontSizeOverride("font_size", 18);
-        content.AddChild(badge); content.MoveChild(badge, 0);
         GetNode<Label>("Center/Frame/Content/Status").Text = "UI_HOME_TAGLINE";
         GetNode<Button>("Center/Frame/Content/Lobby").Text = "UI_CREATE_PARTY";
         GetNode<Button>("Center/Frame/Content/Lobby").CustomMinimumSize = new(0, 80);
@@ -37,9 +33,6 @@ public partial class AppRoot : Control
         // Explicit preview entry while the character-performance benchmark awaits review.
         if (OS.IsDebugBuild())
         {
-            var show = new Button { Name = "LivingShowPreview", Text = "SHOW_OPEN", CustomMinimumSize = new(0, 64) };
-            content.AddChild(show);
-            show.Pressed += () => GetTree().ChangeSceneToFile("res://Scenes/LivingShowBenchmark.tscn");
             if (MatchProcessProbe.LaunchArguments().Contains("--match-show-preview") && !GetTree().HasMeta("living_show_launch_consumed"))
             {
                 GetTree().SetMeta("living_show_launch_consumed", true);

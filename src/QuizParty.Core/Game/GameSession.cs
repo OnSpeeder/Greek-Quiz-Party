@@ -144,7 +144,7 @@ public sealed class GameSession
         if (error != GameError.None) return error;
         foreach (var total in totals) _scores[total.Key] = total.Value;
         _reveal = new(question.Presentation.InstanceId, question.CorrectAnswerIndex,
-            question.Explanation, Array.AsReadOnly(results), question.FunFacts);
+            question.Explanation, Array.AsReadOnly(results), question.FunFacts, question.Source);
         if (_awardPoints) _strategy?.RecordResults(question.Presentation.CategoryId, question.Presentation.Difficulty, results);
         return GameError.None;
     }

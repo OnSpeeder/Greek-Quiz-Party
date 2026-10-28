@@ -55,11 +55,11 @@ Client input is a request, never truth.
 
 ## 4. Protocol version
 
-Current production version (match reconnection revision):
+Current production version (source reveal and expanded character catalogue):
 
-`ProtocolVersion = 12`
+`ProtocolVersion = 14`
 
-See the v12 contract below. Earlier phase contracts are retained as history.
+See the v14 contract below. Earlier phase contracts are retained as history.
 
 Phase 03 used version 1; Phases 04–05 used version 2; Phase 06 used version 3.
 Version 4 adds the optional PIN field to ClientHello and LAN discovery. Strict
@@ -855,3 +855,8 @@ decline is persisted separately and retried until the host confirms it or the
 reservation no longer exists. Current LAN transport is not encrypted and does not
 authenticate the host cryptographically. Physical restart and offline-delivery
 verification remain release gates until observed on the target devices.
+
+
+## Protocol v14 — reveal source and character catalogue (2026-10-28)
+
+The selectable character IDs are 0–9; player count, taken-character list length, local slots and room capacity remain bounded by eight. IDs 0–7 retain their meanings. `MatchRevealDto` adds optional `Source`; it is absent from the pre-reveal question, appears only with the reveal, and remains available on later snapshots. Clients reject sources over 1024 characters, whitespace/control characters, credentials, non-absolute or non-HTTP(S) URLs. Host validates the same content on load and counts the encoded URL in the 7000-byte content budget. Protocol 13 and earlier are rejected at handshake and ignored in discovery; all peers must update together. No client-supplied URL is opened by the host. Browser navigation is a local action after explicit confirmation.

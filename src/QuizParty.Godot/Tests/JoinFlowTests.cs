@@ -213,19 +213,19 @@ public class JoinFlowTests
 
     [TestCase]
     [RequireGodotRuntime]
-    public async Task EightCharactersDisableTakenChoicesAndKeepSelectionsStableOnRefresh()
+    public async Task TenCharactersDisableTakenChoicesAndKeepSelectionsStableOnRefresh()
     {
         var tree = (SceneTree)Engine.GetMainLoop();
         using var picker = new CharacterPicker(); tree.Root.AddChild(picker);
         try
         {
-            AssertThat(picker.GetChildren().OfType<Button>().Count()).IsEqual(8);
+            AssertThat(picker.GetChildren().OfType<Button>().Count()).IsEqual(10);
             picker.Select(6); picker.SetTaken([0, 1]); AssertThat(picker.Selected).IsEqual(6);
             AssertThat(picker.GetNode<Button>("Character0").Disabled).IsTrue();
             picker.Select(0); AssertThat(picker.Selected).IsEqual(6);
             picker.SetTaken([0, 1, 6]); AssertThat(picker.Selected).IsNull();
             AssertThat(picker.GetNode<Button>("Character6").Modulate.R < 1).IsTrue();
-            for (var i = 0; i < 8; i++) AssertThat(GameArt.AvatarTexture(i)).IsNotNull();
+            for (var i = 0; i < 10; i++) AssertThat(GameArt.AvatarTexture(i)).IsNotNull();
         }
         finally { picker.Free(); await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame); }
     }
@@ -246,7 +246,7 @@ public class JoinFlowTests
         var flow = clientRoot.GetNode<JoinFlow>("Margin/Scroll/Content/JoinFlow");
         try
         {
-            AssertThat(host.Host("Αίθουσα δοκιμής", "Host", 19881, "1234", 5)).IsEqual(Error.Ok);
+            AssertThat(host.Host("Αίθουσα δοκιμής", "Host", 19881, "1234", 8)).IsEqual(Error.Ok);
             clientRoot.ShowSetupPage("join");
             flow.ChooseRoom(Room(19881, host.Snapshot!.SessionId));
             AssertThat(flow.PinOpen).IsTrue();
@@ -261,12 +261,12 @@ public class JoinFlowTests
             await Wait(tree, () => flow.IdentityOpen);
             AssertThat(host.Snapshot.Players.Length).IsEqual(1);
             var picker = flow.GetNode<CharacterPicker>("Identity/CharacterScroll/Characters");
-            AssertThat(picker.GetNode<Button>("Character5").Disabled).IsTrue();
-            flow.GetNode<LineEdit>("Identity/PlayerName").Text = "Ελένη"; picker.Select(7);
+            AssertThat(picker.GetNode<Button>("Character8").Disabled).IsTrue();
+            flow.GetNode<LineEdit>("Identity/PlayerName").Text = "Ελένη"; picker.Select(9);
             AssertThat(flow.GetNode<Button>("Identity/JoinLobby").Text).IsEqual("");
             flow.GetNode<Button>("Identity/JoinLobby").EmitSignal(Button.SignalName.Pressed);
             await Wait(tree, () => client.LocalPlayerId is not null);
-            AssertThat(client.OwnedPlayers.Single().CharacterId).IsEqual(7);
+            AssertThat(client.OwnedPlayers.Single().CharacterId).IsEqual(9);
             AssertThat(host.Snapshot.Players.Length).IsEqual(2);
         }
         finally

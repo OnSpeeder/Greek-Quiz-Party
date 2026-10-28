@@ -45,6 +45,7 @@ public class QuestionPackTests
         Assert.True(result.Success);
         var pack = result.Pack!;
         Assert.Equal("Αθήνα", Assert.Single(pack.Questions).Answers[0]);
+        Assert.Equal("https://example.org/reference", Assert.Single(pack.Questions).Source);
         Assert.Equal("CATEGORY_GREECE", Assert.Single(pack.Categories).NameKey);
         Assert.Throws<NotSupportedException>(() => ((IList<QuizParty.Core.Questions.QuestionDefinition>)pack.Questions).Clear());
     }
@@ -62,6 +63,16 @@ public class QuestionPackTests
         var result = QuestionPackLoader.Validate(Manifest, new Dictionary<string, string> { ["boundary.json"] = items.ToJsonString() }, "el-GR");
         Assert.Equal("boundary_1", Assert.Single(result.Issues.Where(issue => issue.Code == "similar-text")).QuestionId);
         Assert.Equal("boundary_3", Assert.Single(result.Issues.Where(issue => issue.Code == "duplicate-text")).QuestionId);
+    }
+
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("file:///C:/secret")]
+    [InlineData("https://name:password@example.org/")]
+    public void InvalidSourceIsRejected(string source)
+    {
+        var question = Question(); question["source"] = source;
+        Assert.Contains(Validate(question).Issues, issue => issue.Code == "source" && !issue.Warning);
     }
 
     [Fact]

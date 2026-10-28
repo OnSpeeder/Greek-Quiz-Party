@@ -9,7 +9,7 @@ public sealed class QuestionDefinition
 {
     public QuestionDefinition(string id, string text, IEnumerable<string> answers,
         int correctAnswerIndex, string categoryId, int difficulty, string explanation,
-        IEnumerable<string>? funFacts = null)
+        IEnumerable<string>? funFacts = null, string? source = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
@@ -22,6 +22,8 @@ public sealed class QuestionDefinition
         if (correctAnswerIndex is < 0 or > 3) throw new ArgumentOutOfRangeException(nameof(correctAnswerIndex));
         if (difficulty is < 1 or > 5) throw new ArgumentOutOfRangeException(nameof(difficulty));
         var facts = funFacts?.Where(f => !string.IsNullOrWhiteSpace(f)).Take(5).ToArray() ?? Array.Empty<string>();
+        if (source is not null && !QuestionSource.IsValid(source)) throw new ArgumentException("Source must be a bounded HTTP(S) URL.", nameof(source));
+        Source = source;
         Id = id;
         Text = text;
         Answers = Array.AsReadOnly(copy);
@@ -40,6 +42,15 @@ public sealed class QuestionDefinition
     public int Difficulty { get; }
     public string Explanation { get; }
     public IReadOnlyList<string> FunFacts { get; }
+    public string? Source { get; }
+}
+
+public static class QuestionSource
+{
+    public const int MaxLength = 1024;
+    public static bool IsValid(string? value) => value is { Length: > 0 and <= MaxLength } &&
+        !value.Any(c => char.IsControl(c) || char.IsWhiteSpace(c)) && Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+        uri.Scheme is "http" or "https" && !string.IsNullOrWhiteSpace(uri.Host) && string.IsNullOrEmpty(uri.UserInfo);
 }
 
 public sealed record QuestionPresentation(QuestionInstanceId InstanceId, string Text,
@@ -63,10 +74,12 @@ internal sealed class QuestionInstance
         CorrectAnswerIndex = Array.IndexOf(order, definition.CorrectAnswerIndex);
         Explanation = definition.Explanation;
         FunFacts = definition.FunFacts;
+        Source = definition.Source;
     }
 
     public QuestionPresentation Presentation { get; }
     public int CorrectAnswerIndex { get; }
     public string Explanation { get; }
     public IReadOnlyList<string> FunFacts { get; }
+    public string? Source { get; }
 }

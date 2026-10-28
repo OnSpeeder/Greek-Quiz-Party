@@ -11,7 +11,7 @@ public sealed record MatchQuestionDto(Guid InstanceId, string Text, string[] Ans
     int Difficulty, long StartedAtTicks, long DeadlineTicks);
 public sealed record MatchScoreDto(Guid PlayerId, string DisplayName, long Total, int? CharacterId = null);
 public sealed record MatchPlayerResultDto(Guid PlayerId, int? AnswerIndex, bool IsCorrect, int Points);
-public sealed record MatchRevealDto(int CorrectAnswerIndex, string Explanation, MatchPlayerResultDto[] Players, string[]? FunFacts = null);
+public sealed record MatchRevealDto(int CorrectAnswerIndex, string Explanation, MatchPlayerResultDto[] Players, string[]? FunFacts = null, string? Source = null);
 public sealed record MatchStatisticsDto(Guid PlayerId, int Correct, int Wrong, int Unanswered,
     int BestStreak, long ResponseTicks, int Responses);
 public sealed record StrategyRulesDto(bool Confidence, bool Streaks, bool Cards, bool Missions, bool AllowSteal);

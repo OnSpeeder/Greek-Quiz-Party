@@ -79,12 +79,12 @@ public class RoomPreparationTests
     public void MalformedCharactersAndSpoofedAvailabilityAreRejected()
     {
         var host = new LobbyHost("Room", "Host", new Clock());
-        var invalid = LobbyProtocol.Encode("ClientHello", Guid.Empty, new ClientHelloDto(LobbyProtocol.AppVersion, "Name", "Android", "", 8));
+        var invalid = LobbyProtocol.Encode("ClientHello", Guid.Empty, new ClientHelloDto(LobbyProtocol.AppVersion, "Name", "Android", "", 10));
         Assert.Equal("MalformedRequest", Hello(host.Handle(2, invalid)).Reason);
         var client = new LobbyClientState();
         var request = client.BeginAccess(host.SessionId, "", "Android");
         LobbyProtocol.TryDecode(request, out var envelope);
-        foreach (var characters in new[] { new[] { 0, 0 }, new[] { 8 }, new[] { -1 } })
+        foreach (var characters in new[] { new[] { 0, 0 }, new[] { 10 }, new[] { -1 } })
             Assert.Equal(LobbyClientUpdate.Ignored, client.Apply(LobbyProtocol.Encode("RoomAccessResult", host.SessionId,
                 new RoomAccessResultDto(true, "None", 1, characters), envelope!.MessageId)));
         Assert.Equal(LobbyClientUpdate.RoomAccess, client.Apply(host.Handle(2, request).Messages[0].Json));

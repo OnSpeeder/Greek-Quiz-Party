@@ -52,7 +52,7 @@ public partial class RosterEditor : VBoxContainer
         if (!Visible || _transport is null) return;
         _characters.SetTaken(snapshot.Players.Where(p => p.CharacterId is not null).Select(p => p.CharacterId!.Value));
         if (_characters.Selected is null)
-            _characters.Select(Enumerable.Range(0, 8).Where(id => snapshot.Players.All(p => p.CharacterId != id)).Select(id => (int?)id).FirstOrDefault());
+            _characters.Select(Enumerable.Range(0, QuizParty.Core.Players.Characters.Count).Where(id => snapshot.Players.All(p => p.CharacterId != id)).Select(id => (int?)id).FirstOrDefault());
         _addToggle.Visible = _transport.OwnedPlayers.Count > 0;
         UpdateAdd(); _teams.Visible = _transport.IsHost && _hostOptions; _teams.SetPressedNoSignal(snapshot.TeamMode);
         _hint.Text = string.Format(Tr("HOST_PLAYER_COUNT"), snapshot.Players.Length, snapshot.MaxPlayers);

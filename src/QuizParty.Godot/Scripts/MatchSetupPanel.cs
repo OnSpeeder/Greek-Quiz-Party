@@ -61,23 +61,24 @@ public partial class MatchSetupPanel : PanelContainer
         var label = new Label { Text = key, AutowrapMode = TextServer.AutowrapMode.WordSmart };
         QuizShowTheme.SetFontSize(label, 19); _body.AddChild(label);
     }
-    private static void IconHeading(Container parent, string key, string icon)
+    private void IconHeading(Container parent, string key, string icon)
     {
-        var heading = new HBoxContainer(); parent.AddChild(heading);
-        heading.AddChild(new TextureRect { Texture = LobbyIcons.Texture(icon), CustomMinimumSize = new(28, 28),
+        var heading = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center }; parent.AddChild(heading);
+        heading.AddChild(new TextureRect { Texture = LobbyIcons.Texture(icon), CustomMinimumSize = new(36, 36), TooltipText = Tr(key),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             MouseFilter = MouseFilterEnum.Ignore });
-        heading.AddChild(new Label { Text = key, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        heading.AccessibilityName = Tr(key);
     }
     private void Choices(string key, (int Value, string Text)[] options, int selected, Action<int> change, string icon)
     {
         var section = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _grid!.AddChild(section);
         IconHeading(section, key, icon);
-        var row = new GridContainer { Columns = options.Length > 5 ? 4 : 3 }; section.AddChild(row);
+        var row = new GridContainer { Columns = 3 }; section.AddChild(row);
         var group = new ButtonGroup();
         foreach (var (value, text) in options)
         {
             var button = Button("Value" + value, text, () => change(value));
+            if (text == "∞") { var label = key == "SETUP_SECONDS" ? "SETUP_UNTIMED" : "SETUP_UNLIMITED"; button.AccessibilityName = Tr(label); button.TooltipText = Tr(label); }
             button.ToggleMode = true; button.ButtonGroup = group; button.SetPressedNoSignal(value == selected);
             QuizShowTheme.SetFontSize(button, 19); row.AddChild(button);
         }
@@ -111,12 +112,13 @@ public partial class MatchSetupPanel : PanelContainer
     {
         _capacity = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart }; _body.AddChild(_capacity);
         _body.AddChild(_grid);
-        Choices("SETUP_LENGTH", [(1, Tr("SETUP_PREVIEW")), (10, "10"), (20, "20"), (30, "30"), (40, "40"), (50, "50"), (0, Tr("SETUP_UNLIMITED"))],
+        Choices("SETUP_LENGTH", [(1, Tr("SETUP_PREVIEW")), (10, "10"), (20, "20"), (30, "30"), (40, "40"), (50, "50"), (0, "∞")],
             _transport.QuestionCount, count => { _transport.QuestionCount = count; RefreshCapacity(); }, "questions");
-        Choices("SETUP_SECONDS", [(10, "10"), (20, "20"), (30, "30"), (60, "60"), (120, "120"), (0, Tr("SETUP_UNTIMED"))],
+        Choices("SETUP_SECONDS", [(10, "10"), (20, "20"), (30, "30"), (60, "60"), (120, "120"), (0, "∞")],
             _transport.QuestionSeconds, seconds => _transport.QuestionSeconds = seconds, "time");
         var speed = new CheckButton { Name = "SpeedScoring", Text = "SETUP_SPEED_SCORING", SizeFlagsHorizontal = SizeFlags.ExpandFill,
             CustomMinimumSize = new(64, 64), ButtonPressed = _transport.SpeedScoring };
+        CompactSwitch(speed);
         speed.Toggled += on => _transport.SpeedScoring = on; _grid.AddChild(speed);
         var difficulty = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _grid.AddChild(difficulty);
         IconHeading(difficulty, "SETUP_DIFFICULTY", "difficulty");
@@ -134,6 +136,7 @@ public partial class MatchSetupPanel : PanelContainer
             bands.AddChild(button);
         }
         var strategy = new CheckButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, Name = "Strategy", Text = "STRATEGY_ENABLED", ButtonPressed = _transport.StrategyEnabled };
+        CompactSwitch(strategy);
         strategy.Toggled += on => _transport.StrategyEnabled = on; _grid.AddChild(strategy);
         var teams = new CheckButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, Name = "Teams", Text = "TEAM_ENABLE", ButtonPressed = _transport.Snapshot?.TeamMode == true };
         teams.Toggled += _transport.SetTeamMode; _grid.AddChild(teams);
@@ -153,6 +156,15 @@ public partial class MatchSetupPanel : PanelContainer
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, TooltipText = Tr(category.NameKey) });
         RefreshCapacity();
     }
+    private static void CompactSwitch(CheckButton button)
+    {
+        button.CustomMinimumSize = new(64, 64);
+        button.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        button.AddThemeFontSizeOverride("font_size", 18);
+        foreach (var state in new[] { "normal", "pressed", "hover", "hover_pressed", "disabled" })
+            button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+    }
+
     private void RefreshCapacity()
     {
         var count = _transport.SelectedQuestionCapacity;

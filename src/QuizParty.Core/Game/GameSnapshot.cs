@@ -7,7 +7,7 @@ public sealed record PlayerScore(PlayerId PlayerId, string DisplayName, long Tot
 public sealed record PlayerQuestionResult(PlayerId PlayerId, int? AnswerIndex, bool IsCorrect, int Points,
     TimeSpan? ResponseTime = null, ConfidenceLevel Confidence = ConfidenceLevel.Safe);
 public sealed record QuestionResult(QuestionInstanceId InstanceId, int CorrectAnswerIndex,
-    string Explanation, IReadOnlyList<PlayerQuestionResult> Players, IReadOnlyList<string>? FunFacts = null);
+    string Explanation, IReadOnlyList<PlayerQuestionResult> Players, IReadOnlyList<string>? FunFacts = null, string? Source = null);
 
 /// <summary>Public domain view, not a network DTO. Correctness exists only in Reveal.</summary>
 public sealed record GameSnapshot(GamePhase Phase, QuestionPresentation? Question,

@@ -109,7 +109,7 @@ LOBBY_STATUS_PinFormat,Το PIN πρέπει να είναι κενό ή 4–6 �
 LOBBY_STATUS_PinRequired,Πληκτρολόγησε το PIN της αίθουσας και πάτησε ξανά την αίθουσα,Enter the room PIN then select the room again
 LOBBY_STATUS_WrongPin,Λάθος PIN — έλεγξε τον κωδικό με τον οικοδεσπότη,Wrong PIN — check with the host
 LOBBY_STATUS_PinRateLimited,Πολλές προσπάθειες PIN — περίμενε έως 30 δευτερόλεπτα,Too many PIN attempts — wait up to 30 seconds
-DISCOVERY_TITLE,Διαθέσιμες Αίθουσες,Available Rooms
+DISCOVERY_TITLE,Αίθουσες,Rooms
 DISCOVERY_REFRESH,Αναζήτηση αιθουσών,Find rooms
 DISCOVERY_HELP,Βρες αίθουσες στο ίδιο δίκτυο,Find rooms on the same network
 DISCOVERY_STATUS_Scanning,Αναζήτηση στο δίκτυο…,Searching the local network…
@@ -271,7 +271,7 @@ UI_SETTINGS_BACK,Πίσω,Back
 UI_SETTINGS_ON,ΕΝΕΡΓΟ,ON
 UI_SETTINGS_OFF,ΑΝΕΝΕΡΓΟ,OFF
 UI_SETTINGS_AUDIO_HINT,Δοκίμασε τον ήχο πριν ανέβεις στη σκηνή!,Test the sound before taking the stage!
-UI_SETTINGS_MUTED,Ο ήχος είναι κλειστός. Ενεργοποίησε τα εφέ και αύξησε την ένταση για δοκιμή.,Sound is muted. Enable effects and raise the volume to test.
+UI_SETTINGS_MUTED,Ο ήχος είναι κλειστός. Ενεργοποίησέ τον και αύξησε την ένταση για δοκιμή.,Sound is muted. Enable sound and raise the volume to test.
 UI_SETTINGS_LANGUAGE,Γλώσσα μενού,Menu language
 UI_SETTINGS_LANGUAGE_HINT,Η γλώσσα των ερωτήσεων ορίζεται από το πακέτο του οικοδεσπότη.,Question language follows the host’s question pack.
 UI_SETTINGS_CREDITS,Συντελεστές,Credits
@@ -287,7 +287,7 @@ UI_SETTINGS_CREDITS_BODY,QuizParty · Μια σκηνή για όλη την π�
 UI_SETTINGS_PRIVACY_BODY,Το QuizParty δεν ζητά λογαριασμό και δεν περιλαμβάνει τηλεμετρία. Οι προτιμήσεις εμφάνισης και ήχου αποθηκεύονται τοπικά σε αυτή τη συσκευή. Σε παιχνίδι LAN το όνομα παίκτη και οι ενέργειες παιχνιδιού ανταλλάσσονται με τον οικοδεσπότη και οι δημόσιες πληροφορίες της παρέας με τους συνδεδεμένους παίκτες. Μην χρησιμοποιείτε ευαίσθητα στοιχεία ως όνομα. Η εφαρμογή δεν προσφέρει υπηρεσία λογαριασμών ή συγχρονισμό cloud.,QuizParty requires no account and includes no telemetry. Presentation and sound preferences are saved locally on this device. In LAN play your display name and game actions are exchanged with the host; public party information is shared with connected players. Avoid sensitive information in display names. The app provides no account service or cloud synchronization.
 UI_SETTINGS_ABOUT_BODY,QuizParty · Παιχνίδι γνώσεων για 2–8 παίκτες στην ίδια συσκευή ή στο τοπικό δίκτυο. Ελληνικό περιεχόμενο και επιλογές στρατηγικής για την παρέα. {0},QuizParty · Party trivia for 2–8 players sharing a device or local network. Greek question content and strategic choices for friends and family. {0}
 UI_SETTINGS_HELP_TAB,Βοήθεια,Help & Legal
-UI_SETTINGS_SFX,Εφέ,SFX
+UI_SETTINGS_SFX,Ήχος και μουσική,Sound and music
 UI_SETTINGS_LEAVE_SHORT,Αποχώρηση,Leave party
 UI_SETTINGS_RESET_SHORT,Επαναφορά,Reset defaults
 UI_EXIT,Κλείσιμο παιχνιδιού,Close game
@@ -414,3 +414,9 @@ MATCH_RECONNECTING,Η σύνδεση χάθηκε. Προσπαθούμε να �
 MATCH_PAUSED_DISCONNECTED,Το παιχνίδι σταμάτησε προσωρινά. Περιμένουμε: {0}. Μπορείτε να συνεχίσετε όλοι μαζί ή να συνεχίσει ο host.,The game is paused. Waiting for: {0}. Everyone can continue together or the host can resume.
 MATCH_RESUME_HOST,Συνέχεια παιχνιδιού,Resume game
 MATCH_RESUME_COUNTDOWN,Η παρέα είναι ξανά μαζί! Το παιχνίδι συνεχίζει σε {0}…,Everyone is back! The game resumes in {0}…
+
+MATCH_SOURCE,Πηγή απάντησης,Answer source
+MATCH_SOURCE_CONFIRM,Θέλεις να ανοίξεις την πηγή της απάντησης στον περιηγητή;,Open the answer source in your browser?
+MATCH_SOURCE_ERROR,Δεν ήταν δυνατό το άνοιγμα του συνδέσμου.,Could not open the link.
+CHARACTER_8,Χρυσαφένιος,Golden
+CHARACTER_9,Λεβάντα,Lavender

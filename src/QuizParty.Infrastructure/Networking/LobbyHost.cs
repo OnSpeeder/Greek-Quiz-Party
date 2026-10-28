@@ -112,7 +112,7 @@ public sealed class LobbyHost
             game.Reveal is null ? null : new(game.Reveal.CorrectAnswerIndex, game.Reveal.Explanation,
                 game.Reveal.Players.Select(player => new MatchPlayerResultDto(player.PlayerId.Value,
                     player.AnswerIndex, player.IsCorrect, player.Points)).ToArray(),
-                game.Reveal.FunFacts?.ToArray()),
+                game.Reveal.FunFacts?.ToArray(), game.Reveal.Source),
             _match.QuestionNumber, _match.TotalQuestions, _match.RoundNumber, _match.IsTieBreaker,
             _match.Eligible.Select(id => id.Value).ToArray(), _match.Winners.Select(id => id.Value).ToArray(),
             _match.ContentExhausted, game.Phase == GamePhase.GameOver ? _match.Statistics.Select(s =>

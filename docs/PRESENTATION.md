@@ -68,7 +68,7 @@ gold/purple SVG skins and original transparent pose atlases are documented in
 `Art/Settings/README.md`. No account options or new audio services were added.
 
 Open **Ρυθμίσεις / Settings** from the top of the menu or lobby/match screen.
-Sound effects, volume, reduced motion, larger text, high contrast and Greek/English
+Sound and music, volume, reduced motion, larger text, high contrast and Greek/English
 menu language save locally
 to `user://presentation.cfg`. Invalid configuration falls back to defaults and
 logs a warning; failed saves show a message and retain the in-memory preference.
@@ -77,12 +77,14 @@ or Return to game closes settings. **Opening settings does not pause the match.*
 Back first returns from a detail page or reset confirmation. Help & Legal contains
 offline credits (including engine component notices/licenses), privacy information
 and About with actual engine/build metadata. Reset asks for confirmation and resets
-only presentation preferences; Cancel is initially focused. No music, narration,
-haptic or screen-shake switches are shown without working underlying features.
+only presentation preferences; Cancel is initially focused. Narration, haptic and
+screen-shake switches are not shown without working underlying features.
 
 Short original synthesized cues cover taps, accepted card use, reveal and final
-results. Muting stops current audio immediately. No ticking loop, correctness
-sound before reveal, background music, flashing or camera shake was added.
+results. Four original synthesized loops accompany the menu/lobby, questions,
+reveal/scoreboard and final, with a 0.65-second crossfade when the public phase
+changes. The device sound switch and volume control affect both music and cues;
+muting stops current audio immediately. No correctness sound occurs before reveal.
 Public text fades last 160 ms and never block input. Reduced motion immediately
 cancels fades and displays full-opacity text. High contrast removes stage beams.
 Settings add a brief opening tween, sliding native switches and decorative mascot
@@ -190,3 +192,10 @@ The original four portraits plus four original generated cutouts form one stable
 catalog. Art/CHARACTERS.md records IDs, atlas layout and exact generation prompt.
 Capture rooms/PIN/identity via scripts/capture-join-flow.ps1 at portrait/landscape
 sizes, using a real local discovery/PIN host. Debug flags never affect normal play.
+
+The 2026-10-28 settings revision uses icon-only landscape navigation and back/leave actions, with accessible names and tooltips. The content supports thresholded drag scrolling in both orientations. Game setup uses icon-only question/time/difficulty headings, and leaving the lobby returns to the home scene. The living-show benchmark remains accessible by debug launch flag.
+
+Music and feedback audio are disabled on headless display servers used by automated probes; normal Windows and Android scenes use the saved sound preference.
+
+
+The 2026-10-28 source/music/character revision adds two selectable static mascots (ten identities, eight seats maximum), side-by-side continue/end vote counts, and a source button on reveals that asks for confirmation before invoking the platform browser. The source URL is hidden before reveal. Original music now includes a tension loop during the final eight seconds of timed active questions and a separate scoreboard loop, plus distinct reveal, score and final stingers. Untimed and paused questions do not enter tension mode. All audio follows the existing sound/volume preference.

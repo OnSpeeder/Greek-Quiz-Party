@@ -14,7 +14,11 @@ public partial class RoomBrowser : VBoxContainer
     public override void _Ready()
     {
         var heading = new HBoxContainer(); AddChild(heading);
-        heading.AddChild(new Label { Text = "DISCOVERY_TITLE", SizeFlagsHorizontal = SizeFlags.ExpandFill, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        var title = new Label { Text = "DISCOVERY_TITLE", SizeFlagsHorizontal = SizeFlags.ExpandFill, VerticalAlignment = VerticalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        title.AddThemeFontOverride("font", QuizShowTheme.DisplayFont());
+        title.AddThemeFontSizeOverride("font_size", 30);
+        title.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
+        heading.AddChild(title);
         var refresh = new Button { Name = "Refresh", Icon = GD.Load<Texture2D>("res://Art/refresh.svg"), AccessibilityName = Tr("DISCOVERY_REFRESH"), TooltipText = Tr("DISCOVERY_REFRESH"), CustomMinimumSize = new Vector2(0, 64) };
         refresh.Pressed += () => _discovery?.Scan();
         heading.AddChild(refresh); refresh.Name = "Refresh"; heading.Name = "Header";

@@ -18,7 +18,7 @@ public class MatchFlowSceneTests
         try
         {
             var transport = root.GetNode<LobbyTransport>("Transport");
-            transport.DiscoveryPort = 19842; transport.StrategyEnabled = true; transport.UseSyntheticQuestions(1);
+            transport.DiscoveryPort = 19842; transport.StrategyEnabled = true; transport.UseSyntheticQuestions(1, source: "https://example.org/fact");
             AssertThat(transport.Host("Flow", "Host", 19841)).IsEqual(Error.Ok);
             foreach (var slot in Enumerable.Range(1, 7)) { transport.AddLocalPlayer("Player " + slot, slot); transport.SetReady(true, localSlot: slot); }
             transport.SetReady(true); transport.StartGame();
@@ -26,6 +26,7 @@ public class MatchFlowSceneTests
             AssertThat(root.GetNode<Label>("Margin/Scroll/Content/Status").Visible).IsFalse();
             var panel = root.GetNode<MatchPanel>("Margin/Scroll/Content/MatchPanel");
             var scroll = root.GetNode<ScrollContainer>("Margin/Scroll");
+            AssertThat(panel.GetNode<MatchDialog>("MatchDialogs/RevealDialog").Body.GetNodeOrNull<Button>("Source")).IsNull();
             foreach (var size in new[] { new Vector2(1152, 648), new Vector2(480, 800) })
             {
                 root.Size = size;
@@ -49,6 +50,24 @@ public class MatchFlowSceneTests
             AssertThat(modal.Body.GetNode<Label>("CorrectAnswer").Text.Contains("Σωστό")).IsTrue();
             AssertThat(modal.Body.GetNode<Label>("FunFactsHeading").Text).IsEqual("MATCH_FUN_FACTS");
             AssertThat(modal.Body.GetNode<Label>("FunFacts").Text.Contains("fun fact")).IsTrue();
+            var source = modal.Body.GetNode<Button>("Source");
+            string? opened = null; panel.SourceOpener = url => { opened = url; return Error.Ok; };
+            source.EmitSignal(Button.SignalName.Pressed);
+            var confirm = panel.GetNode<MatchDialog>("MatchDialogs/SourceConfirmation");
+            AssertThat(confirm.Visible).IsTrue(); AssertThat(modal.Visible).IsFalse();
+            AssertThat(confirm.Body.GetNode<Label>("Url").Text).IsEqual("https://example.org/fact");
+            confirm.Actions.GetNode<Button>("No").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(opened).IsNull(); AssertThat(modal.Visible).IsTrue();
+            source.EmitSignal(Button.SignalName.Pressed);
+            panel.SourceOpener = _ => Error.CantOpen;
+            confirm.Actions.GetNode<Button>("Yes").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(confirm.Body.GetNode<Label>("Error").Visible).IsTrue();
+            root.GetNode<PresentationShell>("PresentationShell").NavigateBack();
+            AssertThat(confirm.Visible).IsFalse(); AssertThat(modal.Visible).IsTrue();
+            panel.SourceOpener = url => { opened = url; return Error.Ok; };
+            source.EmitSignal(Button.SignalName.Pressed);
+            confirm.Actions.GetNode<Button>("Yes").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(opened).IsEqual("https://example.org/fact"); AssertThat(modal.Visible).IsTrue();
             var heldButton = modal.Actions.GetChildren().OfType<Button>().First();
             transport.ContinueMatch(localSlot: 1);
             AssertThat(modal.Actions.GetChildren().OfType<Button>().First() == heldButton).IsTrue();

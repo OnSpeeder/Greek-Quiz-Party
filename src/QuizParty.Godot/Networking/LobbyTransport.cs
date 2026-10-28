@@ -61,14 +61,14 @@ public partial class LobbyTransport : Node
     public IReadOnlyList<Core.Questions.QuestionCategory> QuestionCategories { get; private set; } = [];
     public HashSet<string>? EnabledCategories { get; set; }
 
-    public void UseSyntheticQuestions(int count, bool longContent = false)
+    public void UseSyntheticQuestions(int count, bool longContent = false, string? source = null)
     {
         if (!OS.IsDebugBuild() || count is not (1 or 10 or 20 or 30 or 40 or 50)) throw new InvalidOperationException("Debug fixture only.");
         _debugQuestions = Enumerable.Range(1, count + 5).Select(i => new Core.Questions.QuestionDefinition(
             $"fixture_{i}", longContent ? $"ΔΟΚΙΜΗ {i} — Ποια από τις παρακάτω επιλογές είναι η σωστή απάντηση σε αυτή τη μακροσκελή ερώτηση με ελληνικούς χαρακτήρες και τόνους που ελέγχει την προσαρμογή της οθόνης;" : $"ΔΟΚΙΜΗ {i} — επιλέξτε «Σωστό»",
             longContent ? ["Σωστό — αυτή είναι η δοκιμαστική απάντηση με περισσότερες λέξεις", "Λάθος Α — μια διαφορετική επιλογή για έλεγχο της εμφάνισης", "Λάθος Β — ακόμη μία επιλογή με ελληνικούς χαρακτήρες", "Λάθος Γ — η τελευταία επιλογή για την οθόνη δοκιμής"] : ["Σωστό", "Λάθος Α", "Λάθος Β", "Λάθος Γ"],
             0, StrategyEnabled ? new[] { "history", "science", "arts", "sports", "geography" }[(i - 1) % 5] : "fixture",
-            i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.", ["Δοκιμαστικό fun fact για έλεγχο της εμφάνισης."])).ToArray();
+            i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.", ["Δοκιμαστικό fun fact για έλεγχο της εμφάνισης."], source)).ToArray();
         QuestionCount = count;
         GD.Print($"MATCH SYNTHETIC_FIXTURE count={count} debug-only; no reviewed content added");
     }

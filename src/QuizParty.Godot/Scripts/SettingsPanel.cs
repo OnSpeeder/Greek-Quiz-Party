@@ -52,6 +52,7 @@ public partial class SettingsPanel : Control
     private bool _leaveAvailable;
     private Theme? _skin;
     private HBoxContainer _header = null!;
+    private Control _headerBalance = null!;
     private Label _hint = null!;
     private GridContainer _audioGrid = null!;
     private GridContainer _gameplayGrid = null!;
@@ -81,13 +82,14 @@ public partial class SettingsPanel : Control
         _sign = sign;
         header.AddChild(sign);
         _title = Label("UI_SETTINGS_BANNER");
-        _title.HorizontalAlignment = HorizontalAlignment.Left;
+        _title.HorizontalAlignment = HorizontalAlignment.Center;
         _title.VerticalAlignment = VerticalAlignment.Center;
         _title.AddThemeFontOverride("font", QuizShowTheme.DisplayFont());
         _title.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
         _title.AddThemeColorOverride("font_outline_color", QuizShowTheme.Navy);
         _title.AddThemeConstantOverride("outline_size", 2); sign.AddChild(_title);
         _close = Button("Close", "UI_SETTINGS_BACK", "back"); header.AddChild(_close);
+        _headerBalance = new Control { MouseFilter = MouseFilterEnum.Ignore }; header.AddChild(_headerBalance);
         _close.Pressed += () => { if (!Back()) CloseRequested?.Invoke(); };
         _hint = Label("UI_SETTINGS_HINT"); _hint.AddThemeFontSizeOverride("font_size", 16); _layout.AddChild(_hint);
         _body = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; _layout.AddChild(_body);
@@ -107,6 +109,7 @@ public partial class SettingsPanel : Control
             FollowFocus = true, FocusMode = FocusModeEnum.All,
             SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
         _body.AddChild(_scroll);
+        _scroll.AddChild(new PageDragScroll());
         _scroll.GuiInput += @event =>
         {
             if (@event is not InputEventKey { Pressed: true } key) return;
@@ -192,7 +195,8 @@ public partial class SettingsPanel : Control
         _status.AddThemeFontSizeOverride("font_size", 17);
         _version = new Label { Name = "Version", AutowrapMode = TextServer.AutowrapMode.WordSmart }; _layout.AddChild(_version);
         _version.AddThemeFontSizeOverride("font_size", 16);
-        _leave = Button("LeaveParty", "UI_LEAVE_PARTY"); _leave.Visible = false;
+        _leave = Button("LeaveParty", "UI_LEAVE_PARTY");
+        _leave.Icon = GD.Load<Texture2D>("res://Art/exit.svg"); _leave.Visible = false;
         _leave.Pressed += () => LeaveRequested?.Invoke(); _layout.AddChild(_leave);
         _built = true;
         Resized += Reflow;
@@ -259,7 +263,9 @@ public partial class SettingsPanel : Control
             using var emptyHeader = new StyleBoxEmpty();
             _sign.AddThemeStyleboxOverride("panel", emptyHeader);
             _title.AddThemeConstantOverride("outline_size", preferences.HighContrast ? 0 : 2);
-            _title.AddThemeConstantOverride("shadow_offset_y", 0);
+            _title.AddThemeColorOverride("font_shadow_color", new Color("4c236b"));
+            _title.AddThemeConstantOverride("shadow_offset_y", 4);
+            _title.AddThemeConstantOverride("shadow_offset_x", 1);
             foreach (var card in _cards)
             {
                 using StyleBox cardStyle = ShowtimeTheme.Panel(new(preferences.HighContrast ? "080a16" : "1b1c35"),
@@ -340,8 +346,12 @@ public partial class SettingsPanel : Control
         for (var i = 0; i < _cards.Count; i++)
         {
             _cards[i].Visible = !DetailOpen && (!LandscapeLayout || i == _active);
+            ((Control)_cards[i].GetChild(0).GetChild(0)).Visible = !LandscapeLayout;
             _tabs[i].SetPressedNoSignal(i == _active);
-            _tabs[i].Text = (i == _active ? "▸ " : "") + Tr(new[] { "UI_SETTINGS_AUDIO", "UI_SETTINGS_GAMEPLAY", "UI_SETTINGS_HELP_TAB" }[i]);
+            var key = new[] { "UI_SETTINGS_AUDIO", "UI_SETTINGS_GAMEPLAY", "UI_SETTINGS_HELP_TAB" }[i];
+            _tabs[i].Text = LandscapeLayout ? "" : Tr(key);
+            _tabs[i].IconAlignment = HorizontalAlignment.Center;
+            _tabs[i].AccessibilityName = Tr(key); _tabs[i].TooltipText = Tr(key);
         }
     }
 
@@ -361,11 +371,13 @@ public partial class SettingsPanel : Control
         _leave.Visible = _leaveAvailable && !DetailOpen;
         var leaveParent = wide ? (Node)_header : _helpContent;
         if (_leave.GetParent() != leaveParent) _leave.Reparent(leaveParent);
-        _leave.CustomMinimumSize = new(wide ? 180 : _minimum, _minimum);
+        _leave.CustomMinimumSize = new(_minimum, _minimum);
         _leave.SizeFlagsHorizontal = wide ? SizeFlags.ShrinkEnd : SizeFlags.ExpandFill;
-        _leave.Text = "UI_SETTINGS_LEAVE_SHORT";
+        _leave.Text = "";
+        _leave.IconAlignment = HorizontalAlignment.Center;
+        _leave.TooltipText = Tr("UI_LEAVE_PARTY");
         _leave.AccessibilityName = Tr("UI_LEAVE_PARTY");
-        _navigation.CustomMinimumSize = new(wide ? 200 : 0, 0);
+        _navigation.CustomMinimumSize = new(wide ? _minimum : 0, 0);
         _navigation.AddThemeConstantOverride("separation", 18);
         foreach (var tab in _tabs) tab.CustomMinimumSize = new(0, Math.Max(_minimum, wide ? 80 : 64));
         foreach (var tab in _tabs) tab.AddThemeFontSizeOverride("font_size", _preferences.LargeText ? 25 : 22);
@@ -373,7 +385,17 @@ public partial class SettingsPanel : Control
         _sign.CustomMinimumSize = new(0, _minimum);
         using StyleBox signStyle = new StyleBoxEmpty();
         _sign.AddThemeStyleboxOverride("panel", signStyle);
-        _header.MoveChild(_close, wide ? 0 : 1);
+        _headerBalance.CustomMinimumSize = new(_minimum, _minimum);
+        _headerBalance.Visible = !wide || !_leaveAvailable || DetailOpen;
+        if (wide)
+        {
+            _header.MoveChild(_close, 0); _header.MoveChild(_sign, 1);
+            if (_leave.GetParent() == _header) _header.MoveChild(_leave, 2);
+        }
+        else
+        {
+            _header.MoveChild(_headerBalance, 0); _header.MoveChild(_sign, 1); _header.MoveChild(_close, 2);
+        }
         _hint.Visible = !wide;
         _audioGrid.Columns = wide && !_preferences.LargeText ? 2 : 1;
         _gameplayGrid.Columns = wide && Size.X >= 1400 && !_preferences.LargeText ? 2 : 1;
@@ -389,11 +411,12 @@ public partial class SettingsPanel : Control
             var parent = wide ? (Node)_actionBar : _helpContent;
             if (action.GetParent() != parent) action.Reparent(parent);
         }
-        _close.Text = wide ? "UI_SETTINGS_BACK" : "";
+        _close.Text = "";
+        _close.IconAlignment = HorizontalAlignment.Center;
         _close.AccessibilityName = Tr("UI_SETTINGS_BACK");
         _close.TooltipText = Tr("UI_SETTINGS_BACK");
         _close.SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
-        _close.CustomMinimumSize = new(wide ? Math.Max(160, _minimum) : _minimum, _minimum);
+        _close.CustomMinimumSize = new(_minimum, _minimum);
         _close.AddThemeFontSizeOverride("font_size", _preferences.LargeText ? 25 : 22);
         // Reparent only decoration; all focusable controls remain the same instances.
         var destination = wide ? (Node)_body : _layout;

@@ -171,6 +171,73 @@ public class SettingsPageTests
         finally { root.Free(); await Frames(tree); }
     }
 
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task SettingsDragScrollsInPortraitAndLandscapeAndKeepsAccessibleIconNames()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = ResourceLoader.Load<PackedScene>("res://Scenes/Main.tscn").Instantiate<Control>();
+        tree.Root.AddChild(root);
+        try
+        {
+            root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopLeft);
+            var shell = root.GetNode<PresentationShell>("PresentationShell");
+            shell.Apply(new PresentationPreferences(ReducedMotion: true), persist: false);
+            shell.OpenSettings();
+            var panel = shell.GetNode<SettingsPanel>("SettingsOverlay");
+            var scroll = (ScrollContainer)panel.FindChild("SectionsScroll", true, false);
+            var drag = scroll.GetChildren().OfType<PageDragScroll>().Single();
+            foreach (var size in new[] { new Vector2(480, 800), new Vector2(1152, 648) })
+            {
+                root.Size = size; panel.SelectSection(1); await Frames(tree);
+                scroll.ScrollVertical = 0;
+                var point = scroll.GetGlobalRect().GetCenter();
+                using var down = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = point };
+                using var move = new InputEventMouseMotion { Position = point - new Vector2(0, 180) };
+                using var up = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = move.Position };
+                drag._Input(down); drag._Input(move); drag._Input(up);
+                AssertThat(scroll.ScrollVertical > 0).IsTrue();
+            }
+            var tab = (Button)panel.FindChild("Tab0", true, false);
+            AssertThat(tab.Text).IsEqual(""); AssertThat(tab.AccessibilityName.Length > 0).IsTrue();
+            AssertThat(((Button)panel.FindChild("Close", true, false)).Text).IsEqual("");
+        }
+        finally { root.Free(); await Frames(tree); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task MusicFollowsPhaseWithoutRestartAndHonorsMute()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var root = new Node(); tree.Root.AddChild(root);
+        var music = new PartyMusic(); root.AddChild(music);
+        try
+        {
+            AssertThat(PartyMusic.QuestionPhase(false, false, 8.1)).IsEqual("QuestionActive");
+            AssertThat(PartyMusic.QuestionPhase(false, false, 8)).IsEqual("Urgent");
+            AssertThat(PartyMusic.QuestionPhase(true, false, 0)).IsEqual("QuestionActive");
+            AssertThat(PartyMusic.QuestionPhase(false, true, 2)).IsEqual("QuestionActive");
+            music.SetPhase("Menu");
+            AssertThat(music.CurrentTrack).IsEqual("menu");
+            music.SetPhase("QuestionActive");
+            AssertThat(music.CurrentTrack).IsEqual("question");
+            var player = music.GetChildren().OfType<AudioStreamPlayer>().Single(p => p.Stream?.ResourcePath.EndsWith("question.wav", StringComparison.Ordinal) == true);
+            music.SetPhase("QuestionLocked");
+            AssertThat(player.Playing).IsTrue();
+            music.SetPhase("Urgent"); AssertThat(music.CurrentTrack).IsEqual("tension");
+            music.SetPhase("Scoreboard"); AssertThat(music.CurrentTrack).IsEqual("scoreboard");
+            music.Configure(false, .65f);
+            AssertThat(music.GetChildren().OfType<AudioStreamPlayer>().Any(p => p.Playing)).IsFalse();
+            music.SetPhase("AnswerReveal");
+            AssertThat(music.CurrentTrack).IsEqual("reveal");
+            music.Configure(true, .65f);
+            AssertThat(music.GetChildren().OfType<AudioStreamPlayer>().Any(p => p.Playing)).IsTrue();
+            music.SetPhase("GameOver"); AssertThat(music.CurrentTrack).IsEqual("final");
+        }
+        finally { root.Free(); await Frames(tree); }
+    }
+
     private static async Task Frames(SceneTree tree)
     {
         for (var i = 0; i < 5; i++) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);

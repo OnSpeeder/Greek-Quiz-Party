@@ -121,7 +121,10 @@ public partial class LobbyScreen : Control
         content.AddChild(_pinOptions); content.MoveChild(_pinOptions, _pin.GetIndex());
         _pinOptions.Pressed += () => { _pinOpen = !_pinOpen; ShowSetup(true); };
         if (PresentationShell.For(this) is { } shell) shell.SetLeaveAction(() =>
-        { _transport.Stop(); Reset(); shell.CloseSettings(); });
+        {
+            if (_transport.MatchSnapshot is null) { shell.CloseSettings(); ReturnHome(); }
+            else { _transport.Stop(); Reset(); shell.CloseSettings(); }
+        });
         _join.Pressed += () => ShowError(_transport.Join(_address.Text.Trim(), _name.Text.Trim(), pin: _pin.Text));
         _ready.Pressed += () =>
         {
@@ -129,7 +132,7 @@ public partial class LobbyScreen : Control
             if (local is not null) _transport.SetReady(!local.Ready);
         };
         _start.Pressed += _transport.StartGame;
-        _disconnect.Pressed += () => { _transport.Stop(); Reset(); };
+        _disconnect.Pressed += ReturnHome;
         GetNode<Button>(path + "Back").Pressed += NavigateBack;
         _transport.SnapshotChanged += Render;
         _transport.StatusChanged += reason =>
@@ -229,6 +232,7 @@ public partial class LobbyScreen : Control
     private void Render(LobbySnapshotDto snapshot)
     {
         if (_transport.MatchSnapshot is not null) return;
+        PresentationShell.For(this)?.SetMusicPhase("Lobby");
         GetNode<MatchPanel>("Margin/Scroll/Content/MatchPanel").Visible = false;
         GetNode<ScrollContainer>("Margin/Scroll").VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
         _players.Visible = true;
@@ -315,6 +319,7 @@ public partial class LobbyScreen : Control
 
     public void NavigateBack()
     {
+        if (GetNode<MatchPanel>("Margin/Scroll/Content/MatchPanel").CloseSourceConfirmation()) return;
         if (_transport.MatchSnapshot is not null)
         { PresentationShell.For(this)?.OpenSettings(); return; }
         if (_page == "join" && _setupVisible)

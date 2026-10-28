@@ -37,7 +37,8 @@ public partial class PageDragScroll : Node
     private void Move(Vector2 position)
     {
         if (_origin is not { } origin) return;
-        if (!_dragging && Math.Abs(position.Y - origin.Y) < 12) return;
+        if (!_dragging && (Math.Abs(position.Y - origin.Y) < 12 ||
+            Math.Abs(position.Y - origin.Y) <= Math.Abs(position.X - origin.X))) return;
         _dragging = true;
         _scroll.ScrollVertical = _initial + (int)(origin.Y - position.Y);
         GetViewport().SetInputAsHandled();

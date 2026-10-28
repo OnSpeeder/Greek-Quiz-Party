@@ -186,3 +186,8 @@ filename/array order; selection/no-repeat scheduling belongs to Phase 06.
 The initial one-question pack was explicitly approved by the user; content/EDITORIAL.md
 records review. Larger reviewed libraries remain editorial work, not an AI-reviewed
 bulk fill. Metadata is not added to network DTOs; protocol version remains 2.
+
+
+## Source links in answer reveal (2026-10-28)
+
+An optional `source` is carried to the reveal only and may be opened after local confirmation. It must be a nonblank absolute HTTP(S) URL of at most 1024 characters without whitespace, control characters or credentials. Its encoded size counts towards the existing 7000-byte content budget; absent sources remain warnings and do not show a link button. Opening the link requires the device's browser and a network connection.

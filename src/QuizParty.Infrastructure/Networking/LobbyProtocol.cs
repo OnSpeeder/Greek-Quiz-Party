@@ -27,7 +27,7 @@ public sealed record LobbyDispatch(IReadOnlyList<LobbyOutbound> Messages, bool D
 
 public static class LobbyProtocol
 {
-    public const int Version = 13;
+    public const int Version = 14;
     public const int MaxPacketBytes = 16384;
     public const int MaxNameLength = 32;
     public const string AppVersion = "0.10.0";

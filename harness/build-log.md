@@ -1019,3 +1019,21 @@ Stop at benchmark review before producing the full experience.
 - Speed scoring defaults on; untimed bonus is at most 10%, falling to zero after
   30 seconds of unpaused host time. Remaining scope and storage/network limitations
   are documented in PRODUCT.md, GAME_DESIGN.md and NETWORK_PROTOCOL.md.
+
+
+## 2026-10-28 — Phase 10 settings, navigation and music revision
+
+- Implementation plan: `harness/phase-10-settings-music-plan.md`. Local changes only.
+- `dotnet build QuizParty.sln` passed; final production Godot project rebuild passed. Core tests: 287 passed; integration tests: 128 passed. Full Godot suite: 40 passed; after final small changes the relevant settings/setup/navigation/join suites: 21 passed.
+- Initial lobby network regression detected audio resources retained on immediate headless exit. Headless presentation now suppresses music, and the repeated `scripts/test-network-lobby.ps1` passed with host, two clients, rejection, disconnect and cleanup cases.
+- Actual Godot viewport captures inspected at 1152×648 and 420×900 for settings and game setup, plus 420×900 join and larger-text settings. Greek lettering and icon-only headings fit; setup and settings scroll to additional controls. A simultaneous capture attempt collided on the debug host port; sequential rerun was clean.
+- Godot MCP bridge was unavailable because its local port was occupied; actual scene captures used the existing standalone Godot capture route. Physical Android gestures, subjective listening and manual disconnect-button navigation for both roles remain unverified. The original Phase 10 human visual, device, accessibility and reviewed-content gates remain open.
+
+
+## 2026-10-28 — Phase 10 additional characters, source and music
+
+- Plan: `harness/phase-10-characters-source-audio-plan.md`. Two original AI-generated RGBA character cutouts were inspected and added; provenance and prompts recorded beside assets.
+- `dotnet test QuizParty.sln`: 287 Core and 132 integration passed. Full GdUnit: 40 passed after updating the pre-existing eight-character expectation to ten; after final popup-error and urgency boundary tests, relevant suites: 7 passed. `scripts/validate-content.ps1 -Stage` passed 14,760 reviewed questions with existing editorial warnings after repairing one invalid pre-existing URL. Content CLI rejection tests passed.
+- Actual Godot wide/portrait captures inspected for compact game setup, portrait identity with all ten avatars, and host/remote scoreboard with horizontal counts. Multi-process `scripts/test-network-flow.ps1` passed host plus two connections/three seats, voting, end and replay. Confirmation Yes/No, error and Back were exercised using an injected browser opener; no live browser was opened.
+- Real Android touch and OS browser opening, subjective listening and mixing approval, and final human art/accessibility sign-off remain unobserved; Phase 10 remains open. No remote CI enabled.
+- UDP discovery, PIN, manual-IP and reconnect regression `scripts/test-network-discovery.ps1` passed under protocol v14. A headless client initially reported an audio resource on exit during a wide capture; after suppressing feedback audio on headless display servers, `capture-match-presentation.ps1 -SourceConfirmation` passed and the confirmation was inspected in 420×900 and 1152×648 Godot viewports. No browser was launched during testing.

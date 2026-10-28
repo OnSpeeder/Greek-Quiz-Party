@@ -475,3 +475,15 @@ The fit retains scrolling when content cannot fit at a readable minimum. The
 scoreboard idle-disconnect and slow-transition reports were not reproduced in local
 probes; no root cause or definitive fix is claimed. See the build log for evidence
 and remaining visual and runtime acceptance gaps.
+
+
+## Settings/navigation/music revision — 2026-10-28
+
+Scope and order: `harness/phase-10-settings-music-plan.md`. User requested icon-led setup, home on lobby disconnect, drag scrolling of device settings, compact landscape controls, prominent rooms heading, hiding the living-show menu entry while retaining the scene, and situational music. Three setup row icons retain accessible names/tooltips; infinity denotes unlimited questions. Device sound and volume now control both effects and four original synthesized 8-second loops; music follows public match phases with crossfades and no authoritative or protocol changes. Music is suppressed in headless probe runs; scene teardown stops streams. Benchmark debug launch remains.
+
+Wide and portrait Godot captures were visually inspected: title centering, icons, Greek text and rooms heading are visible; settings and setup content continue beyond the viewport through scrolling. Physical Android touch, actual listening/mix approval, and host/client manual disconnect clicks were not observed; Phase 10 visual/accessibility/content gates remain open.
+
+
+## Character, source and music revision — 2026-10-28
+
+Plan: `harness/phase-10-characters-source-audio-plan.md`. The two added generated cutout identities and prompts are recorded in `src/QuizParty.Godot/Art/NEW_CHARACTERS.md`; ten choices do not change the eight-seat room limit. Existing IDs are stable. Protocol v14 adds reveal-only source and accepts IDs 8–9; older peers are intentionally incompatible. URLs are bounded and restricted to HTTP(S), without credentials or whitespace, and counted in the content wire budget. A pre-existing malformed Churchill source was repaired to the independently checked [Wikipedia destination](https://el.wikipedia.org/wiki/%CE%9F%CF%85%CE%AF%CE%BD%CF%83%CF%84%CE%BF%CE%BD_%CE%A4%CF%83%CF%8C%CF%81%CF%84%CF%83%CE%B9%CE%BB). Source confirmation is local, with an OS browser request only on Yes. Added original synthesized tension and scoreboard loops, and reveal/score/final cues. No claim of professional mixing or human audio approval.

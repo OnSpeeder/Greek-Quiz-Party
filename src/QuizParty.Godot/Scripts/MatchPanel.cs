@@ -28,6 +28,7 @@ public partial class MatchPanel : VBoxContainer
     private VBoxContainer _hostRail = null!;
     private MatchDialog _revealDialog = null!;
     private MatchDialog _pauseDialog = null!;
+    private MatchDialog _sourceDialog = null!;
     private GridContainer _voteActions = null!;
     private Button _replay = null!;
     private Guid _revealQuestion;
@@ -35,6 +36,7 @@ public partial class MatchPanel : VBoxContainer
     private ShowtimeStageView _stage = null!;
     private Texture2D _continueIcon = null!;
     private Texture2D _finishIcon = null!;
+    internal Func<string, Error> SourceOpener { get; set; } = OS.ShellOpen;
 
     public override void _Ready()
     {
@@ -44,6 +46,18 @@ public partial class MatchPanel : VBoxContainer
         var dialogs = new CanvasLayer { Name = "MatchDialogs", Layer = 20 }; AddChild(dialogs);
         dialogs.AddChild(_revealDialog);
         _pauseDialog = new MatchDialog { Name = "PauseDialog" }; dialogs.AddChild(_pauseDialog);
+        _sourceDialog = new MatchDialog { Name = "SourceConfirmation" }; dialogs.AddChild(_sourceDialog);
+        _sourceDialog.Body.AddChild(new Label { Name = "Prompt", Text = "MATCH_SOURCE_CONFIRM", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        _sourceDialog.Body.AddChild(new Label { Name = "Url", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        _sourceDialog.Body.AddChild(new Label { Name = "Error", Visible = false, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        _sourceDialog.Actions.Columns = 2;
+        var no = new Button { Name = "No", Text = "UI_NO", CustomMinimumSize = new(64, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var yes = new Button { Name = "Yes", Text = "UI_YES", CustomMinimumSize = new(64, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _sourceDialog.Actions.AddChild(no); _sourceDialog.Actions.AddChild(yes);
+        no.FocusNext = no.FocusPrevious = no.GetPathTo(yes);
+        yes.FocusNext = yes.FocusPrevious = yes.GetPathTo(no);
+        no.Pressed += () => CloseSourceConfirmation();
+        yes.Pressed += OpenSource;
         _voteActions = new GridContainer { Name = "VoteActions" }; AddChild(_voteActions);
         _replay = new Button { Name = "Replay", Text = "MATCH_REPLAY", ThemeTypeVariation = "PrimaryAction" };
         _replay.Pressed += () => _transport?.Replay(); AddChild(_replay);
@@ -212,6 +226,7 @@ public partial class MatchPanel : VBoxContainer
             foreach (var answer in _answers) QuizShowTheme.SetFontSize(answer, 26);
         }
         _snapshot = snapshot;
+        if (snapshot.Phase != "QuestionActive") PresentationShell.For(this)?.SetMusicPhase(snapshot.Phase);
         _standings.Observe(snapshot);
         UpdateAnswerLayout();
         _stage.Render(snapshot.Scores, phaseChanged && snapshot.Phase == "AnswerReveal", snapshot.AnsweredPlayers);
@@ -280,7 +295,8 @@ public partial class MatchPanel : VBoxContainer
                 shell.Juice.Reveal(_answers, reveal.CorrectAnswerIndex);
             // Only animate public text. Private panel hiding and answer input remain immediate.
             shell.Fade(snapshot.Phase == "GameOver" ? _winner : Part<Label>(snapshot.Reveal is null ? "Question" : "Reveal"));
-            if (snapshot.Phase is "AnswerReveal" or "GameOver") shell.PlayCue(snapshot.Phase == "GameOver" ? "final" : "reveal");
+            if (snapshot.Phase is "AnswerReveal" or "Scoreboard" or "GameOver")
+                shell.PlayCue(snapshot.Phase == "GameOver" ? "final" : snapshot.Phase == "Scoreboard" ? "score" : "reveal");
             Callable.From(() =>
             {
                 if (GodotObject.IsInstanceValid(this) && IsInsideTree() && IsVisibleInTree() &&
@@ -338,6 +354,7 @@ public partial class MatchPanel : VBoxContainer
             countdown.Text = string.Format(Tr("MATCH_RESUME_COUNTDOWN"), Math.Max(1, (int)Math.Ceiling(TimeSpan.FromTicks(_snapshot.ResumeRemainingTicks).TotalSeconds - elapsed)));
         var active = _snapshot.Phase == "QuestionActive";
         var untimed = _snapshot.Question.DeadlineTicks == long.MaxValue;
+        if (active) PresentationShell.For(this)?.SetMusicPhase(PartyMusic.QuestionPhase(untimed, _snapshot.IsPaused, seconds));
         Part<Label>("Meta/Countdown").Text = active
             ? untimed ? Tr("SETUP_UNTIMED").ToString() : string.Format(Tr(seconds <= 5 ? "UI_CLOCK_URGENT" : "UI_CLOCK"), (int)Math.Ceiling(seconds)) : "";
         Part<Label>("Meta/Countdown").AccessibilityName = untimed ? Tr("SETUP_UNTIMED").ToString() : string.Format(Tr("MATCH_TIME"), (int)Math.Ceiling(seconds));
@@ -395,7 +412,7 @@ public partial class MatchPanel : VBoxContainer
     private void UpdateRevealDialog(bool phaseChanged)
     {
         if (_snapshot is not { Phase: "AnswerReveal" } snapshot)
-        { _revealDialog.Hide(); _revealReady = false; return; }
+        { _revealDialog.Hide(); _sourceDialog.Hide(); _revealReady = false; return; }
         if (_revealQuestion != snapshot.Question.InstanceId || phaseChanged)
         {
             _revealQuestion = snapshot.Question.InstanceId; _revealReady = false;
@@ -407,11 +424,12 @@ public partial class MatchPanel : VBoxContainer
                 _revealReady = true; ShowReveal();
             };
         }
-        else if (_revealReady) ShowReveal();
+        else if (_revealReady && !_sourceDialog.Visible) ShowReveal();
     }
     private void UpdatePauseDialog()
     {
         if (_snapshot is not { IsPaused: true } snapshot || _transport is null) { _pauseDialog.Hide(); return; }
+        _sourceDialog.Hide();
         _pauseDialog.Actions.Columns = _transport.IsHost || _transport.OwnedPlayers.Count <= 1 ? 1 : 2;
         var context = $"{snapshot.PauseId}:{snapshot.IsResuming}";
         if (!_pauseDialog.HasMeta("pause_context") || _pauseDialog.GetMeta("pause_context").AsString() != context)
@@ -456,6 +474,14 @@ public partial class MatchPanel : VBoxContainer
                 var explanation = new Label { Name = "Explanation", Text = reveal.Explanation, AutowrapMode = TextServer.AutowrapMode.WordSmart };
                 QuizShowTheme.SetFontSize(explanation, 24); _revealDialog.Body.AddChild(explanation);
             }
+            if (QuizParty.Core.Questions.QuestionSource.IsValid(reveal.Source))
+            {
+                var source = new Button { Name = "Source", Icon = LobbyIcons.Texture("link"), ExpandIcon = true,
+                    IconAlignment = HorizontalAlignment.Center, CustomMinimumSize = new(64, 64), SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
+                    TooltipText = Tr("MATCH_SOURCE"), AccessibilityName = Tr("MATCH_SOURCE") };
+                source.AddThemeConstantOverride("icon_max_width", 28);
+                source.Pressed += ShowSourceConfirmation; _revealDialog.Body.AddChild(source);
+            }
             if (reveal.FunFacts is { Length: > 0 })
             {
                 var heading = new Label { Name = "FunFactsHeading", Text = "MATCH_FUN_FACTS", AutowrapMode = TextServer.AutowrapMode.WordSmart };
@@ -470,6 +496,38 @@ public partial class MatchPanel : VBoxContainer
         _revealDialog.Show();
         _revealDialog.MoveToFront();
     }
+    private void ShowSourceConfirmation()
+    {
+        if (_snapshot is not { Phase: "AnswerReveal", IsPaused: false, Reveal: { } reveal } ||
+            !QuizParty.Core.Questions.QuestionSource.IsValid(reveal.Source)) return;
+        _revealDialog.Hide();
+        _sourceDialog.Body.GetNode<Label>("Error").Hide();
+        _sourceDialog.Body.GetNode<Label>("Url").Text = reveal.Source;
+        _sourceDialog.Show(); _sourceDialog.MoveToFront();
+        _sourceDialog.Actions.GetNode<Button>("No").GrabFocus();
+    }
+
+    public bool CloseSourceConfirmation()
+    {
+        if (!_sourceDialog.Visible) return false;
+        _sourceDialog.Hide();
+        if (_snapshot is { Phase: "AnswerReveal", IsPaused: false })
+        {
+            ShowReveal();
+            _revealDialog.Body.GetNodeOrNull<Button>("Source")?.GrabFocus();
+        }
+        return true;
+    }
+
+    private void OpenSource()
+    {
+        if (_snapshot is not { Phase: "AnswerReveal", IsPaused: false, Reveal: { } reveal } ||
+            !QuizParty.Core.Questions.QuestionSource.IsValid(reveal.Source)) { CloseSourceConfirmation(); return; }
+        var error = SourceOpener(reveal.Source!);
+        if (error == Error.Ok) CloseSourceConfirmation();
+        else { var label = _sourceDialog.Body.GetNode<Label>("Error"); label.Text = "MATCH_SOURCE_ERROR"; label.Show(); }
+    }
+
     private void RenderVotes(GridContainer container, bool reveal)
     {
         if (_snapshot is null || _transport is null) return;
@@ -508,26 +566,30 @@ public partial class MatchPanel : VBoxContainer
                     ActionButton(player.DisplayName + " · " + Tr("MATCH_END_GAME"), true, player.LocalSlot, _snapshot.EndVotes?.Contains(player.PlayerId) == true);
             }
         }
+        var counts = container.GetNodeOrNull<HBoxContainer>("VoteCounts");
+        if (counts is null) { counts = new HBoxContainer { Name = "VoteCounts", SizeFlagsHorizontal = SizeFlags.ExpandFill }; container.AddChild(counts); }
+        used.Add(counts);
         var eligibleCount = _transport.Snapshot?.Players.Count(p => _snapshot.DisconnectedPlayers?.Contains(p.PlayerId) != true)
             ?? _snapshot.Scores.Count(p => _snapshot.DisconnectedPlayers?.Contains(p.PlayerId) != true);
         UpdateCount("ContinueCount", _continueIcon, "MATCH_VOTES", _snapshot.ContinueVotes?.Length ?? 0, eligibleCount);
         if (!reveal && _snapshot.TotalQuestions == 0 && _snapshot.Phase == "Scoreboard")
             UpdateCount("EndCount", _finishIcon, "MATCH_END_VOTES", _snapshot.EndVotes?.Length ?? 0, eligibleCount);
+        if (counts.GetNodeOrNull<Control>("EndCount") is { } endCount) endCount.Visible = !reveal && _snapshot.TotalQuestions == 0 && _snapshot.Phase == "Scoreboard";
         foreach (var child in container.GetChildren().Where(c => !used.Contains(c))) { container.RemoveChild(child); child.QueueFree(); }
         void UpdateCount(string name, Texture2D icon, string key, int count, int total)
         {
-            var row = container.GetNodeOrNull<HBoxContainer>(name);
+            var row = counts.GetNodeOrNull<HBoxContainer>(name);
             if (row is null)
             {
                 row = new HBoxContainer { Name = name, SizeFlagsHorizontal = SizeFlags.ExpandFill };
                 row.AddChild(new TextureRect { Texture = icon, CustomMinimumSize = new(28, 28), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                     StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore });
                 var label = new Label { Name = "Count", AutowrapMode = TextServer.AutowrapMode.Off };
-                label.SetMeta("presentation_no_wrap", true); row.AddChild(label); container.AddChild(row);
+                label.SetMeta("presentation_no_wrap", true); row.AddChild(label); counts.AddChild(row);
             }
             var text = string.Format(Tr(key), count, total);
             row.GetNode<Label>("Count").Text = $"{count}/{total}";
-            row.TooltipText = text; row.AccessibilityName = text; used.Add(row);
+            row.TooltipText = text; row.AccessibilityName = text; row.Visible = true;
         }
         void ClearActions()
         {

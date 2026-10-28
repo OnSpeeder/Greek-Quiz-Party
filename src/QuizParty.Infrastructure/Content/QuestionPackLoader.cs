@@ -126,11 +126,11 @@ public static class QuestionPackLoader
                         funFacts = funFactsElement.EnumerateArray().Select(f => f.GetString()!).ToArray();
                 }
                 if (text.Length > 2048 || explanation.Length > 4096 || answers.Any(answer => answer.Length > 512)) Issue(file, id, "wire-limit", "Text exceeds current game DTO bounds.");
-                if (JsonSerializer.SerializeToUtf8Bytes(new { text, answers, explanation, funFacts }).Length > MaxEncodedQuestionBytes) Issue(file, id, "wire-limit", "Encoded content exceeds reserved match packet budget.");
                 var source = Text(value, "source");
+                if (JsonSerializer.SerializeToUtf8Bytes(new { text, answers, explanation, funFacts, source }).Length > MaxEncodedQuestionBytes) Issue(file, id, "wire-limit", "Encoded content exceeds reserved match packet budget.");
                 if (value.TryGetProperty("source", out var sourceValue) && sourceValue.ValueKind != JsonValueKind.String) Issue(file, id, "source", "source must be a string URL.");
                 if (string.IsNullOrWhiteSpace(source)) Issue(file, id, "source", "Factual source is missing.", true);
-                else if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || uri.Scheme is not ("https" or "http")) Issue(file, id, "source", "source must be an HTTP(S) URL.");
+                else if (!QuestionSource.IsValid(source)) Issue(file, id, "source", "source must be a bounded HTTP(S) URL without credentials.");
                 if (value.TryGetProperty("tags", out var tags) && (tags.ValueKind != JsonValueKind.Array || tags.GetArrayLength() > 32 || tags.EnumerateArray().Any(tag => tag.ValueKind != JsonValueKind.String || !Identifier(tag.GetString()!))))
                     Issue(file, id, "tags", "tags must be at most 32 nonblank strings.");
                 foreach (var field in new[] { "verifiedAt", "expiresAfter" })
@@ -146,7 +146,7 @@ public static class QuestionPackLoader
                     if (!distractors.Add(signature)) Issue(file, id, "distractors", "Repeated distractor set; check variety.", true);
                 }
                 if (issues.Count(issue => !issue.Warning) == before && status == "reviewed")
-                    questions.Add(new(id, text, answers, correct, category, difficulty, explanation, funFacts));
+                    questions.Add(new(id, text, answers, correct, category, difficulty, explanation, funFacts, string.IsNullOrWhiteSpace(source) ? null : source));
             }
         }
         if (questions.Count == 0 && !issues.Any(issue => !issue.Warning)) Issue("manifest.json", "", "empty", "Pack contains no reviewed playable questions.");

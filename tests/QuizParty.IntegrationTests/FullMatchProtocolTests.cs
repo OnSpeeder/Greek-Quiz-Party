@@ -16,10 +16,10 @@ public class FullMatchProtocolTests
         public Clock Clock { get; } = new();
         public LobbyHost Host { get; }
         public LobbyClientState Client { get; } = new();
-        public Fixture(int count)
+        public Fixture(int count, string? source = null)
         {
             var questions = Enumerable.Range(1, count + 2).Select(i => new QuestionDefinition($"q{i}", $"Synthetic {i}",
-                ["yes", "no", "other", "last"], 0, "test", i % 5 + 1, "Synthetic explanation")).ToArray();
+                ["yes", "no", "other", "last"], 0, "test", i % 5 + 1, "Synthetic explanation", source: source)).ToArray();
             Host = new("Test", "Host", Clock, questions, new(count));
             Deliver(Host.Handle(2, Client.BeginHello("Phone", "Android")));
             Deliver(Host.Handle(2, Client.CreateReady(true)!));
@@ -30,6 +30,28 @@ public class FullMatchProtocolTests
         public void Deliver(LobbyDispatch dispatch) { foreach (var p in dispatch.Messages.Where(p => p.ConnectionId == 2)) Client.Apply(p.Json); }
         public void Sync() { foreach (var p in Host.BroadcastMatch()) Assert.Equal(LobbyClientUpdate.MatchSnapshot, Client.Apply(p.Json)); }
         public int Correct => Array.IndexOf(Host.MatchSnapshot()!.Question.Answers, "yes");
+    }
+
+    [Fact]
+    public void SourceIsPrivateUntilRevealAndRejectsUnsafeWireValues()
+    {
+        const string source = "https://example.org/fact";
+        var f = new Fixture(1, source);
+        Assert.Null(f.Client.Match.Snapshot!.Reveal);
+        foreach (var packet in f.Host.BroadcastMatch()) Assert.DoesNotContain(source, packet.Json);
+        f.Deliver(f.Host.Handle(2, f.Client.Match.CreateAnswer(f.Correct)!));
+        f.Host.SubmitHostAnswer(f.Correct); f.Sync(); f.Host.PollMatch();
+        var reveal = f.Host.MatchSnapshot()!;
+        Assert.Equal(source, reveal.Reveal!.Source);
+        foreach (var badUrl in new[] { "javascript:alert(1)", "file:///C:/secret", "https://user:pass@example.org/", "https://example.org/" + new string('a', 1024) })
+        {
+            var bad = reveal with { Revision = reveal.Revision + 1, Reveal = reveal.Reveal with { Source = badUrl } };
+            Assert.Equal(LobbyClientUpdate.Ignored, f.Client.Apply(LobbyProtocol.Encode("MatchSnapshot", f.Host.SessionId, bad)));
+        }
+        f.Sync();
+        Assert.Equal(source, f.Client.Match.Snapshot!.Reveal!.Source);
+        var old = f.Client.BeginHello("Old", "Android").Replace($"\"ProtocolVersion\":{LobbyProtocol.Version}", "\"ProtocolVersion\":13", StringComparison.Ordinal);
+        Assert.Contains("IncompatibleVersion", f.Host.Handle(3, old).Messages[0].Json);
     }
 
     [Theory]

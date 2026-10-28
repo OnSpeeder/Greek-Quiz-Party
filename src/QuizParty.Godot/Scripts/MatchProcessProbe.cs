@@ -64,7 +64,7 @@ public partial class MatchProcessProbe : Node
         if (_transport.AllowSteal) _transport.EnabledCards = Enum.GetValues<QuizParty.Core.Game.CardKind>().ToHashSet();
         if (int.TryParse(Argument("--match-seed="), out var seed)) _transport.DebugStrategySeed = seed;
         _transport.CardInputChanged += reason => _cardReason = reason;
-        if (int.TryParse(Argument("--match-fixture="), out var count)) _transport.UseSyntheticQuestions(count);
+        if (int.TryParse(Argument("--match-fixture="), out var count)) _transport.UseSyntheticQuestions(count, source: _args.Contains("--match-source-preview") ? "https://example.org/reference" : null);
         _transport.SnapshotChanged += snapshot =>
         {
             if (!_auto || snapshot.Phase != "Lobby") return;
@@ -117,6 +117,13 @@ public partial class MatchProcessProbe : Node
             // disconnect handling instead of hiding shutdown races behind host exit.
             if (!_args.Contains("--match-keep-open")) GetTree().CreateTimer(_transport.IsHost ? 4 : 2).Timeout += () => { if (Live) GetTree().Quit(); };
         }
+        if (_args.Contains("--match-source-preview") && snapshot.Phase == "AnswerReveal" && !_captured)
+            GetTree().CreateTimer(1.45).Timeout += () =>
+            {
+                if (!Live || _transport.MatchSnapshot?.Phase != "AnswerReveal") return;
+                var panel = GetParent().GetNode<MatchPanel>("Margin/Scroll/Content/MatchPanel");
+                panel.GetNode<MatchDialog>("MatchDialogs/RevealDialog").Body.GetNodeOrNull<Button>("Source")?.EmitSignal(Button.SignalName.Pressed);
+            };
         var capture = Argument("--match-capture=");
         if (!_captured && capture is not null && snapshot.Phase == (Argument("--match-capture-phase=") ?? "GameOver") &&
             (!int.TryParse(Argument("--match-capture-number="), out var number) || snapshot.QuestionNumber == number))

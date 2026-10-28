@@ -127,6 +127,7 @@ public sealed class MatchClientState
         var reveal = next.Reveal;
         return reveal is not null && reveal.CorrectAnswerIndex is >= 0 and <= 3 &&
             reveal.Explanation is { Length: > 0 and <= 4096 } &&
+            (reveal.Source is null || QuizParty.Core.Questions.QuestionSource.IsValid(reveal.Source)) &&
             (reveal.FunFacts is null || reveal.FunFacts.Length <= 5 && reveal.FunFacts.All(f => f is { Length: > 0 and <= 1024 })) &&
             reveal.Players is { } players && players.Length == scores.Length &&
             players.All(player => player is not null && player.AnswerIndex is null or >= 0 and <= 3 &&

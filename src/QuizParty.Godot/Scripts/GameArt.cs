@@ -6,7 +6,8 @@ public static class GameArt
 {
     public static Texture2D AvatarTexture(int index)
     {
-        if (index is < 0 or > 7) throw new ArgumentOutOfRangeException(nameof(index));
+        if (!QuizParty.Core.Players.Characters.IsValid(index)) throw new ArgumentOutOfRangeException(nameof(index));
+        if (index >= 8) return GD.Load<Texture2D>(index == 8 ? "res://Art/character-gold-v1.png" : "res://Art/character-lavender-v1.png");
         if (index >= 4)
         {
             var atlas = GD.Load<Texture2D>("res://Art/showtime-extra-crew-v1.png");

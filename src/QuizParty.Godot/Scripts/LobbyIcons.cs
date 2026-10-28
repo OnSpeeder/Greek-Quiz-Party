@@ -13,6 +13,7 @@ public static class LobbyIcons
             "waiting" => "<circle cx='32' cy='32' r='27' stroke='#FFB800'/><path d='M23 18h18m-18 28h18M24 18c0 14 16 14 16 28M40 18c0 14-16 14-16 28' stroke='#FFB800'/>",
             "continue" => "<circle cx='32' cy='32' r='25'/><path d='M17 32h29M35 21l11 11-11 11'/>",
             "finish" => "<path d='M16 57V8m0 3c14-8 23 7 37-1v24c-14 8-23-7-37 1'/><path d='M24 10v12m12-9v12m-12 9V22m12 15V25M16 22c14-8 23 7 37-1'/>",
+            "link" => "<path d='M25 39l14-14M22 46h-3a11 11 0 0 1 0-22l8-8a11 11 0 0 1 15 0M42 18h3a11 11 0 0 1 0 22l-8 8a11 11 0 0 1-15 0'/>",
             "questions" => "<rect x='10' y='7' width='44' height='50' rx='6'/><path d='M24 23c0-10 16-10 16 0 0 6-8 7-8 13m0 9v1'/>",
             "time" => "<circle cx='32' cy='34' r='24'/><path d='M32 20v15l10 6M24 5h16'/>",
             "difficulty" => "<path d='M8 53h48M12 47V35h10v12M27 47V24h10v23M42 47V12h10v35'/>",

@@ -11,6 +11,7 @@ public partial class PresentationShell : Control
     private SettingsPanel _overlay = null!;
     private Button _settings = null!;
     private AudioStreamPlayer _audio = null!;
+    private PartyMusic _music = null!;
     private readonly Dictionary<string, AudioStreamWav> _sounds = [];
     private readonly Dictionary<Control, Tween> _fades = [];
     private readonly List<Control> _hidden = [];
@@ -64,6 +65,9 @@ public partial class PresentationShell : Control
         backdrop.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _audio = new AudioStreamPlayer { Name = "FeedbackAudio" };
         AddChild(_audio);
+        _music = new PartyMusic { Name = "PartyMusic" }; AddChild(_music);
+        _music.Configure(Preferences.Sound && DisplayServer.GetName() != "headless", Preferences.Volume);
+        _music.SetPhase("Menu");
         _settings = new Button { Name = "Settings", Icon = GD.Load<Texture2D>("res://Art/settings.svg"), ExpandIcon = true, IconAlignment = HorizontalAlignment.Center, AccessibilityName = Tr("UI_SETTINGS"),
             TooltipText = Tr("UI_SETTINGS"), CustomMinimumSize = new(64, 64) };
         _settings.AddThemeConstantOverride("icon_max_width", 32);
@@ -421,6 +425,7 @@ public partial class PresentationShell : Control
         StyleTree(_root);
         foreach (var panel in _root.FindChildren("*", "", true, false).OfType<MatchPanel>()) panel.RefreshQuestionFit();
         if (_root is AppRoot home) home.FitTitle();
+        _music.Configure(preferences.Sound && DisplayServer.GetName() != "headless", preferences.Volume);
         if (!Preferences.Sound || Preferences.Volume == 0) _audio.Stop();
         _audio.VolumeDb = Mathf.LinearToDb(Math.Max(.0001f, Preferences.Volume));
         if (Preferences.ReducedMotion)
@@ -445,11 +450,14 @@ public partial class PresentationShell : Control
         tween.Finished += () => _fades.Remove(control);
     }
 
+    public void SetMusicPhase(string phase) => _music.SetPhase(phase);
+
     public void PlayCue(string cue)
     {
-        if (!Preferences.Sound || Preferences.Volume <= 0) return;
+        if (!Preferences.Sound || Preferences.Volume <= 0 || DisplayServer.GetName() == "headless") return;
         if (cue == "tap" && _audio.Playing) return;
-        if (!_sounds.TryGetValue(cue, out var stream)) _sounds[cue] = stream = CreateTone(cue);
+        if (!_sounds.TryGetValue(cue, out var stream)) _sounds[cue] = stream = cue is "reveal" or "score" or "final"
+            ? GD.Load<AudioStreamWav>($"res://Art/Music/sting-{cue}.wav") : CreateTone(cue);
         _audio.Stream = stream; _audio.VolumeDb = Mathf.LinearToDb(Preferences.Volume); _audio.Play();
     }
 

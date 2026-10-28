@@ -7,6 +7,12 @@ public partial class StageBackdrop : Control
 {
     private TextureRect? _art;
     private bool _highContrast;
+    private string _themeId = "showtime";
+    public string ThemeId
+    {
+        get => _themeId;
+        set { _themeId = value; ApplyTheme(); QueueRedraw(); }
+    }
     public bool HighContrast
     {
         get => _highContrast;
@@ -18,8 +24,19 @@ public partial class StageBackdrop : Control
         _art = new TextureRect { Name = "StageArt", ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, MouseFilter = MouseFilterEnum.Ignore,
             Visible = !HighContrast, Modulate = new Color(.8f, .8f, .86f) };
-        AddChild(_art); _art.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        AddChild(_art); _art.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); ApplyTheme();
         Resized += UpdateArt; UpdateArt();
+    }
+    private void ApplyTheme()
+    {
+        if (_art is null) return;
+        _art.Modulate = _themeId switch
+        {
+            "studio" => new Color(.66f, .95f, 1f),
+            "neon" => new Color(1f, .66f, 1f),
+            "retro" => new Color(1f, .79f, .55f),
+            _ => new Color(.8f, .8f, .86f)
+        };
     }
     private void UpdateArt()
     {

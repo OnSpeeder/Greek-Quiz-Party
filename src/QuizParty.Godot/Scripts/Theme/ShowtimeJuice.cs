@@ -98,6 +98,17 @@ public partial class ShowtimeJuice : Node
             (double)from, (double)to, .6);
     }
 
+    public void MoveFrom(Control control, Vector2 previousGlobalPosition)
+    {
+        var target = control.Position;
+        var offset = previousGlobalPosition - control.GlobalPosition;
+        if (offset.LengthSquared() < 1) return;
+        var tween = Begin(control, () => control.Position = target);
+        if (tween is null) return;
+        control.Position = target + offset;
+        tween.TweenProperty(control, "position", target, .45).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+    }
+
     public override void _ExitTree()
     { foreach (var control in _active.Keys.ToArray()) Finish(control); }
 }

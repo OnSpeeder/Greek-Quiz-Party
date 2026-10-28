@@ -337,8 +337,13 @@ before determining individual/team winners; tied leaders share this deliberate
 finish. Deck exhaustion also finishes unlimited matches safely.
 
 Zero question duration means untimed: answers remain host-receipt validated,
-question closes when all remaining participants answer, and correct raw points
-are the base 500 before difficulty/strategy, with no speed bonus. Extra Time is
+and the question closes when all remaining participants answer. Speed scoring is
+a host-selected match setting, enabled by default. When enabled, an untimed correct
+answer earns up to 10% of the base 500, decreasing linearly to zero at 30 seconds
+of unpaused host time; the result is rounded away from zero before difficulty and
+strategy. When disabled, correct answers earn base points without a speed bonus
+for both timed and untimed questions. Timed scoring otherwise retains its existing
+remaining-time formula. Extra Time is
 unavailable; other cards retain their existing timing windows. Disconnected
 players retain confirmed results but cannot hold an untimed question or vote
 barrier open. Host Continue can always advance reveal/recap/round end.

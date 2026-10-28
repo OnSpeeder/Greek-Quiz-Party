@@ -2,6 +2,7 @@ using Godot;
 using QuizParty.Core.Lobby;
 using QuizParty.Core.Time;
 using QuizParty.Infrastructure.Networking;
+using QuizParty.Presentation;
 
 namespace QuizParty.Networking;
 
@@ -22,6 +23,9 @@ public partial class LobbyTransport : Node
     private bool _reconnecting;
     private bool _hasSeenMatch;
     private int _retryAttempt;
+    private RejoinTicket? _departure;
+    private Guid _departureRequest;
+    private Guid _savedSession;
     public RoomAccessResultDto? RoomAccess => _client.Access;
     public bool JoinPending => _joiningPrepared;
     public event Action<RoomAccessResultDto>? RoomAccessChanged;
@@ -42,6 +46,7 @@ public partial class LobbyTransport : Node
     private IReadOnlyList<Core.Questions.QuestionDefinition>? _debugQuestions;
     public int QuestionCount { get; set; } = 1;
     public int QuestionSeconds { get; set; } = 20;
+    public bool SpeedScoring { get; set; } = true;
     public bool StrategyEnabled { get; set; } = true;
     public bool AllowSteal { get; set; }
     public HashSet<int> EnabledDifficulties { get; set; } = [1, 2, 3, 4, 5];
@@ -56,11 +61,12 @@ public partial class LobbyTransport : Node
     public IReadOnlyList<Core.Questions.QuestionCategory> QuestionCategories { get; private set; } = [];
     public HashSet<string>? EnabledCategories { get; set; }
 
-    public void UseSyntheticQuestions(int count)
+    public void UseSyntheticQuestions(int count, bool longContent = false)
     {
         if (!OS.IsDebugBuild() || count is not (1 or 10 or 20 or 30 or 40 or 50)) throw new InvalidOperationException("Debug fixture only.");
         _debugQuestions = Enumerable.Range(1, count + 5).Select(i => new Core.Questions.QuestionDefinition(
-            $"fixture_{i}", $"ΔΟΚΙΜΗ {i} — επιλέξτε «Σωστό»", ["Σωστό", "Λάθος Α", "Λάθος Β", "Λάθος Γ"],
+            $"fixture_{i}", longContent ? $"ΔΟΚΙΜΗ {i} — Ποια από τις παρακάτω επιλογές είναι η σωστή απάντηση σε αυτή τη μακροσκελή ερώτηση με ελληνικούς χαρακτήρες και τόνους που ελέγχει την προσαρμογή της οθόνης;" : $"ΔΟΚΙΜΗ {i} — επιλέξτε «Σωστό»",
+            longContent ? ["Σωστό — αυτή είναι η δοκιμαστική απάντηση με περισσότερες λέξεις", "Λάθος Α — μια διαφορετική επιλογή για έλεγχο της εμφάνισης", "Λάθος Β — ακόμη μία επιλογή με ελληνικούς χαρακτήρες", "Λάθος Γ — η τελευταία επιλογή για την οθόνη δοκιμής"] : ["Σωστό", "Λάθος Α", "Λάθος Β", "Λάθος Γ"],
             0, StrategyEnabled ? new[] { "history", "science", "arts", "sports", "geography" }[(i - 1) % 5] : "fixture",
             i % 5 + 1, "Συνθετική ερώτηση ελέγχου — δεν αποτελεί περιεχόμενο παιχνιδιού.", ["Δοκιμαστικό fun fact για έλεγχο της εμφάνισης."])).ToArray();
         QuestionCount = count;
@@ -93,6 +99,9 @@ public partial class LobbyTransport : Node
     public event Action<LobbySnapshotDto>? SnapshotChanged;
     public event Action<string>? StatusChanged;
     public bool IsHost => _host is not null;
+    public RejoinTicket? CurrentTicket => _client.Snapshot is { Phase: "GameStarting" } lobby && _client.PlayerId is { } player &&
+        _client.ControllerId is { } controller && _client.ReconnectToken is { } token && _address.Length > 0
+        ? new(lobby.SessionId, player, controller, token, _address, _port) : null;
     public Guid? LocalPlayerId => OwnedPlayers.FirstOrDefault(p => p.LocalSlot == _activeSlot)?.PlayerId;
     public LobbySnapshotDto? Snapshot => _host?.Snapshot() ?? _client.Snapshot;
     public int ClientProtocol { get; set; } = LobbyProtocol.Version;
@@ -145,6 +154,12 @@ public partial class LobbyTransport : Node
             OS.IsDebugBuild() && DebugStrategySeed is { } seed ? new Core.Randomness.SeededRandomSource(seed) : null, character, hostPlays, maxPlayers);
         _peer = peer;
         Multiplayer.MultiplayerPeer = peer;
+        if (!IsProbe())
+        {
+            try { var store = RejoinStore.Device(); if (store.Load() is { } previous) store.QueueDeparture(previous); }
+            catch (Exception storageError) when (storageError is IOException or UnauthorizedAccessException or InvalidOperationException or System.Text.Json.JsonException)
+            { GD.PushWarning($"Previous game departure could not be saved: {storageError.GetType().Name}"); Emit("RejoinSaveFailed"); }
+        }
         var host = _host;
         Discovery.Advertise(host.Snapshot, port, host.RequiresPin, DiscoveryPort);
         Emit("HostListening");
@@ -173,6 +188,38 @@ public partial class LobbyTransport : Node
             if (generation == _generation && GodotObject.IsInstanceValid(this) && IsInsideTree() && _client.PlayerId is null && _client.Access?.Accepted != true)
                 Fail("ConnectionTimeout");
         };
+        return Error.Ok;
+    }
+
+    private static bool IsProbe() => OS.IsDebugBuild() && (System.Environment.GetEnvironmentVariable("EnableGodotTests") == "true" ||
+        MatchProcessProbe.LaunchArguments().Any(a => a.StartsWith("--ui-", StringComparison.Ordinal) || a.StartsWith("--match-", StringComparison.Ordinal)));
+
+    public bool Resume(RejoinTicket ticket)
+    {
+        if (!ticket.IsValid) return false;
+        Stop();
+        if (!_client.RestoreReconnect(ticket.Session, ticket.Player, ticket.Controller, ticket.Token)) return false;
+        _address = ticket.Address; _port = ticket.Port; _hasSeenMatch = true; _reconnecting = true;
+        Emit("Reconnecting"); ScheduleReconnect(); return true;
+    }
+
+    public Error DeliverDeparture(RejoinTicket ticket)
+    {
+        if (!ticket.IsValid) return Error.InvalidParameter;
+        Stop(); _departure = ticket; _departureRequest = Guid.NewGuid();
+        var peer = new ENetMultiplayerPeer(); var error = peer.CreateClient(ticket.Address, ticket.Port);
+        if (error != Error.Ok) { _departure = null; peer.Dispose(); return error; }
+        _peer = peer; Multiplayer.MultiplayerPeer = peer;
+        var request = _departureRequest;
+        var timeout = new global::Godot.Timer { WaitTime = 8, OneShot = true };
+        AddChild(timeout);
+        timeout.Timeout += () =>
+        {
+            if (GodotObject.IsInstanceValid(this) && IsInsideTree() && _departure is not null && _departureRequest == request)
+            { Stop(); Emit("DepartureRetry"); }
+            if (GodotObject.IsInstanceValid(timeout)) timeout.QueueFree();
+        };
+        timeout.Start();
         return Error.Ok;
     }
 
@@ -243,7 +290,7 @@ public partial class LobbyTransport : Node
         if (PlayMatch && !_host.ConfigureMatch(new(QuestionCount, QuestionSeconds,
             StrategyEnabled ? new Core.Game.StrategyRules(AllowSteal: AllowSteal)
             { EnabledCards = EnabledCards.ToArray(), EnabledMissions = EnabledMissions.ToArray() } : null,
-            EnabledDifficulties), EnabledCategories)) { Emit("InsufficientContent"); return; }
+            EnabledDifficulties, SpeedScoring), EnabledCategories)) { Emit("InsufficientContent"); return; }
         var result = _host.Start();
         Emit(result.ToString());
         Broadcast();
@@ -348,7 +395,7 @@ public partial class LobbyTransport : Node
             _peer!.Host.Flush();
         }
         _generation++;
-        _reconnecting = false; _hasSeenMatch = false; _retryAttempt++;
+        _reconnecting = false; _hasSeenMatch = false; _retryAttempt++; _departure = null; _departureRequest = Guid.Empty; _savedSession = Guid.Empty;
         _host = null;
         _clientPin = ""; _clientCharacter = null; _prepareSession = Guid.Empty; _joiningPrepared = false;
         if (GodotObject.IsInstanceValid(Discovery)) Discovery.Stop();
@@ -395,6 +442,12 @@ public partial class LobbyTransport : Node
 
     private void OnConnected()
     {
+        if (_departure is { } departure)
+        {
+            RpcId(1, MethodName.ClientMessage, LobbyProtocol.Encode("AbandonReservation", departure.Session,
+                new AbandonReservationDto(departure.Token), messageId: _departureRequest));
+            return;
+        }
         if (_reconnecting)
         {
             if (_client.BeginReconnect() is { } request) RpcId(1, MethodName.ClientMessage, request);
@@ -430,9 +483,10 @@ public partial class LobbyTransport : Node
         if (_host.Suspend(connection)) { Emit("PlayerLeft"); Broadcast(); BroadcastMatch(); }
     }
 
-    private void OnConnectionFailed() { if (_reconnecting) ScheduleReconnect(); else Fail("ConnectionFailed"); }
+    private void OnConnectionFailed() { if (_departure is not null) { Stop(); Emit("DepartureRetry"); } else if (_reconnecting) ScheduleReconnect(); else Fail("ConnectionFailed"); }
     private void OnServerDisconnected()
     {
+        if (_departure is not null) { Stop(); Emit("DepartureRetry"); return; }
         if (_reconnecting) { ScheduleReconnect(); return; }
         if (_hasSeenMatch && _client.ReconnectToken is not null && _address.Length > 0)
         {
@@ -554,8 +608,20 @@ public partial class LobbyTransport : Node
     private void ServerMessage(string json)
     {
         if (_host is not null || Multiplayer.GetRemoteSenderId() != 1) return;
+        if (_departure is { } departure && LobbyProtocol.TryDecode(json, out var packet) && packet is not null &&
+            packet.ProtocolVersion == LobbyProtocol.Version && packet.SessionId == departure.Session && packet.MessageType == "RequestResult" &&
+            packet.CorrelationId == _departureRequest && LobbyProtocol.TryPayload<RequestResultDto>(packet, out var receipt) && receipt is not null)
+        {
+            var resolved = receipt.Accepted && receipt.Reason == "None" || !receipt.Accepted && receipt.Reason == "ReconnectUnavailable";
+            Stop(); Emit(resolved ? "DepartureDelivered" : "DepartureRetry"); return;
+        }
         var update = _client.Apply(json);
-        if (update == LobbyClientUpdate.ReconnectRejected) { if (_client.LastReason == "MatchEnded") Fail("ReconnectExpired"); else ScheduleReconnect(); return; }
+        if (update == LobbyClientUpdate.ReconnectRejected)
+        {
+            if (_client.LastReason is "MatchEnded" or "ReconnectUnavailable") { ClearFinishedTicket(); Fail("ReconnectExpired"); }
+            else ScheduleReconnect();
+            return;
+        }
         if (update == LobbyClientUpdate.Reconnected)
         {
             _reconnecting = false; _retryAttempt++; ResetMatchPresentation(); Publish(); Emit("Reconnected"); return;
@@ -573,10 +639,27 @@ public partial class LobbyTransport : Node
             Fail(_client.LastReason); return;
         }
         if (update is LobbyClientUpdate.Joined or LobbyClientUpdate.Snapshot)
-        { if (_client.Snapshot?.Phase == "Lobby") { _hasSeenMatch = false; ResetMatchPresentation(); } Publish(); }
+        { if (_client.Snapshot?.Phase == "Lobby") { _hasSeenMatch = false; _savedSession = Guid.Empty; ResetMatchPresentation(); } Publish(); }
         if (update == LobbyClientUpdate.Joined) { _joiningPrepared = false; Emit("Joined"); }
         if (update == LobbyClientUpdate.RequestResult) Emit(_client.LastReason);
-        if (update == LobbyClientUpdate.MatchSnapshot) { _hasSeenMatch = true; PublishMatch(); OwnedStateChanged?.Invoke(); }
+        if (update == LobbyClientUpdate.MatchSnapshot)
+        {
+            _hasSeenMatch = true;
+            if (!IsProbe() && _client.Snapshot is { } lobby && _client.PlayerId is { } player && _client.ControllerId is { } controller &&
+                _client.ReconnectToken is { } token && _client.MatchForSlot(_client.LastMatchSlot).Snapshot is { } match)
+            {
+                try
+                {
+                    var store = RejoinStore.Device();
+                    if (match.Phase == "GameOver") { if (store.Load()?.Session == lobby.SessionId) store.Clear(); }
+                    else if (_savedSession != lobby.SessionId)
+                    { store.Save(new(lobby.SessionId, player, controller, token, _address, _port)); _savedSession = lobby.SessionId; }
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                { GD.PushWarning($"Rejoin storage could not be saved: {error.GetType().Name}"); Emit("RejoinSaveFailed"); }
+            }
+            PublishMatch(); OwnedStateChanged?.Invoke();
+        }
         if (update == LobbyClientUpdate.AnswerReceipt)
         {
             var state = _client.MatchForSlot(_client.LastMatchSlot);
@@ -596,6 +679,18 @@ public partial class LobbyTransport : Node
     [Rpc(TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void RoomClosed()
     {
-        if (_host is null && Multiplayer.GetRemoteSenderId() == 1) Fail("HostClosed");
+        if (_host is null && Multiplayer.GetRemoteSenderId() == 1)
+        {
+            ClearFinishedTicket();
+            Fail("HostClosed");
+        }
+    }
+
+    private void ClearFinishedTicket()
+    {
+        if (IsProbe()) return;
+        try { var store = RejoinStore.Device(); if (store.Load()?.Session == _client.ReconnectSession) store.Clear(); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        { GD.PushWarning($"Finished game ticket could not be cleared: {error.GetType().Name}"); }
     }
 }

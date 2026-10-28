@@ -25,6 +25,7 @@ public sealed class LobbyHost
     private readonly Dictionary<long, Guid> _controllers = new() { [1] = Guid.NewGuid() };
     private readonly Dictionary<long, string> _tokens = new();
     private readonly Dictionary<long, TimeSpan> _reservations = new();
+    private readonly HashSet<string> _abandoned = new(StringComparer.Ordinal);
     private static string NewToken() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
     private FullMatch? _match;
     private readonly Dictionary<Guid, int> _matchCharacters = new();
@@ -155,7 +156,7 @@ public sealed class LobbyHost
     public bool Replay()
     {
         if (_match?.Snapshot.Phase != GamePhase.GameOver) return false;
-        _lobby.Replay(); _match = null; _matchCharacters.Clear(); return true;
+        _lobby.Replay(); _match = null; _matchCharacters.Clear(); _abandoned.Clear(); return true;
     }
     public GameError AdvanceMatch() => _match?.Advance() ?? GameError.InvalidTransition;
     public SubmissionError SubmitHostAnswer(int index, int confidence = 1, int localSlot = 0) => SubmitAnswer(1,
@@ -218,16 +219,44 @@ public sealed class LobbyHost
         token = null;
         if (packet.SessionId != SessionId || !LobbyProtocol.TryPayload<ReconnectRequestDto>(packet, out var request) ||
             request?.Token is not { Length: 64 } supplied || !supplied.All(Uri.IsHexDigit)) return "MalformedRequest";
-        if (_match?.Snapshot.Phase == GamePhase.GameOver) return "MatchEnded";
+        if (_match is null || _match.Snapshot.Phase == GamePhase.GameOver) return "MatchEnded";
         ExpireReservations();
         var old = _reservations.Keys.FirstOrDefault(id => CryptographicOperations.FixedTimeEquals(
             Encoding.ASCII.GetBytes(_tokens[id]), Encoding.ASCII.GetBytes(supplied)));
-        if (old == 0 || _lobby.FindPlayer(new(connection)) is not null) return "ReconnectUnavailable";
+        if (old == 0)
+            return _tokens.Values.Any(existing => CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(existing), Encoding.ASCII.GetBytes(supplied)))
+                ? "StillConnected" : "ReconnectUnavailable";
+        if (old == connection)
+        {
+            token = _tokens[old]; _reservations.Remove(old);
+            foreach (var player in GetPlayers().Where(p => p.ConnectionId?.Value == connection)) _match.Reconnect(player.Id);
+            return "None";
+        }
+        if (_lobby.FindPlayer(new(connection)) is not null) return "ReconnectUnavailable";
         if (!_lobby.Rebind(new(old), new(connection))) return "ReconnectUnavailable";
         _controllers[connection] = _controllers[old]; _controllers.Remove(old);
         token = _tokens[old]; _tokens.Remove(old); _reservations.Remove(old);
         _tokens[connection] = token;
         foreach (var player in GetPlayers().Where(p => p.ConnectionId?.Value == connection)) _match?.Reconnect(player.Id);
+        return "None";
+    }
+
+    private string Abandon(LobbyEnvelope packet)
+    {
+        if (packet.SessionId != SessionId || !LobbyProtocol.TryPayload<AbandonReservationDto>(packet, out var request) ||
+            request?.Token is not { Length: 64 } supplied || !supplied.All(Uri.IsHexDigit)) return "MalformedRequest";
+        var digest = Convert.ToHexString(SHA256.HashData(Encoding.ASCII.GetBytes(supplied.ToUpperInvariant())));
+        if (_abandoned.Contains(digest)) return "None";
+        var old = _reservations.Keys.FirstOrDefault(id => CryptographicOperations.FixedTimeEquals(
+            Encoding.ASCII.GetBytes(_tokens[id]), Encoding.ASCII.GetBytes(supplied)));
+        if (old == 0)
+        {
+            if (_tokens.Values.Any(token => CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(token), Encoding.ASCII.GetBytes(supplied))))
+                return "StillConnected";
+            return "ReconnectUnavailable";
+        }
+        _abandoned.Add(digest);
+        Disconnect(old);
         return "None";
     }
 
@@ -291,6 +320,11 @@ public sealed class LobbyHost
             var reason = Reconnect(connection, packet, out var token);
             reply = LobbyProtocol.Encode("ReconnectResult", SessionId,
                 new ReconnectResultDto(reason == "None", reason, token, reason == "None" ? Snapshot() : null), packet.MessageId);
+        }
+        else if (packet.MessageType == "AbandonReservation")
+        {
+            var reason = Abandon(packet);
+            reply = LobbyProtocol.Encode("RequestResult", SessionId, new RequestResultDto(reason == "None", reason), packet.MessageId);
         }
         else
         {

@@ -35,6 +35,7 @@ public partial class SettingsPanel : Control
     private Button _close = null!;
     private Button _leave = null!;
     private OptionButton _language = null!;
+    private OptionButton _themeChoice = null!;
     private HSlider _volume = null!;
     private readonly List<PanelContainer> _cards = [];
     private readonly List<Button> _tabs = [];
@@ -72,20 +73,20 @@ public partial class SettingsPanel : Control
         _header = new HBoxContainer(); outer.AddChild(_header);
         _frame = new PanelContainer { Name = "Frame", SizeFlagsVertical = SizeFlags.ExpandFill }; outer.AddChild(_frame);
         _layout = new VBoxContainer(); _frame.AddChild(_layout);
+        // The new device-settings composition keeps its header and actions inside
+        // one responsive surface, with the content area independently scrollable.
+        _header.Reparent(_layout); _layout.MoveChild(_header, 0);
         var header = _header;
         var sign = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         _sign = sign;
         header.AddChild(sign);
         _title = Label("UI_SETTINGS_BANNER");
-        _title.HorizontalAlignment = HorizontalAlignment.Center;
+        _title.HorizontalAlignment = HorizontalAlignment.Left;
         _title.VerticalAlignment = VerticalAlignment.Center;
         _title.AddThemeFontOverride("font", QuizShowTheme.DisplayFont());
-        _title.AddThemeColorOverride("font_color", new Color("55cff5"));
-        _title.AddThemeColorOverride("font_outline_color", ShowtimeTheme.Gold);
-        _title.AddThemeConstantOverride("outline_size", 5);
-        _title.AddThemeColorOverride("font_shadow_color", new Color("162b5e"));
-        _title.AddThemeConstantOverride("shadow_offset_x", 5);
-        _title.AddThemeConstantOverride("shadow_offset_y", 8); sign.AddChild(_title);
+        _title.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
+        _title.AddThemeColorOverride("font_outline_color", QuizShowTheme.Navy);
+        _title.AddThemeConstantOverride("outline_size", 2); sign.AddChild(_title);
         _close = Button("Close", "UI_SETTINGS_BACK", "back"); header.AddChild(_close);
         _close.Pressed += () => { if (!Back()) CloseRequested?.Invoke(); };
         _hint = Label("UI_SETTINGS_HINT"); _hint.AddThemeFontSizeOverride("font_size", 16); _layout.AddChild(_hint);
@@ -142,6 +143,11 @@ public partial class SettingsPanel : Control
         _gameplayGrid = new GridContainer { Columns = 1 }; gameplay.AddChild(_gameplayGrid);
         var languageControls = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _gameplayGrid.AddChild(languageControls);
         var accessibilityControls = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _gameplayGrid.AddChild(accessibilityControls);
+        languageControls.AddChild(Label("UI_SETTINGS_THEME"));
+        _themeChoice = new OptionButton { Name = "ThemeChoice", CustomMinimumSize = new(0, 64), FitToLongestItem = false };
+        foreach (var theme in PresentationPreferences.ThemeIds) _themeChoice.AddItem(Tr("UI_THEME_" + theme.ToUpperInvariant()));
+        languageControls.AddChild(_themeChoice);
+        _themeChoice.ItemSelected += index => Change(_preferences with { ThemeId = PresentationPreferences.ThemeIds[(int)index] });
         languageControls.AddChild(Label("UI_SETTINGS_LANGUAGE"));
         _language = new OptionButton { Name = "Language", CustomMinimumSize = new(0, 64), FitToLongestItem = false };
         _language.AddItem("Ελληνικά"); _language.AddItem("English"); languageControls.AddChild(_language);
@@ -150,6 +156,7 @@ public partial class SettingsPanel : Control
         AddToggle(accessibilityControls, "ReducedMotion", "UI_REDUCED_MOTION", value => Change(_preferences with { ReducedMotion = value }));
         AddToggle(accessibilityControls, "LargeText", "UI_LARGE_TEXT", value => Change(_preferences with { LargeText = value }));
         AddToggle(accessibilityControls, "HighContrast", "UI_HIGH_CONTRAST", value => Change(_preferences with { HighContrast = value }));
+        AddToggle(accessibilityControls, "AutoFitQuestions", "UI_AUTO_FIT_QUESTIONS", value => Change(_preferences with { AutoFitQuestions = value }));
         var help = Card(sectionKeys[2]);
         _helpContent = help;
         foreach (var (name, key) in new[] { ("Credits", "UI_SETTINGS_CREDITS"), ("Privacy", "UI_SETTINGS_PRIVACY"),
@@ -238,7 +245,7 @@ public partial class SettingsPanel : Control
     public void Render(PresentationPreferences preferences, int minimum, string status = "")
     {
         var restyle = _skin is null || _preferences.LargeText != preferences.LargeText ||
-            _preferences.HighContrast != preferences.HighContrast || _minimum != minimum;
+            _preferences.HighContrast != preferences.HighContrast || _preferences.ThemeId != preferences.ThemeId || _minimum != minimum;
         _preferences = preferences; _minimum = minimum;
         foreach (var button in FindChildren("*", "BaseButton", true, false).OfType<BaseButton>())
             button.CustomMinimumSize = new(minimum, minimum);
@@ -246,25 +253,22 @@ public partial class SettingsPanel : Control
         if (restyle)
         {
             var previous = _skin; _skin = SettingsSkin.Create(preferences, minimum); Theme = _skin; previous?.Dispose();
-            using StyleBox frameStyle = preferences.HighContrast
-                ? ShowtimeTheme.Panel(new("080a16"), ShowtimeTheme.Ink, 3) : SettingsSkin.Slice("frame-main", 44, 40);
+            using StyleBox frameStyle = ShowtimeTheme.Panel(new(preferences.HighContrast ? "080a16" : "12132c"),
+                preferences.HighContrast ? ShowtimeTheme.Ink : ShowtimeTheme.Gold, 3);
             _frame.AddThemeStyleboxOverride("panel", frameStyle);
-            using var headerSkin = SettingsSkin.Slice("header-trim", 70, 12);
-            headerSkin.SetTextureMargin(Side.Top, 18); headerSkin.SetTextureMargin(Side.Bottom, 18);
-            using var plainHeader = ShowtimeTheme.Panel(new("080a16"), ShowtimeTheme.Ink);
             using var emptyHeader = new StyleBoxEmpty();
-            _sign.AddThemeStyleboxOverride("panel", preferences.HighContrast ? plainHeader : emptyHeader);
-            _title.AddThemeConstantOverride("outline_size", preferences.HighContrast ? 0 : 8);
-            _title.AddThemeConstantOverride("shadow_offset_y", preferences.HighContrast ? 0 : 8);
+            _sign.AddThemeStyleboxOverride("panel", emptyHeader);
+            _title.AddThemeConstantOverride("outline_size", preferences.HighContrast ? 0 : 2);
+            _title.AddThemeConstantOverride("shadow_offset_y", 0);
             foreach (var card in _cards)
             {
-                using StyleBox cardStyle = preferences.HighContrast
-                    ? ShowtimeTheme.Panel(new("080a16"), ShowtimeTheme.Ink) : SettingsSkin.Slice("frame-card", 22, 20);
+                using StyleBox cardStyle = ShowtimeTheme.Panel(new(preferences.HighContrast ? "080a16" : "1b1c35"),
+                    preferences.HighContrast ? ShowtimeTheme.Ink : new Color("62668d"));
                 card.AddThemeStyleboxOverride("panel", cardStyle);
             }
         }
         foreach (var (name, value) in new[] { ("Sound", preferences.Sound), ("ReducedMotion", preferences.ReducedMotion),
-            ("LargeText", preferences.LargeText), ("HighContrast", preferences.HighContrast) })
+            ("LargeText", preferences.LargeText), ("HighContrast", preferences.HighContrast), ("AutoFitQuestions", preferences.AutoFitQuestions) })
         {
             var toggle = _toggles[name]; toggle.SetPressedNoSignal(value);
             toggle.Text = value ? "✓" : "–";
@@ -278,6 +282,10 @@ public partial class SettingsPanel : Control
         _volume.AccessibilityName = Tr("UI_VOLUME");
         _scroll.AccessibilityName = Tr("UI_SETTINGS_BANNER");
         _language.Select(preferences.Language == "en" ? 1 : 0);
+        for (var i = 0; i < PresentationPreferences.ThemeIds.Count; i++)
+            _themeChoice.SetItemText(i, Tr("UI_THEME_" + PresentationPreferences.ThemeIds[i].ToUpperInvariant()));
+        _themeChoice.Select(Math.Max(0, PresentationPreferences.ThemeIds.ToList().IndexOf(preferences.ThemeId)));
+        _themeChoice.AccessibilityName = Tr("UI_SETTINGS_THEME");
         _language.AccessibilityName = Tr("UI_SETTINGS_LANGUAGE");
         _previewHint.Text = preferences.Sound && preferences.Volume > 0 ? "UI_SETTINGS_AUDIO_HINT" : "UI_SETTINGS_MUTED";
         _status.Text = status;
@@ -361,11 +369,9 @@ public partial class SettingsPanel : Control
         _navigation.AddThemeConstantOverride("separation", 18);
         foreach (var tab in _tabs) tab.CustomMinimumSize = new(0, Math.Max(_minimum, wide ? 80 : 64));
         foreach (var tab in _tabs) tab.AddThemeFontSizeOverride("font_size", _preferences.LargeText ? 25 : 22);
-        _title.AddThemeFontSizeOverride("font_size", wide ? 76 : _preferences.LargeText ? 38 : 40);
-        _sign.CustomMinimumSize = new(0, wide ? 110 : 76);
-        using StyleBox signStyle = _preferences.HighContrast
-            ? ShowtimeTheme.Panel(new("080a16"), ShowtimeTheme.Ink)
-            : wide ? new StyleBoxEmpty() : SettingsSkin.Slice("header-trim", 24, 10);
+        _title.AddThemeFontSizeOverride("font_size", _preferences.LargeText ? 36 : 30);
+        _sign.CustomMinimumSize = new(0, _minimum);
+        using StyleBox signStyle = new StyleBoxEmpty();
         _sign.AddThemeStyleboxOverride("panel", signStyle);
         _header.MoveChild(_close, wide ? 0 : 1);
         _hint.Visible = !wide;
@@ -392,13 +398,13 @@ public partial class SettingsPanel : Control
         // Reparent only decoration; all focusable controls remain the same instances.
         var destination = wide ? (Node)_body : _layout;
         if (_mascotBay.GetParent() != destination) _mascotBay.Reparent(destination);
-        _mascotBay.Visible = !_preferences.HighContrast && !DetailOpen && Size.Y >= 560;
-        _mascotBay.CustomMinimumSize = new(wide ? 240 : 100, 0);
+        _mascotBay.Visible = wide && !_preferences.HighContrast && !DetailOpen && Size.Y >= 560;
+        _mascotBay.CustomMinimumSize = new(wide ? 150 : 0, 0);
         _mascotBay.SizeFlagsHorizontal = wide ? SizeFlags.Fill : SizeFlags.ShrinkEnd;
         // Overlap the atlas's transparent foot gutter with the pedestal surface.
         _mascotBay.AddThemeConstantOverride("separation", wide ? -12 : -6);
-        _mascot.CustomMinimumSize = wide ? new(240, 220) : new(100, 80);
-        _plinth.CustomMinimumSize = wide ? new(240, 64) : new(100, 24);
+        _mascot.CustomMinimumSize = wide ? new(150, 145) : new(100, 80);
+        _plinth.CustomMinimumSize = wide ? new(150, 40) : new(100, 24);
         _mascot.Configure(!wide, _preferences.ReducedMotion || _preferences.HighContrast);
         UpdateSections();
         if (changed && focus is not null && IsAncestorOf(focus) && !focus.IsVisibleInTree())

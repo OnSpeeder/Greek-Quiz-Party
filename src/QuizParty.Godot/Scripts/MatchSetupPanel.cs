@@ -61,10 +61,18 @@ public partial class MatchSetupPanel : PanelContainer
         var label = new Label { Text = key, AutowrapMode = TextServer.AutowrapMode.WordSmart };
         QuizShowTheme.SetFontSize(label, 19); _body.AddChild(label);
     }
-    private void Choices(string key, (int Value, string Text)[] options, int selected, Action<int> change)
+    private static void IconHeading(Container parent, string key, string icon)
+    {
+        var heading = new HBoxContainer(); parent.AddChild(heading);
+        heading.AddChild(new TextureRect { Texture = LobbyIcons.Texture(icon), CustomMinimumSize = new(28, 28),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            MouseFilter = MouseFilterEnum.Ignore });
+        heading.AddChild(new Label { Text = key, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+    }
+    private void Choices(string key, (int Value, string Text)[] options, int selected, Action<int> change, string icon)
     {
         var section = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _grid!.AddChild(section);
-        section.AddChild(new Label { Text = key });
+        IconHeading(section, key, icon);
         var row = new GridContainer { Columns = options.Length > 5 ? 4 : 3 }; section.AddChild(row);
         var group = new ButtonGroup();
         foreach (var (value, text) in options)
@@ -104,11 +112,14 @@ public partial class MatchSetupPanel : PanelContainer
         _capacity = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart }; _body.AddChild(_capacity);
         _body.AddChild(_grid);
         Choices("SETUP_LENGTH", [(1, Tr("SETUP_PREVIEW")), (10, "10"), (20, "20"), (30, "30"), (40, "40"), (50, "50"), (0, Tr("SETUP_UNLIMITED"))],
-            _transport.QuestionCount, count => { _transport.QuestionCount = count; RefreshCapacity(); });
+            _transport.QuestionCount, count => { _transport.QuestionCount = count; RefreshCapacity(); }, "questions");
         Choices("SETUP_SECONDS", [(10, "10"), (20, "20"), (30, "30"), (60, "60"), (120, "120"), (0, Tr("SETUP_UNTIMED"))],
-            _transport.QuestionSeconds, seconds => _transport.QuestionSeconds = seconds);
+            _transport.QuestionSeconds, seconds => _transport.QuestionSeconds = seconds, "time");
+        var speed = new CheckButton { Name = "SpeedScoring", Text = "SETUP_SPEED_SCORING", SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            CustomMinimumSize = new(64, 64), ButtonPressed = _transport.SpeedScoring };
+        speed.Toggled += on => _transport.SpeedScoring = on; _grid.AddChild(speed);
         var difficulty = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _grid.AddChild(difficulty);
-        difficulty.AddChild(new Label { Text = "SETUP_DIFFICULTY" });
+        IconHeading(difficulty, "SETUP_DIFFICULTY", "difficulty");
         var bands = new HBoxContainer(); difficulty.AddChild(bands);
         foreach (var (key, levels) in new[] { ("LOW", new[] { 1, 2 }), ("MEDIUM", new[] { 3 }), ("HIGH", new[] { 4, 5 }) })
         {

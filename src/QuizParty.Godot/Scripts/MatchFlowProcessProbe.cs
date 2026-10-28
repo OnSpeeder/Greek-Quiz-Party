@@ -25,15 +25,20 @@ public partial class MatchFlowProcessProbe : Node
     private void Begin()
     {
         _transport = GetParent().GetNode<LobbyTransport>("Transport");
-        _transport.DiscoveryPort = 19864; _transport.StrategyEnabled = false;
-        if (_args.Contains("--match-flow-host")) { _transport.UseSyntheticQuestions(10); _transport.QuestionCount = 0; _transport.QuestionSeconds = 0; }
+        if (!_args.Contains("--match-flow-default-discovery")) _transport.DiscoveryPort = 19864;
+        _transport.StrategyEnabled = false;
+        if (_args.Contains("--match-flow-host")) { _transport.UseSyntheticQuestions(10, _args.Contains("--match-flow-long")); _transport.QuestionCount = 0; _transport.QuestionSeconds = 0; }
         _transport.SnapshotChanged += OnLobby; _transport.MatchChanged += OnMatch;
+        _transport.StatusChanged += status => GD.Print($"FLOW STATUS ms={Time.GetTicksMsec()} {status}");
         var port = int.Parse(Arg("--match-flow-port=") ?? "19863");
+        var hostPlays = _args.Contains("--match-flow-host-plays");
         var error = _args.Contains("--match-flow-host")
-            ? _transport.Host("Flow regression", "", port, hostPlays: false)
+            ? _transport.Host("Flow regression", hostPlays ? "Host" : "", port, hostPlays: hostPlays)
             : _transport.Join(Arg("--match-flow-address=") ?? "127.0.0.1", Arg("--match-flow-name=") ?? "Παίκτης", port);
         if (error != Error.Ok) { GD.PushError($"Flow start failed: {error}"); GetTree().Quit(6); }
-        GetTree().CreateTimer(60).Timeout += () => { if (Live) GetTree().Quit(7); };
+        if (error == Error.Ok && _transport.IsHost && hostPlays) _transport.SetReady(true);
+        var timeout = int.TryParse(Arg("--match-flow-timeout="), out var seconds) ? Math.Clamp(seconds, 60, 300) : 60;
+        GetTree().CreateTimer(timeout).Timeout += () => { if (Live) GetTree().Quit(7); };
     }
     private void OnLobby(LobbySnapshotDto snapshot)
     {
@@ -61,6 +66,8 @@ public partial class MatchFlowProcessProbe : Node
     }
     private void OnMatch(MatchSnapshotDto snapshot)
     {
+        if (_scheduled.Add($"phase:{snapshot.Question.InstanceId}:{snapshot.Phase}"))
+            GD.Print($"FLOW PHASE ms={Time.GetTicksMsec()} question={snapshot.QuestionNumber} phase={snapshot.Phase}");
         if (snapshot.Phase == "GameOver")
         {
             if (_finished) return; _finished = true;
@@ -73,8 +80,8 @@ public partial class MatchFlowProcessProbe : Node
         {
             if (snapshot.QuestionNumber == 1 && snapshot.Phase == "QuestionActive" && snapshot.AcceptedAnswerCount is > 0 and < 3) Capture("answering", .05);
             if (snapshot.Phase == "AnswerReveal") Capture("facts", 1.5);
-            if (snapshot.Phase == "Scoreboard") Capture("scoreboard", .3);
-            return;
+            if (snapshot.Phase == "Scoreboard") { Capture("scoreboard", .3); Capture("scoreboard-end", 1.0); Capture("scoreboard-settled", 1.6); }
+            if (!_args.Contains("--match-flow-host-plays")) return;
         }
         if (snapshot.Phase == "QuestionActive")
         {
@@ -82,19 +89,25 @@ public partial class MatchFlowProcessProbe : Node
             foreach (var player in _transport.OwnedPlayers)
             {
                 if (!_scheduled.Add($"answer:{snapshot.Question.InstanceId}:{player.LocalSlot}")) continue;
-                var delay = _args.Contains("--match-flow-local") ? .15 : .8;
+                var delay = _args.Contains("--match-flow-stagger") ? _transport.IsHost ? .1 : _args.Contains("--match-flow-name=local") ? .4 : 2.0 : _args.Contains("--match-flow-local") ? .15 : .8;
                 GetTree().CreateTimer(delay).Timeout += () =>
-                { if (Live) _transport.SubmitAnswer(Array.IndexOf(snapshot.Question.Answers, "Σωστό"), localSlot: player.LocalSlot); };
+                { if (Live) _transport.SubmitAnswer(Array.FindIndex(snapshot.Question.Answers, answer => answer.StartsWith("Σωστό", StringComparison.Ordinal)), localSlot: player.LocalSlot); };
             }
         }
         if (snapshot.Phase is "AnswerReveal" or "Scoreboard")
         {
             Capture(snapshot.Phase == "AnswerReveal" ? "facts" : "scoreboard", snapshot.Phase == "AnswerReveal" ? 1.5 : .3);
+            if (snapshot.Phase == "Scoreboard") { Capture("scoreboard-end", 1.0); Capture("scoreboard-settled", 1.6); }
             foreach (var player in _transport.OwnedPlayers)
             {
                 if (!_scheduled.Add($"vote:{snapshot.Question.InstanceId}:{snapshot.Phase}:{player.LocalSlot}")) continue;
-                GetTree().CreateTimer(snapshot.Phase == "AnswerReveal" ? 2.1 : 1.1).Timeout += () =>
-                { if (Live) _transport.ContinueMatch(snapshot.Phase == "Scoreboard" && snapshot.QuestionNumber == 2, player.LocalSlot); };
+                var hold = _args.Contains("--match-flow-idle-scoreboard") && snapshot.Phase == "Scoreboard" && snapshot.QuestionNumber == 1;
+                GetTree().CreateTimer(snapshot.Phase == "AnswerReveal" ? 2.1 : hold ? 15 : 1.1).Timeout += () =>
+                {
+                    if (!Live) return;
+                    GD.Print($"FLOW VOTE ms={Time.GetTicksMsec()} question={snapshot.QuestionNumber} phase={snapshot.Phase} slot={player.LocalSlot}");
+                    _transport.ContinueMatch(snapshot.Phase == "Scoreboard" && snapshot.QuestionNumber == 2, player.LocalSlot);
+                };
             }
         }
     }

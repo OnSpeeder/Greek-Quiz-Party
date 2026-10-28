@@ -10,6 +10,54 @@ public class ReconnectTests
     private sealed class Clock : IGameClock { public TimeSpan Now { get; set; } = TimeSpan.FromSeconds(100); }
 
     [Fact]
+    public void AbandonReservationRevokesAllSeatsAndIsSafeToRetry()
+    {
+        var clock = new Clock();
+        var question = new QuestionDefinition("one", "Question", ["yes", "no", "other", "last"], 0, "test", 1, "Fact");
+        var host = new LobbyHost("Room", "Host", clock, new[] { question }, new(1));
+        var client = new LobbyClientState();
+        client.Apply(host.Handle(2, client.BeginHello("Phone", "Android")).Messages[0].Json);
+        foreach (var packet in host.Handle(2, client.CreateAddLocal("Second", 1)!).Messages.Where(p => p.ConnectionId == 2)) client.Apply(packet.Json);
+        host.Handle(2, client.CreateReady(true)!); host.Handle(2, client.CreateReady(true, 1)!);
+        host.SetHostReady(true); host.Start(); Assert.True(host.BeginMatch());
+        var token = Assert.IsType<string>(client.ReconnectToken);
+        var abandoned = LobbyProtocol.Encode("AbandonReservation", host.SessionId, new AbandonReservationDto(token));
+        Assert.Contains("StillConnected", host.Handle(3, abandoned).Messages[0].Json);
+        Assert.True(host.Suspend(2));
+        var invalid = LobbyProtocol.Encode("AbandonReservation", host.SessionId, new AbandonReservationDto(new string('A', 64)));
+        Assert.Contains("ReconnectUnavailable", host.Handle(4, invalid).Messages[0].Json);
+        var accepted = LobbyProtocol.Encode("AbandonReservation", host.SessionId, new AbandonReservationDto(token));
+        Assert.Contains("\"Accepted\":true", host.Handle(4, accepted).Messages[0].Json);
+        Assert.Single(host.Snapshot().Players);
+        Assert.Equal(3, host.MatchSnapshot()!.Scores.Length);
+        var retry = LobbyProtocol.Encode("AbandonReservation", host.SessionId, new AbandonReservationDto(token));
+        Assert.Contains("\"Accepted\":true", host.Handle(5, retry).Messages[0].Json);
+        var reclaim = LobbyProtocol.Encode("Reconnect", host.SessionId, new ReconnectRequestDto(token));
+        Assert.Contains("ReconnectUnavailable", host.Handle(6, reclaim).Messages[0].Json);
+    }
+
+    [Fact]
+    public void FreshClientRestoresReservationWithoutPersistingOldPrivateSnapshots()
+    {
+        var clock = new Clock();
+        var question = new QuestionDefinition("one", "Question", ["yes", "no", "other", "last"], 0, "test", 1, "Fact");
+        var host = new LobbyHost("Room", "Host", clock, new[] { question }, new(1));
+        var original = new LobbyClientState();
+        original.Apply(host.Handle(2, original.BeginHello("Phone", "Android")).Messages[0].Json);
+        host.Handle(2, original.CreateReady(true)!); host.SetHostReady(true); host.Start(); Assert.True(host.BeginMatch());
+        Assert.True(host.Suspend(2));
+        var restored = new LobbyClientState();
+        Assert.False(restored.RestoreReconnect(Guid.Empty, original.PlayerId!.Value, original.ControllerId!.Value, original.ReconnectToken!));
+        Assert.True(restored.RestoreReconnect(host.SessionId, original.PlayerId.Value, original.ControllerId.Value, original.ReconnectToken!));
+        Assert.Null(restored.Snapshot); Assert.Null(restored.Match.Snapshot);
+        var packets = host.Handle(3, restored.BeginReconnect()!).Messages.Where(p => p.ConnectionId == 3).ToArray();
+        Assert.Equal(LobbyClientUpdate.Reconnected, restored.Apply(packets[0].Json));
+        foreach (var packet in packets.Skip(1)) restored.Apply(packet.Json);
+        Assert.Equal(original.PlayerId, restored.PlayerId);
+        Assert.Equal("QuestionActive", restored.Match.Snapshot!.Phase);
+    }
+
+    [Fact]
     public void ReconnectRestoresAllOwnedSeatsAndAcceptedAnswerWithoutExtendingDeadline()
     {
         var clock = new Clock();
@@ -44,7 +92,7 @@ public class ReconnectTests
         Assert.True(client.Match.Snapshot.IsResuming);
         clock.Now += TimeSpan.FromSeconds(5); Assert.True(host.PollMatch()); Deliver(host.BroadcastMatch(), 4);
         Assert.NotNull(client.MatchForSlot(1).CreateAnswer(1));
-        Assert.Contains("ReconnectUnavailable", host.Handle(5, request).Messages[0].Json);
+        Assert.Contains("StillConnected", host.Handle(5, request).Messages[0].Json);
     }
 
     [Fact]

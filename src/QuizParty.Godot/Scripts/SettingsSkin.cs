@@ -29,25 +29,14 @@ public static class SettingsSkin
         foreach (var type in new[] { "Button", "OptionButton", "CheckButton" })
             theme.SetConstant("icon_max_width", type, 32);
         if (preferences.HighContrast) return theme;
-        foreach (var type in new[] { "Button", "OptionButton" })
-        {
-            theme.SetColor("font_outline_color", type, new Color("201037"));
-            theme.SetConstant("outline_size", type, 4);
-            foreach (var (state, file) in new[] { ("normal", "normal"), ("hover", "hover"),
-                ("pressed", "active"), ("hover_pressed", "active"), ("disabled", "disabled") })
-            {
-                using var style = Slice("button-" + file, 24, 16);
-                theme.SetStylebox(state, type, style);
-            }
-        }
         theme.SetTypeVariation("SettingsTab", "Button");
-        using var tab = Slice("tab-normal", 24, 16);
-        using var activeTab = Slice("tab-active", 24, 16);
+        using var tab = QuizShowTheme.Card(new("20253e"), new("62668d"));
+        using var activeTab = QuizShowTheme.Card(new("27414a"), ShowtimeTheme.Cyan);
         theme.SetStylebox("normal", "SettingsTab", tab);
         theme.SetStylebox("pressed", "SettingsTab", activeTab);
         theme.SetStylebox("hover_pressed", "SettingsTab", activeTab);
         theme.SetTypeVariation("SettingsReset", "Button");
-        using var danger = Slice("button-danger", 24, 16);
+        using var danger = QuizShowTheme.Card(new("502538"), QuizShowTheme.AnswerColor(0));
         theme.SetStylebox("normal", "SettingsReset", danger);
         foreach (var state in new[] { "normal", "hover", "pressed", "hover_pressed" })
         {

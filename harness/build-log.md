@@ -982,3 +982,40 @@ Stop at benchmark review before producing the full experience.
   docs/LAN_UPDATES_DRAFT.md. The requested auto-update feature remains incomplete.
 - Existing Godot editor export teardown reports the known shutdown_adb_on_exit error;
   no gameplay test was bypassed. Build/test notes preserve prior unrelated changes.
+
+### 2026-10-28 — requested reconnect / scoreboard / settings plan
+
+- Saved and pushed existing work as `b80f43a` before beginning this request; untracked Python bytecode caches excluded.
+- Created `harness/phase-10-rejoin-scoreboard-settings-plan.md`. User confirmed default-on speed scoring, untimed +10% diminishing to zero at 30 seconds, and pending delivery of an offline departure.
+- Baseline `scripts/test-network-flow.ps1` returned failure (`Flow process failed`). All three process logs reached identical final scores and `FLOW REPLAY_PASS`; the three stderr files were empty. The failure reason remains unconfirmed. This quick-flow probe does not hold the scoreboard long enough to establish the reported idle disconnect or latency. No fix or visual sign-off is claimed.
+
+### 2026-10-28 — restart rejoin, scoreboard and device presentation
+
+- `scripts/test.ps1 -IncludeGodot`: passed 287 Core, 128 integration and 38
+  Godot tests; final Godot build succeeded. Runtime emitted the existing editor
+  shutdown_adb_on_exit / MCP socket-bind messages, expected invalid-preference
+  warnings, and an anchor-size warning in the scene test. No test was skipped.
+- Protocol v13 adds authenticated duplicate-safe abandonment and fresh-process
+  rejoin. Real ENet tests cover rejoin, revocation and queued delivery. On the
+  attached Android phone, a running three-player match was force-stopped and
+  relaunched; the prompt was visible, accepting rejoined the same live question,
+  and a second force-stop/relaunch followed by leave removed the phone seat on the
+  host. Captures: artifacts/restart-manual/prompt.png and resumed.png. A physical
+  offline queued-leave / Wi-Fi toggle remains unobserved.
+- Windows host/clients and Android/Windows flows passed with host playing and
+  with a host observer, long Greek question, staggered scores and 15 seconds idle
+  on scoreboard. The final vote-to-host-phase sample was about 50 ms. Neither the
+  reported long delay nor spontaneous reconnect occurred in these samples; their
+  cause is not established and no definitive fix is claimed. Longer sessions,
+  affected devices and their network conditions still need diagnosis.
+- Inspected actual Godot 1280x720 host and 420x900 controller views, plus Android
+  portrait long-question/facts/scoreboard. Sampled text and answer targets were
+  visible; extreme content falls back to scrolling. Inspected settings on host
+  and portrait with Studio/Neon and the Retro menu. This is not complete theme,
+  device, accessibility, touch or human artistic sign-off.
+- Windows and Android debug exports succeeded; Android debug build was installed
+  and tested on physical hardware. Debug exports are not release signing or store
+  publication. No question content changed, so QuestionValidator was not rerun.
+- Speed scoring defaults on; untimed bonus is at most 10%, falling to zero after
+  30 seconds of unpaused host time. Remaining scope and storage/network limitations
+  are documented in PRODUCT.md, GAME_DESIGN.md and NETWORK_PROTOCOL.md.

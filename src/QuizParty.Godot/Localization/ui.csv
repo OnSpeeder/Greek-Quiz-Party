@@ -73,6 +73,8 @@ MATCH_TITLE,Δοκιμαστικός γύρος,Practice round
 MATCH_FINAL,Τελικά αποτελέσματα,Final results
 MATCH_TIME,Χρόνος: {0} δευτ.,Time: {0} sec.
 MATCH_CORRECT,Σωστή απάντηση: {0},Correct answer: {0}
+MATCH_FUN_FACTS,Fun facts,Fun facts
+MATCH_DISCONNECTED_PLAYERS,Αποσυνδεδεμένοι: {0},Disconnected: {0}
 MATCH_SCORES,Βαθμολογία,Scoreboard
 MATCH_PLAYER_SCORE,{0}: {1} πόντοι,{0}: {1} points
 MATCH_SHOW_SCORES,Προβολή βαθμολογίας,Show scoreboard
@@ -119,7 +121,12 @@ DISCOVERY_STARTED,Παιχνίδι σε εξέλιξη,Match in progress
 DISCOVERY_FULL,Γεμάτη αίθουσα,Room full
 DISCOVERY_PIN,Απαιτείται PIN,PIN required
 DISCOVERY_OPEN,Ανοιχτή αίθουσα,Open room
-MATCH_DEPARTED,Αποσυνδέθηκαν: {0}. Οι αναπάντητες ερωτήσεις λήγουν στον χρόνο τους. Δεν επιτρέπεται επανείσοδος σε αυτό το παιχνίδι.,Disconnected: {0}. Missing answers time out normally. Rejoining this match is unavailable.
+MATCH_DEPARTED,Αποχώρησαν: {0}. Δεν μπορούν να επιστρέψουν σε αυτό το παιχνίδι.,Left the game: {0}. They cannot rejoin this match.
+REJOIN_PROMPT,Υπάρχει προηγούμενο παιχνίδι που μπορεί να συνεχίζεται. Θέλεις να επιστρέψεις;,Your previous game may still be running. Would you like to rejoin?
+REJOIN_YES,Επιστροφή στο παιχνίδι,Rejoin game
+REJOIN_NO,Αποχώρηση από το παιχνίδι,Leave game
+REJOIN_FAILED,Δεν ήταν δυνατή η επιστροφή. Δοκίμασε ξανά.,Could not open the game. Please try again.
+REJOIN_SAVE_FAILED,Δεν ήταν δυνατή η αποθήκευση της αποχώρησης. Δοκίμασε ξανά.,Could not save your departure. Please try again.
 MATCH_CAPACITY,Διαθέσιμες ελεγμένες ερωτήσεις: {0},Available reviewed questions: {0}
 LOBBY_STATUS_InsufficientContent,Δεν υπάρχουν αρκετές μοναδικές ελεγμένες ερωτήσεις για αυτή τη διάρκεια,Not enough unique reviewed questions for this length
 MATCH_WINNER,Νικητής: {0},Winner: {0}
@@ -317,6 +324,13 @@ SETUP_NONE,Απαλοιφή όλων,Clear all
 SETUP_LENGTH,Ερωτήσεις,Questions
 SETUP_PREVIEW,1,1
 SETUP_SECONDS,Δευτερόλεπτα,Seconds
+SETUP_SPEED_SCORING,Η ταχύτητα δίνει επιπλέον πόντους,Speed earns bonus points
+UI_AUTO_FIT_QUESTIONS,Αυτόματη προσαρμογή ερωτήσεων,Automatically fit questions
+UI_SETTINGS_THEME,Θέμα εμφάνισης,Appearance theme
+UI_THEME_SHOWTIME,Showtime,Showtime
+UI_THEME_STUDIO,Φωτεινό στούντιο,Bright studio
+UI_THEME_NEON,Νυχτερινό νέον,Midnight neon
+UI_THEME_RETRO,Ρετρό σκηνή,Retro stage
 SETUP_DIFFICULTY,Δυσκολία · πολλαπλή επιλογή,Difficulty · select any
 SETUP_LOW,"Χαμηλή
 ×1","Easy

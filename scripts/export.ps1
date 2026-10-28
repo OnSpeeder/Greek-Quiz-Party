@@ -21,6 +21,7 @@ $directBinary = $binary -replace '_console\.exe$', '.exe'
 if (Test-Path -LiteralPath $directBinary) { $binary = $directBinary }
 $process = Start-Process -FilePath $binary -ArgumentList $quotedArguments -WindowStyle Hidden `
     -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+$null = $process.Handle
 if (!$process.WaitForExit(600000)) {
     Stop-Process -Id $process.Id
     throw "$Platform export timed out after ten minutes. See $stdout and $stderr."

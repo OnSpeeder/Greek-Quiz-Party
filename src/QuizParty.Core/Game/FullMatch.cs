@@ -12,7 +12,8 @@ public sealed record MatchSettings
     public TimeSpan QuestionDuration { get; }
     public StrategyRules? Strategy { get; }
     public IReadOnlyList<int> Difficulties { get; }
-    public MatchSettings(int questionCount = 20, int questionSeconds = 20, StrategyRules? strategy = null, IEnumerable<int>? difficulties = null)
+    public bool SpeedScoring { get; }
+    public MatchSettings(int questionCount = 20, int questionSeconds = 20, StrategyRules? strategy = null, IEnumerable<int>? difficulties = null, bool speedScoring = true)
     {
         // One question remains an explicit content preview, not a full-game preset.
         if (questionCount is not (0 or 1 or 10 or 20 or 30 or 40 or 50)) throw new ArgumentOutOfRangeException(nameof(questionCount));
@@ -20,6 +21,7 @@ public sealed record MatchSettings
         QuestionCount = questionCount;
         QuestionDuration = TimeSpan.FromSeconds(questionSeconds);
         Strategy = strategy;
+        SpeedScoring = speedScoring;
         var levels = (difficulties ?? Enumerable.Range(1, 5)).Distinct().Order().ToArray();
         if (levels.Length == 0 || levels.Any(d => d is < 1 or > 5)) throw new ArgumentException("Select valid difficulty levels.", nameof(difficulties));
         Difficulties = Array.AsReadOnly(levels);
@@ -100,7 +102,7 @@ public sealed class FullMatch
         teams?.ValidateRoster(roster.Select(p => p.Id));
         _connected = roster.Select(p => p.Id).ToHashSet();
         _strategy = settings.Strategy is null ? null : new StrategySession(roster.Select(p => p.Id), random, _deck.Upcoming(settings.Unlimited ? _deck.Remaining : settings.QuestionCount), settings.Strategy, nextCard);
-        _game = new(GameAuthority.Host, roster, _clock, random, strategy: _strategy, scaleDifficulty: true);
+        _game = new(GameAuthority.Host, roster, _clock, random, strategy: _strategy, scaleDifficulty: true, speedScoring: settings.SpeedScoring);
         _eligible = Snapshot.Scores.Select(s => s.PlayerId).ToArray();
         _stats = _eligible.ToDictionary(id => id, id => new PlayerStatistics(id, 0, 0, 0, 0, 0, 0));
         _streaks = _eligible.ToDictionary(id => id, _ => 0);

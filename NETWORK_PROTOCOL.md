@@ -828,3 +828,30 @@ are converted to logical game time and no input is accepted while paused. After
 manual resume the host ignores disconnected seats in untimed answer completion,
 records unsubmitted disconnected players as wrong, and allows later token reclaim.
 The normal question/vote/card ownership and correctness privacy rules still apply.
+
+### Speed scoring compatibility review (2026-10-28)
+
+The host may disable speed bonuses, or apply an untimed bonus of up to 10% of
+the base score over 30 seconds of unpaused host time. The setting stays host-side
+and immutable during the match; packets and the existing maximum reveal/total
+bounds are unchanged. v12 clients already render host-supplied totals and accept
+all resulting values, so this scoring-only revision does not require a protocol
+version increment. The client never supplies elapsed time or calculates scores.
+
+## Protocol v13 — restart reconnection and departure (2026-10-28)
+
+All peers reject versions 12 and earlier. `AbandonReservation` carries a bounded
+session-bound reconnect token. Only a currently reserved device may be abandoned;
+connected devices return StillConnected. Abandonment removes all device-owned
+lobby seats while retaining the match score roster, revokes the reconnect token,
+and is duplicate-safe across connections for the lifetime of the match. Tokens
+are never included in broadcast snapshots or logs. Fresh client state can restore
+session/player/controller identifiers and the token and validate a new host
+snapshot before accepting it. A fresh client can retry while the old transport is
+still connected; the host distinguishes that case from an expired reservation.
+The device stores the endpoint and minimum session credentials in its private
+application data; no PIN, correct answer or private snapshot is saved. An explicit
+decline is persisted separately and retried until the host confirms it or the
+reservation no longer exists. Current LAN transport is not encrypted and does not
+authenticate the host cryptographically. Physical restart and offline-delivery
+verification remain release gates until observed on the target devices.

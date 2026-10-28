@@ -18,6 +18,7 @@ public sealed class GameSession
     private readonly IRandomSource _random;
     private readonly ScoreCalculator _scoring;
     private readonly bool _scaleDifficulty;
+    private readonly bool _speedScoring;
     private readonly Player[] _players;
     private readonly Dictionary<PlayerId, long> _scores;
     private readonly Dictionary<PlayerId, ReceivedAnswer> _answers = new();
@@ -31,7 +32,7 @@ public sealed class GameSession
     private readonly Dictionary<PlayerId, TimeSpan> _suspendedDeadlines = new();
 
     public GameSession(GameAuthority authority, IEnumerable<Player> players, IGameClock clock,
-        IRandomSource random, ScoringRules? scoringRules = null, StrategySession? strategy = null, bool scaleDifficulty = false)
+        IRandomSource random, ScoringRules? scoringRules = null, StrategySession? strategy = null, bool scaleDifficulty = false, bool speedScoring = true)
     {
         ArgumentNullException.ThrowIfNull(players);
         ArgumentNullException.ThrowIfNull(clock);
@@ -47,6 +48,7 @@ public sealed class GameSession
         _scoring = new(scoringRules ?? new ScoringRules());
         _strategy = strategy;
         _scaleDifficulty = scaleDifficulty;
+        _speedScoring = speedScoring;
         if ((long)MaximumRawScore(scoringRules) * (scaleDifficulty ? 2 : 1) * (strategy is null ? 1 : StrategyRules.MaxMultiplier) > int.MaxValue)
             throw new ArgumentOutOfRangeException(nameof(scoringRules));
         _scores = _players.ToDictionary(player => player.Id, _ => 0L);
@@ -154,9 +156,11 @@ public sealed class GameSession
         var view = question.Presentation;
         var duration = view.Deadline - view.StartedAt;
         var elapsed = answer.ReceivedAt - view.StartedAt;
-        var raw = view.Deadline == TimeSpan.MaxValue
+        var raw = !_speedScoring
             ? _scoring.Calculate(correct, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1))
-            : _scoring.Calculate(correct, elapsed > duration ? duration : elapsed, duration);
+            : view.Deadline == TimeSpan.MaxValue
+                ? _scoring.CalculateUntimed(correct, elapsed)
+                : _scoring.Calculate(correct, elapsed > duration ? duration : elapsed, duration);
         if (_scaleDifficulty) raw = DifficultyScore.Scale(raw, view.Difficulty);
         var points = _strategy?.Delta(playerId, correct, raw, answer.Confidence, _scores[playerId]) ?? raw;
         return new(playerId, answer.AnswerIndex, correct, _awardPoints ? points : 0, elapsed, answer.Confidence);
@@ -192,7 +196,11 @@ public sealed class GameSession
         var totals = bonuses.ToDictionary(p => p.Key, p => checked(_scores[p.Key] + p.Value));
         foreach (var pair in totals) _scores[pair.Key] = pair.Value;
     }
-    private static int MaximumRawScore(ScoringRules? rules) => checked((rules?.BaseCorrect ?? 500) + (rules?.TimeBonusMax ?? 500));
+    private static long MaximumRawScore(ScoringRules? rules)
+    {
+        var basis = rules?.BaseCorrect ?? 500;
+        return (long)basis + Math.Max(rules?.TimeBonusMax ?? 500, (basis + 9L) / 10);
+    }
 
     public GameError ShowScoreboard() => _machine.TryTransition(GameTrigger.ShowScoreboard);
     public GameError EndRound() => _machine.TryTransition(GameTrigger.EndRound);

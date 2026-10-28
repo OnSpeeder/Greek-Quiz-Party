@@ -30,7 +30,7 @@ public class MatchFlowSceneTests
             {
                 root.Size = size;
                 for (var i = 0; i < 8; i++) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
-                AssertThat(scroll.VerticalScrollMode).IsEqual(ScrollContainer.ScrollMode.Disabled);
+                AssertThat(scroll.VerticalScrollMode).IsEqual(ScrollContainer.ScrollMode.ShowNever);
                 var controllers = panel.GetNode<LocalControllerPanel>("QuestionLayout/HostRail/LocalControllers");
                 controllers.FindChildren("*", "Button", true, false).OfType<Button>().First(b => !b.Disabled).EmitSignal(Button.SignalName.Pressed);
                 for (var i = 0; i < 5; i++) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
@@ -46,15 +46,24 @@ public class MatchFlowSceneTests
             AssertThat(transport.MatchSnapshot!.Phase).IsEqual("AnswerReveal"); AssertThat(modal.Visible).IsFalse();
             await tree.ToSignal(tree.CreateTimer(1.3), global::Godot.Timer.SignalName.Timeout);
             AssertThat(modal.Visible).IsTrue();
-            AssertThat(modal.Body.GetChild<Label>(0).Text.Contains("fun fact")).IsTrue();
+            AssertThat(modal.Body.GetNode<Label>("CorrectAnswer").Text.Contains("Σωστό")).IsTrue();
+            AssertThat(modal.Body.GetNode<Label>("FunFactsHeading").Text).IsEqual("MATCH_FUN_FACTS");
+            AssertThat(modal.Body.GetNode<Label>("FunFacts").Text.Contains("fun fact")).IsTrue();
             var heldButton = modal.Actions.GetChildren().OfType<Button>().First();
             transport.ContinueMatch(localSlot: 1);
             AssertThat(modal.Actions.GetChildren().OfType<Button>().First() == heldButton).IsTrue();
             modal.Actions.GetChildren().OfType<Button>().First().EmitSignal(Button.SignalName.Pressed);
             AssertThat(transport.MatchSnapshot!.Phase).IsEqual("Scoreboard"); AssertThat(modal.Visible).IsFalse();
+            var standings = panel.GetNode<StandingsPanel>("Standings");
+            AssertThat(standings.GetNode<HBoxContainer>("Podium").GetChildCount()).IsEqual(3);
+            AssertThat(standings.GetNode<VBoxContainer>("Remaining").GetChildCount()).IsEqual(5);
             var scoreboardButton = panel.GetNode<GridContainer>("VoteActions").GetChildren().OfType<Button>().First();
             transport.ContinueMatch(localSlot: 1);
             AssertThat(panel.GetNode<GridContainer>("VoteActions").GetChildren().OfType<Button>().First() == scoreboardButton).IsTrue();
+            await tree.ToSignal(tree.CreateTimer(1.2), global::Godot.Timer.SignalName.Timeout);
+            var podium = standings.GetNode<HBoxContainer>("Podium");
+            AssertThat(podium.GetChildren().OfType<PanelContainer>().Count(card => card.GetNode<Label>("Content/Rank").Text == "#1")).IsEqual(1);
+            AssertThat(podium.GetChildren().OfType<PanelContainer>().Count(card => card.GetNode<Label>("Content/Rank").Text == "#2")).IsEqual(2);
             transport.AdvanceMatch(); AssertThat(transport.MatchSnapshot!.Phase).IsEqual("GameOver");
             panel.GetNode<Button>("Replay").EmitSignal(Button.SignalName.Pressed);
             AssertThat(transport.MatchSnapshot).IsNull(); AssertThat(transport.Snapshot!.Phase).IsEqual("Lobby");

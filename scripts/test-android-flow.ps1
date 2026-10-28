@@ -1,4 +1,5 @@
-param([Parameter(Mandatory=$true)][string]$HostAddress, [int]$Port = 19873)
+param([Parameter(Mandatory=$true)][string]$HostAddress, [int]$Port = 19873,
+    [switch]$IdleScoreboard, [switch]$HostPlays, [switch]$LongQuestions, [switch]$StaggerScores)
 . "$PSScriptRoot/common.ps1"
 if ($HostAddress -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw 'Supply the Windows LAN IPv4 address.' }
 $adb = Resolve-Tool 'adb' @("$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe")
@@ -9,13 +10,23 @@ $peers = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
 $fixture = 'files/phase04-test-args.json'
 try {
     & $adb shell am force-stop org.quizparty.game
-    $phoneArgs = @('--match-flow-client', '--match-flow-local', '--match-flow-name=Phone', "--match-flow-address=$HostAddress", "--match-flow-port=$Port", '--match-flow-capture=user://', '--match-ui-greek', '--match-ui-portrait')
+    $phoneArgs = @('--match-flow-client', '--match-flow-name=Phone', "--match-flow-address=$HostAddress", "--match-flow-port=$Port", '--match-flow-capture=user://', '--match-ui-greek', '--match-ui-portrait')
+    if (!$HostPlays) { $phoneArgs += '--match-flow-local' }
+    if ($HostPlays) { $phoneArgs += '--match-flow-host-plays' }
+    if ($IdleScoreboard) { $phoneArgs += '--match-flow-idle-scoreboard' }
+    if ($LongQuestions) { $phoneArgs += '--match-flow-long' }
+    if ($StaggerScores) { $phoneArgs += '--match-flow-stagger' }
     (ConvertTo-Json -InputObject $phoneArgs -Compress) | & $adb shell run-as org.quizparty.game tee $fixture | Out-Null
     Assert-Exit 'Write Android flow fixture'
     foreach ($role in @('host', 'remote')) {
         $flags = if ($role -eq 'host') { '--match-flow-host' } else { '--match-flow-client --match-flow-name=Windows' }
+        if ($HostPlays) { $flags += ' --match-flow-host-plays' }
+        if ($IdleScoreboard) { $flags += ' --match-flow-idle-scoreboard' }
+        if ($LongQuestions) { $flags += ' --match-flow-long' }
+        if ($StaggerScores) { $flags += ' --match-flow-stagger' }
         $peer = Start-Process $binary -WindowStyle Hidden -PassThru -ArgumentList "--resolution 1280x720 --language el_GR -- --ui-preview --ui-greek $flags --match-flow-port=$Port" `
             -RedirectStandardOutput "$output/$role.log" -RedirectStandardError "$output/$role-errors.log"
+        $null = $peer.Handle
         $peers.Add($peer)
         if ($role -eq 'host') {
             $deadline = [DateTime]::UtcNow.AddSeconds(25)
@@ -29,7 +40,7 @@ try {
     Assert-Exit 'Launch Android flow'
     $phonePid = (& $adb shell pidof -s org.quizparty.game).Trim()
     if (!$phonePid) { throw 'Android flow did not start.' }
-    $deadline = [DateTime]::UtcNow.AddSeconds(40)
+    $deadline = [DateTime]::UtcNow.AddSeconds(75)
     do {
         & $adb logcat "--pid=$phonePid" -d -v time | Set-Content -Encoding utf8 "$output/phone.log"
         $phoneLog = Get-Content "$output/phone.log" -Raw
@@ -46,12 +57,14 @@ try {
     }
     if (!$finals[0] -or ($finals | Select-Object -Unique).Count -ne 1) { throw 'Physical Android totals disagree.' }
     if ($phoneLog -match 'ERROR:|Unhandled exception|FATAL EXCEPTION') { throw 'Physical runtime errors observed.' }
+    if ($IdleScoreboard -and $phoneLog -match 'FLOW STATUS ms=\d+ Reconnecting') { throw 'Phone unexpectedly reconnected during the idle scenario.' }
     foreach ($name in @('controller', 'facts', 'scoreboard', 'final')) {
         $encoded = & $adb shell run-as org.quizparty.game base64 "files/$name.png"
         Assert-Exit "Read Android $name capture"
         [IO.File]::WriteAllBytes("$output/$name.png", [Convert]::FromBase64String(($encoded -join '')))
     }
-    Write-Output "PASS: physical Android two-slot client + Windows client + observer host; unanimous progress/end, identical totals and replay. $output"
+    $hostRole = if ($HostPlays) { 'playing host' } else { 'observer host' }
+    Write-Output "PASS: physical Android client + Windows client + $hostRole; unanimous progress/end, identical totals and replay. $output"
 } finally {
     & $adb shell run-as org.quizparty.game rm -f $fixture
     foreach ($peer in $peers) { if (!$peer.HasExited) { $peer.Kill() }; $peer.Dispose() }

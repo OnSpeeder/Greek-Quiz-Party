@@ -18,6 +18,16 @@ public sealed record ScoringRules
 
 public sealed class ScoreCalculator(ScoringRules rules)
 {
+    public int CalculateUntimed(bool isCorrect, TimeSpan elapsed)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(elapsed.Ticks);
+        if (!isCorrect) return 0;
+        var window = TimeSpan.FromSeconds(30).Ticks;
+        var remaining = Math.Max(0, window - Math.Min(elapsed.Ticks, window));
+        var bonus = decimal.Round((decimal)rules.BaseCorrect * remaining / (10m * window), 0, MidpointRounding.AwayFromZero);
+        return checked(rules.BaseCorrect + (int)bonus);
+    }
+
     public int Calculate(bool isCorrect, TimeSpan elapsed, TimeSpan duration)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(duration.Ticks);

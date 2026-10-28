@@ -7,9 +7,9 @@ namespace QuizParty.Core.Tests;
 
 public class MatchFlowTests
 {
-    private static FullMatch Match(SessionFixture f, int count = 0, int seconds = 0, int deck = 4) =>
+    private static FullMatch Match(SessionFixture f, int count = 0, int seconds = 0, int deck = 4, bool speedScoring = true) =>
         new(f.Players, f.Clock, new SeededRandomSource(5), Enumerable.Range(0, deck).Select(i =>
-            new QuestionDefinition("q" + i, "Question " + i, ["yes", "no", "other", "last"], 0, "test", 1, "Facts")), new(count, seconds));
+            new QuestionDefinition("q" + i, "Question " + i, ["yes", "no", "other", "last"], 0, "test", 1, "Facts")), new(count, seconds, speedScoring: speedScoring));
     private static void Reveal(SessionFixture f, FullMatch match)
     {
         var question = match.Snapshot.Question!;
@@ -26,6 +26,41 @@ public class MatchFlowTests
         Reveal(f, match);
         Assert.All(match.Snapshot.Reveal!.Players, p => Assert.Equal(500, p.Points));
         Assert.Equal(TimeSpan.MaxValue, match.Snapshot.Question!.Deadline);
+    }
+    [Theory]
+    [InlineData(0, true, 550)]
+    [InlineData(15, true, 525)]
+    [InlineData(30, true, 500)]
+    [InlineData(0, false, 500)]
+    public void UntimedSpeedSettingUsesHostElapsedTime(int seconds, bool enabled, int points)
+    {
+        var f = new SessionFixture(); var match = Match(f, speedScoring: enabled);
+        f.Clock.Advance(TimeSpan.FromSeconds(seconds)); Reveal(f, match);
+        Assert.All(match.Snapshot.Reveal!.Players, p => Assert.Equal(points, p.Points));
+    }
+    [Theory]
+    [InlineData(true, 875)]
+    [InlineData(false, 500)]
+    public void TimedSpeedSettingControlsTheExistingBonus(bool enabled, int points)
+    {
+        var f = new SessionFixture(); var match = Match(f, seconds: 20, speedScoring: enabled);
+        f.Clock.Advance(TimeSpan.FromSeconds(5)); Reveal(f, match);
+        Assert.All(match.Snapshot.Reveal!.Players, p => Assert.Equal(points, p.Points));
+    }
+    [Fact]
+    public void UntimedSpeedBonusExcludesTimePausedForDisconnect()
+    {
+        var f = new SessionFixture(); var match = Match(f);
+        f.Clock.Advance(TimeSpan.FromSeconds(5));
+        match.Disconnect(f.Players[2].Id);
+        f.Clock.Advance(TimeSpan.FromMinutes(10));
+        Assert.Equal(GameError.None, match.Resume());
+        var question = match.Snapshot.Question!;
+        foreach (var player in f.Players.Take(2))
+            Assert.Equal(SubmissionError.None, match.Submit(new(player.Id, question.InstanceId,
+                question.Answers.ToList().IndexOf("yes")), f.Clock.Now));
+        Assert.True(match.Poll()); Assert.True(match.Poll());
+        Assert.All(match.Snapshot.Reveal!.Players.Where(p => p.AnswerIndex is not null), p => Assert.Equal(542, p.Points));
     }
     [Fact]
     public void ContinueRequiresEveryConnectedSeatAndDuplicateOrStaleVotesCannotAdvanceAgain()

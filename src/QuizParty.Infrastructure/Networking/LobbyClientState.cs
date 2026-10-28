@@ -8,7 +8,9 @@ public sealed class LobbyClientState
 {
     private Guid _helloId;
     private Guid _reconnectId;
+    private Guid _resumeSession;
     public string? ReconnectToken { get; private set; }
+    public Guid ReconnectSession => _snapshot?.SessionId ?? _resumeSession;
     private bool _returnedToLobby;
     private Guid _roomRequest;
     private Guid _roomSession;
@@ -36,6 +38,7 @@ public sealed class LobbyClientState
     {
         _helloId = Guid.NewGuid();
         _snapshot = null;
+        _resumeSession = Guid.Empty; ReconnectToken = null;
         PlayerId = null;
         ControllerId = null;
         _pending.Clear();
@@ -46,9 +49,19 @@ public sealed class LobbyClientState
     }
     public string? BeginReconnect()
     {
-        if (_snapshot is null || ReconnectToken is not { Length: 64 } token) return null;
+        var session = _snapshot?.SessionId ?? _resumeSession;
+        if (session == Guid.Empty || ReconnectToken is not { Length: 64 } token) return null;
         _reconnectId = Guid.NewGuid();
-        return LobbyProtocol.Encode("Reconnect", _snapshot.SessionId, new ReconnectRequestDto(token), messageId: _reconnectId);
+        return LobbyProtocol.Encode("Reconnect", session, new ReconnectRequestDto(token), messageId: _reconnectId);
+    }
+
+    public bool RestoreReconnect(Guid session, Guid player, Guid controller, string token)
+    {
+        if (session == Guid.Empty || player == Guid.Empty || controller == Guid.Empty ||
+            token is not { Length: 64 } || !token.All(Uri.IsHexDigit)) return false;
+        _snapshot = null; _resumeSession = session; PlayerId = player; ControllerId = controller;
+        ReconnectToken = token; _reconnectId = Guid.Empty; _pending.Clear(); _matches.Clear();
+        _returnedToLobby = false; LastReason = "None"; return true;
     }
 
     public string BeginAccess(Guid session, string pin, string platform)
@@ -93,12 +106,12 @@ public sealed class LobbyClientState
         if (!LobbyProtocol.TryDecode(json, out var packet) || packet is null || packet.ProtocolVersion != LobbyProtocol.Version)
             return LobbyClientUpdate.Ignored;
         if (packet.MessageType == "ReconnectResult" && _reconnectId != Guid.Empty && packet.CorrelationId == _reconnectId &&
-            packet.SessionId == _snapshot?.SessionId && LobbyProtocol.TryPayload<ReconnectResultDto>(packet, out var reconnect) && reconnect is not null)
+            packet.SessionId == (_snapshot?.SessionId ?? _resumeSession) && LobbyProtocol.TryPayload<ReconnectResultDto>(packet, out var reconnect) && reconnect is not null)
         {
             _reconnectId = Guid.Empty;
             if (!reconnect.Accepted) { LastReason = BoundedReason(reconnect.Reason); return LobbyClientUpdate.ReconnectRejected; }
             if (reconnect.Reason != "None" || reconnect.Token is not { Length: 64 } token || !token.All(Uri.IsHexDigit) ||
-                !ValidSnapshot(reconnect.Lobby) || reconnect.Lobby!.SessionId != _snapshot.SessionId ||
+                !ValidSnapshot(reconnect.Lobby) || reconnect.Lobby!.SessionId != packet.SessionId ||
                 !reconnect.Lobby.Players.Any(p => p.PlayerId == PlayerId && (p.ControllerId ?? p.PlayerId) == ControllerId && p.LocalSlot == 0))
                 return LobbyClientUpdate.Ignored;
             ReconnectToken = token; _snapshot = reconnect.Lobby with { Players = reconnect.Lobby.Players.ToArray() };

@@ -457,3 +457,21 @@ bounded, hash-verified download foundation is implemented and tested. It is not
 wired to settings, startup, a publisher/server or either platform installer. No
 update-signing private key was generated. See docs/LAN_UPDATES_DRAFT.md; do not
 claim that users can configure or install updates yet.
+
+### Restart rejoin, presentation and scoring revision — 2026-10-28
+
+Protocol v13 persists a minimal device rejoin credential and endpoint once a match
+begins. An application restart offers to resume or permanently leave; an offline
+leave is queued until its original host acknowledges it. Disconnected seats and
+permanently departed seats are distinct, and a new hosted game takes precedence.
+Tickets are stored in the app's private local directory, not encrypted; LAN transport
+has no authenticated encryption or host migration. See NETWORK_PROTOCOL.md.
+
+Speed scoring is a default-on host setting; untimed correct answers receive up to
+10% extra during the first 30 seconds of unpaused host time. The local presentation
+adds bounded question text fitting, distinct facts, vote icons, a score podium,
+score/rank animations, redesigned device settings and three selectable palettes.
+The fit retains scrolling when content cannot fit at a readable minimum. The
+scoreboard idle-disconnect and slow-transition reports were not reproduced in local
+probes; no root cause or definitive fix is claimed. See the build log for evidence
+and remaining visual and runtime acceptance gaps.

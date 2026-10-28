@@ -21,7 +21,7 @@ public class SettingsPageTests
             AssertThat(PresentationPreferences.Load(path)).IsEqual(new PresentationPreferences(false, .25f));
             config.SetValue("ui", "language", 42); config.Save(path);
             AssertThat(PresentationPreferences.Load(path)).IsEqual(new PresentationPreferences(false, .25f));
-            var english = new PresentationPreferences(false, .25f, true, true, true, "en");
+            var english = new PresentationPreferences(false, .25f, true, true, true, "en", false, "retro");
             AssertThat(english.Save(path)).IsEqual(Error.Ok);
             AssertThat(PresentationPreferences.Load(path)).IsEqual(english);
         }
@@ -90,6 +90,13 @@ public class SettingsPageTests
             root.Size = new(1152, 648); await Frames(tree);
             AssertThat(resetAction.HasFocus()).IsTrue();
             panel.SelectSection(1);
+            var autoFit = (CheckButton)panel.FindChild("AutoFitQuestions", true, false);
+            AssertThat(autoFit.ButtonPressed).IsTrue(); autoFit.ButtonPressed = false;
+            AssertThat(PresentationPreferences.Load(path).AutoFitQuestions).IsFalse();
+            var theme = (OptionButton)panel.FindChild("ThemeChoice", true, false);
+            theme.EmitSignal(OptionButton.SignalName.ItemSelected, 2L);
+            AssertThat(PresentationPreferences.Load(path).ThemeId).IsEqual("neon");
+            AssertThat(root.GetNode<StageBackdrop>("StageBackdrop").ThemeId).IsEqual("neon");
             var language = (OptionButton)panel.FindChild("Language", true, false);
             language.GrabFocus(); language.EmitSignal(OptionButton.SignalName.ItemSelected, 1L);
             AssertThat(TranslationServer.GetLocale()).IsEqual("en");

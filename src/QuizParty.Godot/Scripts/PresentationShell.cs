@@ -59,7 +59,7 @@ public partial class PresentationShell : Control
             var scale = ResponsiveCanvas.PixelsPerUnit(GetWindow().Size, _root.GetViewportRect().Size);
             GD.Print($"PRESENTATION TOUCH dpi={DisplayServer.ScreenGetDpi()} scale={scale} window={GetWindow().Size} viewport={_root.GetViewportRect().Size} logicalMinimum={MinimumTarget} headerSize={_settings.Size} accessibilityBackend={AccessibilityServer.IsSupported()}");
         };
-        var backdrop = new StageBackdrop { Name = "StageBackdrop", HighContrast = Preferences.HighContrast };
+        var backdrop = new StageBackdrop { Name = "StageBackdrop", HighContrast = Preferences.HighContrast, ThemeId = Preferences.ThemeId };
         _root.AddChild(backdrop); _root.MoveChild(backdrop, 0);
         backdrop.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _audio = new AudioStreamPlayer { Name = "FeedbackAudio" };
@@ -99,6 +99,7 @@ public partial class PresentationShell : Control
             AddChild(_back); _back.Position = new(20, 12); _back.Pressed += NavigateBack;
         }
         StyleTree(_root);
+        foreach (var panel in _root.FindChildren("*", "", true, false).OfType<MatchPanel>()) panel.RefreshQuestionFit();
         if (_root is AppRoot home) home.FitTitle();
         GetTree().NodeAdded += OnNodeAdded;
         // Explicit debug-only capture options never persist or alter gameplay.
@@ -107,10 +108,12 @@ public partial class PresentationShell : Control
             var args = previewArgs;
             if (args.Any(a => a.StartsWith("--ui-", StringComparison.Ordinal)))
             {
+                var requestedTheme = args.FirstOrDefault(a => a.StartsWith("--ui-theme=", StringComparison.Ordinal))?["--ui-theme=".Length..];
                 Apply(Preferences with { LargeText = args.Contains("--ui-large-text") || Preferences.LargeText,
                     HighContrast = args.Contains("--ui-high-contrast") || Preferences.HighContrast,
                     ReducedMotion = args.Contains("--ui-reduced-motion") || Preferences.ReducedMotion,
-                    Sound = !args.Contains("--ui-mute") && Preferences.Sound }, persist: false);
+                    Sound = !args.Contains("--ui-mute") && Preferences.Sound,
+                    ThemeId = requestedTheme is not null && PresentationPreferences.ThemeIds.Contains(requestedTheme) ? requestedTheme : Preferences.ThemeId }, persist: false);
                 if (args.Contains("--ui-settings")) Callable.From(() =>
                 {
                     if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
@@ -131,6 +134,7 @@ public partial class PresentationShell : Control
                     _ = CaptureAsync(capture["--ui-capture=".Length..]);
             }
         }
+        AddChild(new RejoinCoordinator { Name = "RejoinCoordinator" });
     }
 
     private async Task CaptureAsync(string path)
@@ -413,8 +417,9 @@ public partial class PresentationShell : Control
         if (_exit is not null) { _exit.AccessibilityName = Tr("UI_EXIT"); _exit.TooltipText = Tr("UI_EXIT"); }
         _root.Theme = ShowtimeTheme.Create(Preferences, MinimumTarget);
         var backdrop = _root.GetNode<StageBackdrop>("StageBackdrop");
-        backdrop.HighContrast = preferences.HighContrast; backdrop.QueueRedraw();
+        backdrop.HighContrast = preferences.HighContrast; backdrop.ThemeId = preferences.ThemeId; backdrop.QueueRedraw();
         StyleTree(_root);
+        foreach (var panel in _root.FindChildren("*", "", true, false).OfType<MatchPanel>()) panel.RefreshQuestionFit();
         if (_root is AppRoot home) home.FitTitle();
         if (!Preferences.Sound || Preferences.Volume == 0) _audio.Stop();
         _audio.VolumeDb = Mathf.LinearToDb(Math.Max(.0001f, Preferences.Volume));

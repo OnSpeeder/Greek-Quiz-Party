@@ -382,3 +382,19 @@ manual quorum, unlimited reconnect delay, untimed completion and wrong results,
 plus invalidated votes on a second disconnect. ReconnectTests checks per-slot
 resume authorization, stale pause IDs, client reclaim after continuing, unchanged
 scores and token privacy. GdUnit checks ENet reconnect and countdown timing.
+
+## Restart rejoin and presentation revision (2026-10-28)
+
+ReconnectTests cover protocol v13 fresh-process identity reclaim, revoked and
+forged tokens, connected-seat rejection and duplicate-safe abandonment. JoinFlowTests
+exercise real ENet restart-equivalent transport reclaim, durable departure storage,
+and prompt-driven leave delivery. ScoreCalculatorTests and MatchFlowTests cover the
+speed option, untimed boundaries and paused host time. MatchFlowSceneTests cover
+podium overflow and ties; SettingsPageTests cover theme and fit preferences. The
+network-flow and Android-flow scripts accept -IdleScoreboard, -HostPlays,
+-LongQuestions and -StaggerScores for targeted diagnostics; these are opt-in fixtures.
+
+A physical Android app force-stop/relaunch was observed returning to the original
+question and a second restart/leave removed its seat on the running host. The offline
+queued-leave persistence/retry is covered by automated tests, not a physical outage.
+See harness/build-log.md for runtime captures and limitations.

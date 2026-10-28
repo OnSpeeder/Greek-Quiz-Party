@@ -41,6 +41,10 @@ public class MatchSetupTests
             root.GetNode<Button>("PresentationShell/LobbyActions/GameSetup").EmitSignal(Button.SignalName.Pressed);
             var panel = root.GetNode<MatchSetupPanel>("PresentationShell/MatchSetup");
             AssertThat(panel.Visible).IsTrue(); AssertThat(root.GetNode<Control>("Margin").Visible).IsFalse();
+            var speed = (CheckButton)panel.FindChild("SpeedScoring", true, false);
+            AssertThat(speed.ButtonPressed).IsTrue();
+            speed.ButtonPressed = false; AssertThat(transport.SpeedScoring).IsFalse();
+            speed.ButtonPressed = true; AssertThat(transport.SpeedScoring).IsTrue();
             var difficulty = (Button)panel.FindChild("DifficultyLOW", true, false); difficulty.ButtonPressed = false;
             AssertThat(transport.EnabledDifficulties.SetEquals([3, 4, 5])).IsTrue();
             panel.ShowPage("categories");

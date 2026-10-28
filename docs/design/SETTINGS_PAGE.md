@@ -246,3 +246,11 @@ Unavailable audio/haptic/shake features are omitted, not implemented as inert
 switches. This review candidate includes the supported settings, language,
 offline help/About, confirmed reset and artwork. Automated evidence and outstanding
 human acceptance are recorded in `../PHASE10_QA.md` and the Phase 10 build log.
+
+## 2026-10-28 device settings recomposition
+
+The supported controls were recomposed into a compact shared-theme header and
+section cards; the selector adds Showtime, Studio, Neon and Retro, and automatic
+question fitting defaults on. Existing controls, focus and stored preferences remain.
+See THEMES.md. The previous exhaustive human/device matrix above remains open;
+these changes do not turn earlier unchecked acceptance items into completed ones.

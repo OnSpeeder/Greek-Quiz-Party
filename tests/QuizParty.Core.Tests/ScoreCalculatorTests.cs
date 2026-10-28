@@ -6,6 +6,18 @@ namespace QuizParty.Core.Tests;
 public class ScoreCalculatorTests
 {
     [Theory]
+    [InlineData(0, 550)]
+    [InlineData(15, 525)]
+    [InlineData(30, 500)]
+    [InlineData(1000, 500)]
+    public void UntimedSpeedBonusIsSmallAndExpires(int seconds, int expected)
+    {
+        var calculator = new ScoreCalculator(new());
+        Assert.Equal(expected, calculator.CalculateUntimed(true, TimeSpan.FromSeconds(seconds)));
+        Assert.Equal(0, calculator.CalculateUntimed(false, TimeSpan.FromSeconds(seconds)));
+    }
+
+    [Theory]
     [InlineData(0, 1000)]
     [InlineData(1, 950)]
     [InlineData(5, 750)]

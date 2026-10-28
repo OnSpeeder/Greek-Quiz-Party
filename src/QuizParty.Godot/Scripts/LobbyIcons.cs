@@ -11,6 +11,11 @@ public static class LobbyIcons
         {
             "ready" => "<circle cx='32' cy='32' r='27' fill='#1AD598'/><path d='m17 32 10 10 20-22' stroke='#0F0A26'/>",
             "waiting" => "<circle cx='32' cy='32' r='27' stroke='#FFB800'/><path d='M23 18h18m-18 28h18M24 18c0 14 16 14 16 28M40 18c0 14-16 14-16 28' stroke='#FFB800'/>",
+            "continue" => "<circle cx='32' cy='32' r='25'/><path d='M17 32h29M35 21l11 11-11 11'/>",
+            "finish" => "<path d='M16 57V8m0 3c14-8 23 7 37-1v24c-14 8-23-7-37 1'/><path d='M24 10v12m12-9v12m-12 9V22m12 15V25M16 22c14-8 23 7 37-1'/>",
+            "questions" => "<rect x='10' y='7' width='44' height='50' rx='6'/><path d='M24 23c0-10 16-10 16 0 0 6-8 7-8 13m0 9v1'/>",
+            "time" => "<circle cx='32' cy='34' r='24'/><path d='M32 20v15l10 6M24 5h16'/>",
+            "difficulty" => "<path d='M8 53h48M12 47V35h10v12M27 47V24h10v23M42 47V12h10v35'/>",
             "rules" => "<path d='M7 12q13-6 25 2 12-8 25-2v41q-13-6-25 0-12-6-25 0ZM32 14v39M14 23h10m-10 9h10m16-9h10m-10 9h10'/>",
             "categories" or "geography" => "<circle cx='32' cy='32' r='26'/><ellipse cx='32' cy='32' rx='12' ry='26'/><path d='M7 25h50M7 39h50'/>",
             "greece" => "<path d='M9 58V7h47v34H9M9 18h47M9 29h47M9 40h47M9 7h20v22H9m10-22v22M9 18h20'/>",

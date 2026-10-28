@@ -12,6 +12,111 @@ public class JoinFlowTests
 {
     [TestCase]
     [RequireGodotRuntime]
+    public async Task RejectingSavedGameDeliversAQueuedDepartureToTheHost()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        var directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "quizparty-rejoin-test-" + Guid.NewGuid().ToString("N"));
+        using var hostRoot = new Control { Name = "DepartureHost" }; tree.Root.AddChild(hostRoot);
+        using var clientRoot = new Control { Name = "DepartureClient" }; tree.Root.AddChild(clientRoot);
+        using var managerRoot = new Control { Name = "DepartureManager" }; tree.Root.AddChild(managerRoot);
+        var hostApi = new SceneMultiplayer(); var clientApi = new SceneMultiplayer();
+        tree.SetMultiplayer(hostApi, hostRoot.GetPath()); tree.SetMultiplayer(clientApi, clientRoot.GetPath());
+        var hostLobby = new Node { Name = "Lobby" }; hostRoot.AddChild(hostLobby);
+        var clientLobby = new Node { Name = "Lobby" }; clientRoot.AddChild(clientLobby);
+        var host = new LobbyTransport { Name = "Transport", DiscoveryPort = 19962 }; hostLobby.AddChild(host);
+        var client = new LobbyTransport { Name = "Transport" }; clientLobby.AddChild(client);
+        try
+        {
+            host.UseSyntheticQuestions(1); host.StrategyEnabled = false;
+            AssertThat(host.Host("Room", "Host", 19961)).IsEqual(Error.Ok);
+            AssertThat(client.Join("127.0.0.1", "Phone", 19961)).IsEqual(Error.Ok);
+            await Wait(tree, () => client.LocalPlayerId is not null);
+            client.SetReady(true); host.SetReady(true);
+            await Wait(tree, () => host.Snapshot?.Players.All(p => p.Ready) == true);
+            host.StartGame(); await Wait(tree, () => client.MatchSnapshot is not null);
+            var ticket = client.CurrentTicket!; client.Stop(); await Wait(tree, () => host.MatchSnapshot?.IsPaused == true);
+            var store = new RejoinStore(directory); store.Save(ticket);
+            var manager = new RejoinCoordinator { Name = "Manager", EnableForTests = true, StoreOverride = store }; managerRoot.AddChild(manager);
+            var dialog = manager.GetNode<MatchDialog>("RejoinLayer/RejoinPrompt");
+            AssertThat(dialog.Visible).IsTrue();
+            dialog.Actions.GetNode<Button>("Leave").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(dialog.Visible).IsFalse(); AssertThat(store.Load()).IsNull();
+            await Wait(tree, () => host.Snapshot?.Players.Length == 1 && store.Pending().Count == 0, 10000);
+            AssertThat(host.MatchSnapshot!.Scores.Length).IsEqual(2);
+        }
+        finally
+        {
+            managerRoot.Free(); clientRoot.Free(); hostRoot.Free();
+            tree.SetMultiplayer(null!, new("/root/DepartureClient")); tree.SetMultiplayer(null!, new("/root/DepartureHost"));
+            clientApi.Dispose(); hostApi.Dispose();
+            if (System.IO.Directory.Exists(directory)) System.IO.Directory.Delete(directory, true);
+            await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task FreshTransportCanRejoinAndAnExplicitDepartureRevokesItsSeat()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var hostRoot = new Control { Name = "RestartHost" }; tree.Root.AddChild(hostRoot);
+        using var clientRoot = new Control { Name = "RestartClient" }; tree.Root.AddChild(clientRoot);
+        var hostApi = new SceneMultiplayer(); var clientApi = new SceneMultiplayer();
+        tree.SetMultiplayer(hostApi, hostRoot.GetPath()); tree.SetMultiplayer(clientApi, clientRoot.GetPath());
+        var host = new LobbyTransport { Name = "Transport", DiscoveryPort = 19952 }; hostRoot.AddChild(host);
+        var client = new LobbyTransport { Name = "Transport" }; clientRoot.AddChild(client);
+        try
+        {
+            host.UseSyntheticQuestions(1); host.StrategyEnabled = false;
+            AssertThat(host.Host("Room", "Host", 19951)).IsEqual(Error.Ok);
+            AssertThat(client.Join("127.0.0.1", "Phone", 19951)).IsEqual(Error.Ok);
+            await Wait(tree, () => client.LocalPlayerId is not null);
+            client.SetReady(true); host.SetReady(true);
+            await Wait(tree, () => host.Snapshot?.Players.All(p => p.Ready) == true);
+            host.StartGame(); await Wait(tree, () => client.MatchSnapshot is not null);
+            var ticket = client.CurrentTicket!; var original = client.LocalPlayerId;
+            AssertThat(ticket.IsValid).IsTrue(); client.Stop();
+            await Wait(tree, () => host.MatchSnapshot?.IsPaused == true);
+            client.Free();
+            var fresh = new LobbyTransport { Name = "Transport" }; clientRoot.AddChild(fresh);
+            AssertThat(fresh.Resume(ticket)).IsTrue();
+            await Wait(tree, () => fresh.MatchSnapshot is not null, 8000);
+            AssertThat(fresh.LocalPlayerId).IsEqual(original);
+            fresh.Stop(); await Wait(tree, () => host.MatchSnapshot?.DisconnectedPlayers?.Contains(original!.Value) == true);
+            var delivered = false;
+            fresh.StatusChanged += status => { if (status == "DepartureDelivered") delivered = true; };
+            AssertThat(fresh.DeliverDeparture(ticket)).IsEqual(Error.Ok);
+            await Wait(tree, () => delivered, 8000);
+            AssertThat(host.Snapshot!.Players.Length).IsEqual(1);
+            AssertThat(host.MatchSnapshot!.Scores.Length).IsEqual(2);
+        }
+        finally
+        {
+            clientRoot.Free(); hostRoot.Free(); tree.SetMultiplayer(null!, new("/root/RestartClient")); tree.SetMultiplayer(null!, new("/root/RestartHost"));
+            clientApi.Dispose(); hostApi.Dispose(); await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void RejoinTicketSurvivesReloadAndDepartureIsDurable()
+    {
+        var directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "quizparty-rejoin-test-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var ticket = new RejoinTicket(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new string('A', 64), "127.0.0.1", 7777);
+            var store = new RejoinStore(directory); store.Save(ticket);
+            AssertThat(new RejoinStore(directory).Load()).IsEqual(ticket);
+            store.QueueDeparture(ticket);
+            AssertThat(store.Load()).IsNull(); AssertThat(new RejoinStore(directory).Pending().Single()).IsEqual(ticket);
+            store.QueueDeparture(ticket); AssertThat(store.Pending().Count).IsEqual(1);
+            store.RemovePending(ticket); AssertThat(store.Pending().Count).IsEqual(0);
+        }
+        finally { if (System.IO.Directory.Exists(directory)) System.IO.Directory.Delete(directory, true); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
     public async Task HostSeesPauseAndCanResumeAfterPlayerDisconnects()
     {
         var tree = (SceneTree)Engine.GetMainLoop();
@@ -37,6 +142,9 @@ public class JoinFlowTests
             AssertThat(modal.Body.GetNode<Label>("Message").Text.Contains("Phone")).IsTrue();
             modal.Actions.GetNode<Button>("HostResume").EmitSignal(Button.SignalName.Pressed);
             AssertThat(host.MatchSnapshot!.IsPaused).IsFalse(); AssertThat(modal.Visible).IsFalse();
+            var status = hostRoot.GetNode<Label>("Margin/Scroll/Content/MatchPanel/Departures");
+            AssertThat(status.Visible).IsTrue(); AssertThat(status.Text.Contains("Phone")).IsTrue();
+            AssertThat(status.Text.Contains("Αποσυνδεδεμένοι") || status.Text.Contains("Disconnected")).IsTrue();
         }
         finally
         {

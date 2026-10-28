@@ -18,8 +18,10 @@ public static class ShowtimeTheme
     {
         var theme = new Theme { DefaultFontSize = preferences.LargeText ? 27 : 22,
             DefaultFont = QuizShowTheme.DisplayFont() };
-        var surface = new Color(preferences.HighContrast ? "080a16" : "242441");
-        var border = preferences.HighContrast ? Ink : new Color("62668d");
+        var surface = new Color(preferences.HighContrast ? "080a16" : preferences.ThemeId switch
+        { "studio" => "14384b", "neon" => "391b4a", "retro" => "483020", _ => "242441" });
+        var border = preferences.HighContrast ? Ink : new Color(preferences.ThemeId switch
+        { "studio" => "5b9eb0", "neon" => "b36dbb", "retro" => "bd9562", _ => "62668d" });
         foreach (var type in new[] { "Button", "OptionButton", "CheckButton", "CheckBox" })
         {
             theme.SetStylebox("normal", type, Panel(surface, border));

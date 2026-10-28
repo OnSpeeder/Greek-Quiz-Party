@@ -4,8 +4,10 @@ namespace QuizParty.Presentation;
 
 /// <summary>Device-local presentation only; never influences rules or host clocks.</summary>
 public sealed record PresentationPreferences(bool Sound = true, float Volume = 0.65f,
-    bool ReducedMotion = false, bool LargeText = false, bool HighContrast = false, string Language = "el_GR")
+    bool ReducedMotion = false, bool LargeText = false, bool HighContrast = false, string Language = "el_GR", bool AutoFitQuestions = true,
+    string ThemeId = "showtime")
 {
+    public static IReadOnlyList<string> ThemeIds { get; } = Array.AsReadOnly(new[] { "showtime", "studio", "neon", "retro" });
     public static PresentationPreferences Load(string path = "user://presentation.cfg")
     {
         using var config = new ConfigFile();
@@ -19,8 +21,10 @@ public sealed record PresentationPreferences(bool Sound = true, float Volume = 0
         var text = config.GetValue("ui", "large_text", defaults.LargeText);
         var contrast = config.GetValue("ui", "high_contrast", defaults.HighContrast);
         var language = config.GetValue("ui", "language", defaults.Language);
+        var autoFit = config.GetValue("ui", "auto_fit_questions", defaults.AutoFitQuestions);
+        var theme = config.GetValue("ui", "theme", defaults.ThemeId);
         if (sound.VariantType != Variant.Type.Bool || motion.VariantType != Variant.Type.Bool ||
-            text.VariantType != Variant.Type.Bool || contrast.VariantType != Variant.Type.Bool ||
+            text.VariantType != Variant.Type.Bool || contrast.VariantType != Variant.Type.Bool || autoFit.VariantType != Variant.Type.Bool ||
             volume.VariantType is not (Variant.Type.Float or Variant.Type.Int) ||
             !float.IsFinite(volume.AsSingle()) || volume.AsSingle() is < 0 or > 1)
         { GD.PushWarning("Presentation settings invalid; using defaults."); return defaults; }
@@ -28,7 +32,9 @@ public sealed record PresentationPreferences(bool Sound = true, float Volume = 0
             ? language.AsString() : defaults.Language;
         if (language.VariantType != Variant.Type.String || locale != language.AsString())
             GD.PushWarning("Presentation language invalid; using Greek.");
-        return new(sound.AsBool(), volume.AsSingle(), motion.AsBool(), text.AsBool(), contrast.AsBool(), locale);
+        var themeId = theme.VariantType == Variant.Type.String && ThemeIds.Contains(theme.AsString()) ? theme.AsString() : defaults.ThemeId;
+        if (theme.VariantType != Variant.Type.String || themeId != theme.AsString()) GD.PushWarning("Presentation theme invalid; using Showtime.");
+        return new(sound.AsBool(), volume.AsSingle(), motion.AsBool(), text.AsBool(), contrast.AsBool(), locale, autoFit.AsBool(), themeId);
     }
 
     public Error Save(string path = "user://presentation.cfg")
@@ -40,6 +46,8 @@ public sealed record PresentationPreferences(bool Sound = true, float Volume = 0
         config.SetValue("ui", "large_text", LargeText);
         config.SetValue("ui", "high_contrast", HighContrast);
         config.SetValue("ui", "language", Language);
+        config.SetValue("ui", "auto_fit_questions", AutoFitQuestions);
+        config.SetValue("ui", "theme", ThemeId);
         return config.Save(path);
     }
 }

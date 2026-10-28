@@ -33,10 +33,13 @@ public partial class MatchPanel : VBoxContainer
     private Guid _revealQuestion;
     private bool _revealReady;
     private ShowtimeStageView _stage = null!;
+    private Texture2D _continueIcon = null!;
+    private Texture2D _finishIcon = null!;
 
     public override void _Ready()
     {
         AddThemeConstantOverride("separation", 6);
+        _continueIcon = LobbyIcons.Texture("continue"); _finishIcon = LobbyIcons.Texture("finish");
         _revealDialog = new MatchDialog { Name = "RevealDialog" };
         var dialogs = new CanvasLayer { Name = "MatchDialogs", Layer = 20 }; AddChild(dialogs);
         dialogs.AddChild(_revealDialog);
@@ -135,6 +138,7 @@ public partial class MatchPanel : VBoxContainer
     {
         var wide = Size.X >= 700;
         var host = _transport?.IsHost == true;
+        if (_progress is not null) QuizShowTheme.SetFontSize(_progress, wide ? 22 : 16);
         if (_questionLayout is not null)
         {
             _questionLayout.Visible = _snapshot is not null && _snapshot.Phase != "GameOver";
@@ -172,8 +176,13 @@ public partial class MatchPanel : VBoxContainer
     {
         if (_snapshot is null) return;
         var departed = _snapshot.Scores.Where(s => !lobby.Players.Any(p => p.PlayerId == s.PlayerId)).Select(s => s.DisplayName).ToArray();
-        _departures.Text = departed.Length == 0 ? "" : string.Format(Tr("MATCH_DEPARTED"), string.Join(", ", departed));
-        _departures.Visible = departed.Length > 0;
+        var disconnected = _snapshot.Scores.Where(s => _snapshot.DisconnectedPlayers?.Contains(s.PlayerId) == true &&
+            lobby.Players.Any(p => p.PlayerId == s.PlayerId)).Select(s => s.DisplayName).ToArray();
+        var messages = new List<string>();
+        if (disconnected.Length > 0) messages.Add(string.Format(Tr("MATCH_DISCONNECTED_PLAYERS"), string.Join(", ", disconnected)));
+        if (departed.Length > 0) messages.Add(string.Format(Tr("MATCH_DEPARTED"), string.Join(", ", departed)));
+        _departures.Text = string.Join("\n", messages);
+        _departures.Visible = messages.Count > 0;
     }
 
     private void OnInputChanged(string reason)
@@ -188,7 +197,8 @@ public partial class MatchPanel : VBoxContainer
         Visible = true;
         if (GetParent() is VBoxContainer content && content.GetParent() is ScrollContainer scroll)
         {
-            scroll.VerticalScrollMode = _transport?.IsHost == true && snapshot.Phase is "QuestionActive" or "QuestionLocked" or "AnswerReveal" ? ScrollContainer.ScrollMode.Disabled : ScrollContainer.ScrollMode.ShowNever;
+            // Keep a scrolling fallback for content that cannot fit at a readable size.
+            scroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
             if (_snapshot?.Phase != snapshot.Phase || _snapshot.Question.InstanceId != snapshot.Question.InstanceId)
                 scroll.ScrollVertical = 0;
             content.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -202,6 +212,7 @@ public partial class MatchPanel : VBoxContainer
             foreach (var answer in _answers) QuizShowTheme.SetFontSize(answer, 26);
         }
         _snapshot = snapshot;
+        _standings.Observe(snapshot);
         UpdateAnswerLayout();
         _stage.Render(snapshot.Scores, phaseChanged && snapshot.Phase == "AnswerReveal", snapshot.AnsweredPlayers);
         _controllers.Refresh();
@@ -253,7 +264,7 @@ public partial class MatchPanel : VBoxContainer
         UpdatePauseDialog();
         Part<Label>("Scores").Visible = false;
         _standings.Visible = snapshot.Phase is "Scoreboard" or "RoundEnd" or "GameOver";
-        if (_standings.Visible) _standings.Render(snapshot.Scores, snapshot.SessionId);
+        if (_standings.Visible) _standings.Render(snapshot);
         _statistics.Visible = _showStatistics && snapshot.Phase == "GameOver";
         _statisticsToggle.Visible = snapshot.Phase == "GameOver";
         _newParty.Visible = snapshot.Phase == "GameOver";
@@ -329,15 +340,22 @@ public partial class MatchPanel : VBoxContainer
         var untimed = _snapshot.Question.DeadlineTicks == long.MaxValue;
         Part<Label>("Meta/Countdown").Text = active
             ? untimed ? Tr("SETUP_UNTIMED").ToString() : string.Format(Tr(seconds <= 5 ? "UI_CLOCK_URGENT" : "UI_CLOCK"), (int)Math.Ceiling(seconds)) : "";
-        Part<Label>("Meta/Countdown").AccessibilityName = string.Format(Tr("MATCH_TIME"), (int)Math.Ceiling(seconds));
+        Part<Label>("Meta/Countdown").AccessibilityName = untimed ? Tr("SETUP_UNTIMED").ToString() : string.Format(Tr("MATCH_TIME"), (int)Math.Ceiling(seconds));
         _timeBar.Visible = active && !untimed && _transport?.IsHost != true;
         Part<Label>("Meta/Countdown").Visible = active;
         var deadline = _controllers.Open ? _snapshot.Private?.DeadlineTicks ?? _snapshot.Question.DeadlineTicks : _snapshot.Question.DeadlineTicks;
-        _timeBar.MaxValue = Math.Max(1, TimeSpan.FromTicks(deadline - _snapshot.Question.StartedAtTicks).TotalSeconds);
-        _timeBar.Value = Math.Max(0, seconds);
+        _timeBar.MaxValue = untimed ? 1 : Math.Max(1, TimeSpan.FromTicks(deadline - _snapshot.Question.StartedAtTicks).TotalSeconds);
+        _timeBar.Value = untimed ? 0 : Math.Max(0, seconds);
     }
 
     private bool _fitQueued;
+    private bool _fitReset = true;
+    private Vector2 _fitViewport;
+    public void RefreshQuestionFit()
+    {
+        _fitReset = true;
+        QueueHostFit();
+    }
     private void QueueHostFit()
     {
         if (_fitQueued || !IsInsideTree()) return;
@@ -347,10 +365,21 @@ public partial class MatchPanel : VBoxContainer
     private void FitHostQuestion()
     {
         _fitQueued = false;
-        if (_transport?.IsHost != true || _snapshot?.Phase is not ("QuestionActive" or "QuestionLocked" or "AnswerReveal") ||
+        if (_snapshot?.Phase is not ("QuestionActive" or "QuestionLocked" or "AnswerReveal") ||
             GetParent()?.GetParent() is not ScrollContainer scroll) return;
-        var large = PresentationShell.For(this)?.Preferences.LargeText == true;
+        var preferences = PresentationShell.For(this)?.Preferences;
+        var large = preferences?.LargeText == true;
         var question = Part<Label>("Question");
+        if (_fitReset || !_fitViewport.IsEqualApprox(scroll.Size))
+        {
+            _fitReset = false; _fitViewport = scroll.Size;
+            QuizShowTheme.SetFontSize(question, 30);
+            foreach (var answer in _answers) QuizShowTheme.SetFontSize(answer, 26);
+            if (preferences?.AutoFitQuestions == false) return;
+            QueueHostFit();
+            return;
+        }
+        if (preferences?.AutoFitQuestions == false) return;
         var overflow = GetCombinedMinimumSize().Y > scroll.Size.Y + 1;
         if (!overflow) return;
         var changed = false;
@@ -416,10 +445,26 @@ public partial class MatchPanel : VBoxContainer
     }
     private void ShowReveal()
     {
-        if (_revealDialog.Body.GetChildCount() == 0)
+        if (_revealDialog.Body.GetChildCount() == 0 && _snapshot?.Reveal is { } reveal)
         {
-            var text = new Label { Text = Part<Label>("Reveal").Text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-            _revealDialog.Body.AddChild(text); QuizShowTheme.SetFontSize(text, 24);
+            var answer = new Label { Name = "CorrectAnswer", Text = string.Format(Tr("MATCH_CORRECT"), _snapshot.Question.Answers[reveal.CorrectAnswerIndex]),
+                AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            answer.AddThemeColorOverride("font_color", ShowtimeTheme.Gold);
+            QuizShowTheme.SetFontSize(answer, 26); _revealDialog.Body.AddChild(answer);
+            if (!string.IsNullOrWhiteSpace(reveal.Explanation))
+            {
+                var explanation = new Label { Name = "Explanation", Text = reveal.Explanation, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+                QuizShowTheme.SetFontSize(explanation, 24); _revealDialog.Body.AddChild(explanation);
+            }
+            if (reveal.FunFacts is { Length: > 0 })
+            {
+                var heading = new Label { Name = "FunFactsHeading", Text = "MATCH_FUN_FACTS", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+                heading.AddThemeColorOverride("font_color", ShowtimeTheme.Cyan);
+                QuizShowTheme.SetFontSize(heading, 25); _revealDialog.Body.AddChild(heading);
+                var facts = new Label { Name = "FunFacts", Text = string.Join("\n", reveal.FunFacts.Select(f => "• " + f)),
+                    AutowrapMode = TextServer.AutowrapMode.WordSmart };
+                QuizShowTheme.SetFontSize(facts, 22); _revealDialog.Body.AddChild(facts);
+            }
         }
         RenderVotes(_revealDialog.Actions, true);
         _revealDialog.Show();
@@ -463,17 +508,26 @@ public partial class MatchPanel : VBoxContainer
                     ActionButton(player.DisplayName + " · " + Tr("MATCH_END_GAME"), true, player.LocalSlot, _snapshot.EndVotes?.Contains(player.PlayerId) == true);
             }
         }
-        UpdateLabel("ContinueCount", string.Format(Tr("MATCH_VOTES"), _snapshot.ContinueVotes?.Length ?? 0,
-            _transport.Snapshot?.Players.Length ?? _snapshot.Scores.Length));
+        var eligibleCount = _transport.Snapshot?.Players.Count(p => _snapshot.DisconnectedPlayers?.Contains(p.PlayerId) != true)
+            ?? _snapshot.Scores.Count(p => _snapshot.DisconnectedPlayers?.Contains(p.PlayerId) != true);
+        UpdateCount("ContinueCount", _continueIcon, "MATCH_VOTES", _snapshot.ContinueVotes?.Length ?? 0, eligibleCount);
         if (!reveal && _snapshot.TotalQuestions == 0 && _snapshot.Phase == "Scoreboard")
-            UpdateLabel("EndCount", string.Format(Tr("MATCH_END_VOTES"), _snapshot.EndVotes?.Length ?? 0,
-                _transport.Snapshot?.Players.Length ?? _snapshot.Scores.Length));
+            UpdateCount("EndCount", _finishIcon, "MATCH_END_VOTES", _snapshot.EndVotes?.Length ?? 0, eligibleCount);
         foreach (var child in container.GetChildren().Where(c => !used.Contains(c))) { container.RemoveChild(child); child.QueueFree(); }
-        void UpdateLabel(string name, string text)
+        void UpdateCount(string name, Texture2D icon, string key, int count, int total)
         {
-            var label = container.GetNodeOrNull<Label>(name);
-            if (label is null) { label = new Label { Name = name, AutowrapMode = TextServer.AutowrapMode.WordSmart }; container.AddChild(label); }
-            label.Text = text; used.Add(label);
+            var row = container.GetNodeOrNull<HBoxContainer>(name);
+            if (row is null)
+            {
+                row = new HBoxContainer { Name = name, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                row.AddChild(new TextureRect { Texture = icon, CustomMinimumSize = new(28, 28), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                    StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore });
+                var label = new Label { Name = "Count", AutowrapMode = TextServer.AutowrapMode.Off };
+                label.SetMeta("presentation_no_wrap", true); row.AddChild(label); container.AddChild(row);
+            }
+            var text = string.Format(Tr(key), count, total);
+            row.GetNode<Label>("Count").Text = $"{count}/{total}";
+            row.TooltipText = text; row.AccessibilityName = text; used.Add(row);
         }
         void ClearActions()
         {

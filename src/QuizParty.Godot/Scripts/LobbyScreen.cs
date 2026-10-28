@@ -292,6 +292,11 @@ public partial class LobbyScreen : Control
         GetNode<ScrollContainer>("Margin/Scroll").ScrollVertical = 0;
     }
 
+    public void ResumePrevious(RejoinTicket ticket)
+    {
+        if (!_transport.Resume(ticket)) GD.PushWarning("Saved rejoin ticket was invalid.");
+    }
+
     public void OpenMatchPage(string page)
     {
         if (_transport.MatchSnapshot is not null || _transport.Snapshot?.Phase != "Lobby" ||

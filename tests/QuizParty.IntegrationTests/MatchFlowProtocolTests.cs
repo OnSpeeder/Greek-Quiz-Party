@@ -59,10 +59,10 @@ public class MatchFlowProtocolTests
         Assert.Equal("QuestionActive", host.MatchSnapshot()!.Phase); Assert.Empty(host.MatchSnapshot()!.ContinueVotes!);
     }
     [Fact]
-    public void VersionNineCannotJoinVersionTen()
+    public void OlderVersionCannotJoinCurrentVersion()
     {
         var host = new LobbyHost("Room", "Host", new Clock());
-        var request = new LobbyClientState().BeginHello("Old", "Android").Replace("\"ProtocolVersion\":10", "\"ProtocolVersion\":9");
+        var request = new LobbyClientState().BeginHello("Old", "Android").Replace($"\"ProtocolVersion\":{LobbyProtocol.Version}", $"\"ProtocolVersion\":{LobbyProtocol.Version - 1}");
         var reply = host.Handle(2, request);
         Assert.True(reply.DisconnectSender); Assert.Contains("IncompatibleVersion", reply.Messages[0].Json);
     }

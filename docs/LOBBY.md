@@ -15,7 +15,16 @@
 Back closes the PIN popup or returns identity selection to rooms. From rooms it
 returns home. Input fields stay scrollable above Android keyboard in either
 orientation. Manual IP is intentionally absent from the normal menu; the retained
-transport API and test probes still support it. All peers require production v7.
+transport API and test probes still support it. All peers require production v12.
+
+During a match, a disconnected device automatically retries while the player waits.
+The host reserves its players for the match and pauses play. Connected players may
+unanimously continue, or the host may continue immediately; disconnected seats can
+still rejoin later. When all missing players return during a pause, a five-second
+countdown precedes resumption. Answer deadlines do not run during the pause. If the
+host closes the room, connected clients return home; an unreachable host cannot be
+distinguished from an outage, so the player can cancel the retry and leave. The game
+uses LAN and does not migrate the host.
 
 The sections below retain earlier implementation/test history. References to a
 visible manual-IP control or entering the name before discovery describe the old
@@ -38,6 +47,7 @@ From the main menu choose **Παιχνίδι στο τοπικό δίκτυο / 
 5. Start continues into the configured match. See [Match guide](MATCH.md).
    The retained lobby-only regression explicitly stops at GameStarting.
 
+Historical Phase 07 behavior (superseded during matches by the flow above):
 Disconnect closes the current session on that device. Back returns to the main
 menu and closes its peer. A host exit disconnects everyone. A departing client
 has all of its local players removed from the lobby roster. A lobby rejoin gets a fresh identity and must

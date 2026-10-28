@@ -55,11 +55,11 @@ Client input is a request, never truth.
 
 ## 4. Protocol version
 
-Current production version (approved participation revision):
+Current production version (match reconnection revision):
 
-`ProtocolVersion = 7`
+`ProtocolVersion = 12`
 
-See the v7 contract below. Earlier phase contracts are retained as history.
+See the v12 contract below. Earlier phase contracts are retained as history.
 
 Phase 03 used version 1; Phases 04–05 used version 2; Phase 06 used version 3.
 Version 4 adds the optional PIN field to ClientHello and LAN discovery. Strict
@@ -262,20 +262,26 @@ PIN is an admission convenience, not strong cryptographic security.
 
 ## 14. Reconnect
 
-Optional v1 flow:
+During an active match the host reserves all seats on a disconnected device for
+the life of the match, and the client retries until it reconnects or the user leaves.
+The host pauses game time immediately. All connected seats may vote to resume, or
+the host may override. If all disconnected seats return while paused, the host
+begins a five-second countdown and then resumes. A player who returns after an
+override rejoins the current state without pausing it again. A disconnected seat
+does not block questions once the host or connected players have resumed, including
+untimed questions; an unanswered disconnected seat is recorded as wrong.
+Successful reclaim binds the original players and local slots to the new connection
+and sends fresh per-seat authoritative snapshots. The host retains accepted answers
+and rejects second submissions. Pause duration does not consume answer time.
 
-Phase 07 currently uses the permitted graceful-disconnect strategy instead of
-enabling this optional token flow. See its implemented contract below. Do not
-send or accept reconnect tokens until an explicitly reviewed implementation exists.
-
-1. Host marks player disconnected, keeps slot for grace period.
-2. Client reconnects with opaque token.
-3. Host validates token/session and connection status.
-4. Host binds new connection to same player.
-5. Host sends authoritative snapshot.
-6. Host rejects duplicate answer submissions already processed.
-
-Tokens must be unpredictable enough for LAN session use and must not be logged.
+Admission supplies a random 256-bit token privately to each device. Reconnect
+requires that token, the session ID, a currently reserved disconnected device,
+and a compatible protocol. Tokens stay in memory, are not included in public
+snapshots or logs, and are invalid after match end or host shutdown.
+They are bearer credentials on an unencrypted trusted LAN, not an Internet
+authentication mechanism. Intentional host closure sends a reliable notice before
+closing; clients return home. After a silent host failure the client keeps trying
+until the player leaves. Reconnection cannot migrate or recreate a stopped host.
 
 ## 15. Idempotency
 
@@ -356,7 +362,7 @@ messages are ignored. Full/started entries are visible but disabled. Metadata is
 untrusted; host handshake still validates PIN/capacity/state. No latency/ping
 claim or Internet discovery is implemented.
 
-Graceful-disconnect policy: lobby departure removes seat/readiness/cache; a new
+Historical v4 graceful-disconnect policy (superseded for active matches by v11): lobby departure removes seat/readiness/cache; a new
 join gets a new PlayerId and starts unready, even with the same name/address.
 Once started, every re-entry is rejected GameStarted. A departed match player's
 confirmed answer/score remains, and unsubmitted answers expire under the original
@@ -796,3 +802,29 @@ when the bounded cache fills; stale IDs are still rejected by Core. Generic
 lobby mutation receipts retain their original lifetime bounds/disconnect policy.
 The 720-question regression crosses 4,320 match requests on one connection.
 Rate, packet/depth, ownership and manual-IP transport checks remain in force.
+
+## Protocol v11 — match reconnection (2026-10-28)
+
+All peers must upgrade together; v10 and earlier are rejected. ServerHello adds
+ReconnectToken. Reconnect carries only the session-bound token; ReconnectResult
+returns acceptance, the token, and the current lobby snapshot to that connection.
+The host follows with private per-local-slot match projections. A reservation
+cannot be reclaimed while connected, after expiry, for another session, or by an
+invalid token. Receipt caches are per connection: question-bound answer/card/vote
+rules remain authoritative and reject duplicate effects across a new connection.
+The transport and manual-IP entry point remain intact. A host-owned RoomClosed RPC
+is sent reliably before graceful shutdown. Host loss without this notice uses the
+bounded retry path. See section 14 for timing, privacy and LAN limitations.
+
+## Protocol v12 — disconnect pause (2026-10-28)
+
+All peers upgrade together; version 11 is rejected. MatchSnapshot adds IsPaused,
+PauseId, IsResuming, ResumeRemainingTicks, DisconnectedPlayers and ResumeVotes.
+ResumeVote names the current unpredictable PauseId and owned LocalSlot, and is
+validated/deduplicated by the host. A new disconnect invalidates old pause votes.
+The host alone controls frozen logical game time, phase transitions and the five
+second countdown; clients interpolate only presentation. Host receive timestamps
+are converted to logical game time and no input is accepted while paused. After
+manual resume the host ignores disconnected seats in untimed answer completion,
+records unsubmitted disconnected players as wrong, and allows later token reclaim.
+The normal question/vote/card ownership and correctness privacy rules still apply.

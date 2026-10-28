@@ -397,3 +397,63 @@ bounds. Header buttons reserve their actual touch size and separate inset space.
 - docs/EXPORT_GUIDE.el.md gives debug/release Windows/APK and editor AAB steps.
   export.ps1 -Release writes a separate Release folder. Android release signing
   remains user-owned; no production credentials/key were created or committed.
+
+## Living-show creative direction and first benchmark — 2026-10-26
+
+User delegated creative direction and approved the previously proposed one-scene
+quality benchmark before expanding welcome/lobby/finale. Plan:
+`harness/phase-10-living-show-plan.md`; direction: `docs/design/LIVING_SHOW.md`.
+Preserve cast identity; choose expressive 2D cutout theatre. Blue is a knowing
+presenter; Orange is a resilient optimist. Greek teasing targets the moment.
+
+Implemented separate debug-accessible benchmark, not live authoritative results.
+Two generated RGBA puppet atlases, six parts and three expressions each, native
+answer shutter/text, authored 5.2-second AnimationPlayer performance, original
+synthesized stereo sting. Existing theme/juice/backdrop reused. No new packages.
+Replay cancels old playback; reduced motion resolves immediately; local sound
+controls respect preferences without persisting overrides. Home launch flag is
+consumed once so Home can return normally. Full cast/match integration and the
+welcome/lobby/finale roadmap remain after benchmark artistic review.
+
+Full tests revealed a delayed MatchPanel callback accessing a freed scene; added
+an instance-valid guard, retaining the existing question/phase guard. The final
+full test log no longer contains that exception. Existing shutdown diagnostic
+and expected invalid-settings warnings remain documented. No test weakened.
+No Android device was connected. Export success is not hardware or artistic approval.
+
+### Match interaction and reconnect revision — 2026-10-28
+
+User requested isolated facts scrolling, safer answer scrolling, reliable near-simultaneous
+Continue voting, in-match reconnect and client navigation home on host departure.
+Implementation plan: harness/phase-10-reconnect-interaction-plan.md. Production protocol
+is v11. In-memory, session-bound device tokens reserve all local seats for 60 seconds;
+the game continues without extending host deadlines and disconnected seats leave the vote
+quorum. A graceful host closure sends a notice; a silent outage times out. No Internet
+matchmaking, host migration, persistence across app restarts or physical Wi-Fi toggle
+verification is claimed. See NETWORK_PROTOCOL.md and TESTING.md.
+
+Modal scrolling now suppresses the underlying page drag handler, preserves the fact body
+and does not reset page position for same-phase updates. Vote controls persist across
+same-phase snapshots so an in-progress touch survives another player's vote. Thresholded
+drag suppresses answer-button activation. A final match snapshot no longer gains revisions
+solely from departures. The legacy one-question process probe now uses its synthetic
+fixture instead of assuming a production question always contains a particular answer.
+
+### Disconnect pause and LAN update foundation — 2026-10-28
+
+User requested automatic pause on disconnect, unanimous connected-seat/host resume,
+five-second countdown after all disconnected seats return, untimed missing-seat
+completion and match-lifetime reconnect. Plan: harness/phase-10-pause-lan-update-plan.md.
+Protocol v12 adds host-authoritative pause IDs, votes, disconnected IDs and countdown.
+The Core game clock excludes pause and countdown from response time and scoring;
+reconnect after an override does not interrupt an already running game. A new loss
+cancels a countdown and invalidates old votes. Once an untimed question closes,
+a disconnected unanswered seat counts as wrong even if it rejoins before reveal.
+The client retries indefinitely while the user waits; a silent host loss is not
+distinguishable from an outage and the reconnect dialog offers a way to leave.
+
+LAN automatic installation is NOT complete. Only a standalone signed-manifest and
+bounded, hash-verified download foundation is implemented and tested. It is not
+wired to settings, startup, a publisher/server or either platform installer. No
+update-signing private key was generated. See docs/LAN_UPDATES_DRAFT.md; do not
+claim that users can configure or install updates yet.

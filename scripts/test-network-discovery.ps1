@@ -74,6 +74,7 @@ try {
     Wait-Log $server 'host-match' 'HostListening'
     $departing = Start-Lan 'departing' '--lan-join=127.0.0.1 --lan-name=Phone --lan-leave-question'
     Assert-ExitCode $departing 'departing' 0
+    Wait-Log $server 'host-match' 'LAN MATCH_PAUSED'
     $returning = Start-Lan 'returning' '--lan-join=127.0.0.1 --lan-name=Phone'
     Assert-ExitCode $returning 'returning' 2
     if (!(Select-String "$output/returning.log" -Pattern 'STATUS GameStarted' -Quiet)) { throw 'Match re-entry unexpectedly allowed.' }

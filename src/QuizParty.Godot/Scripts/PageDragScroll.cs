@@ -14,10 +14,11 @@ public partial class PageDragScroll : Node
 
     public override void _Input(InputEvent input)
     {
-        if (!_scroll.IsVisibleInTree()) { Reset(); return; }
+        if (!_scroll.IsVisibleInTree() || GetTree().GetNodesInGroup("match_modal").OfType<Control>()
+            .Any(modal => modal.IsVisibleInTree() && !modal.IsAncestorOf(_scroll))) { Reset(); return; }
         if (input is InputEventScreenTouch touch)
         {
-            if (touch.Pressed && _touch < 0) { _touch = touch.Index; Begin(touch.Position); }
+            if (touch.Pressed && _touch < 0 && Begin(touch.Position)) _touch = touch.Index;
             else if (!touch.Pressed && touch.Index == _touch) { End(); _touch = -1; }
         }
         else if (input is InputEventScreenDrag drag && drag.Index == _touch) Move(drag.Position);
@@ -27,10 +28,11 @@ public partial class PageDragScroll : Node
         }
         else if (_touch < 0 && input is InputEventMouseMotion motion && _origin is not null) Move(motion.Position);
     }
-    private void Begin(Vector2 position)
+    private bool Begin(Vector2 position)
     {
-        if (!_scroll.GetGlobalRect().HasPoint(position) || _scroll.GetVScrollBar().MaxValue <= _scroll.Size.Y) return;
+        if (!_scroll.GetGlobalRect().HasPoint(position) || _scroll.GetVScrollBar().MaxValue <= _scroll.Size.Y) return false;
         _origin = position; _initial = _scroll.ScrollVertical; _dragging = false;
+        return true;
     }
     private void Move(Vector2 position)
     {

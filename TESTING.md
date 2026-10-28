@@ -1,5 +1,18 @@
 # TESTING.md
 
+## Living-show benchmark (2026-10-26)
+
+`LivingShowTests` verifies replay resets, timed reveal/joke ordering, immediate
+reduced-motion completion, silent playback, cleanup, transparent puppet gutters
+and audio duration. `scripts/capture-living-show.ps1` captures four real viewport
+beats; use 1280×720, 420×900, `-LargeText`, and `-ReducedMotion`. Inspect the images.
+`scripts/run-living-show.ps1` opens the interactive scene. Debug home also exposes
+`SHOW_OPEN`. The preview is fictional and never connects to a match.
+
+Device entry uses `--match-show-preview` through the existing debug-only private
+argument fixture. Preserve existing device fixtures. Physical Android and human
+animation/audio approval remain required; desktop portrait captures are not substitutes.
+
 ## Presentation revision checks (2026-10-25)
 
 GdUnit verifies Greek glyph coverage in the shipped display font, larger-text
@@ -134,9 +147,9 @@ Use at least one physical Android device and preferably multiple hardware profil
 - observed source address, deduplication, 32-room cap and injected-clock expiry;
 - reply rate limits, missing/wrong/malformed PIN and success without PIN leakage;
 - per-address/global PIN limits across reconnects, duplicate receipts not charged;
-- fresh lobby rejoin, active-match re-entry rejection and old-answer replay;
+- fresh lobby rejoin, token-bound active-match reclaim, expiry and old-answer replay;
 - confirmed score retained after departure, unanswered seats expire normally;
-- host loss clearly closes clients; match resumption is not enabled.
+- host closure returns clients home; a silent loss retries until the player leaves.
 
 ### Cards
 
@@ -351,3 +364,21 @@ connections, including two owned local slots, unanimous Continue/End and replay.
 It captures actual host/portrait controller views. scripts/test-android-flow.ps1
 -HostAddress <Windows-LAN-IP> exercises that flow on physical Android. All probes
 are explicitly opt-in debug fixtures and confer no question editorial approval.
+
+## Reconnection and match interaction checks (2026-10-28)
+
+ReconnectTests covers reserved multiple seats, accepted-answer protection, original
+host deadline, invalid/duplicate tokens and expiry. JoinFlowTests exercises ENet
+interruption, identity reclaim and graceful host closure. MatchSetupTests checks
+thresholded dragging and isolation of the modal from the underlying page;
+MatchFlowSceneTests verifies vote buttons survive same-phase snapshot updates in
+both reveal and scoreboard. Physical Android Wi-Fi interruption and actual touch
+usability remain required acceptance checks.
+
+## Disconnect pause revision (2026-10-28)
+
+MatchPauseTests uses an injected clock to check frozen question time, countdown,
+manual quorum, unlimited reconnect delay, untimed completion and wrong results,
+plus invalidated votes on a second disconnect. ReconnectTests checks per-slot
+resume authorization, stale pause IDs, client reclaim after continuing, unchanged
+scores and token privacy. GdUnit checks ENet reconnect and countdown timing.

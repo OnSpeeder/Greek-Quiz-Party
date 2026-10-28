@@ -1,5 +1,22 @@
 # Presentation and device settings
 
+## Living-show art benchmark — 2026-10-26
+
+Creative direction and future welcome/lobby/reveal/finale treatments are defined
+in `docs/design/LIVING_SHOW.md`. First implementation is the separate
+`Scenes/LivingShowBenchmark.tscn`, available from debug home via `SHOW_OPEN`.
+It contains a fictional answer and two reconstructed blue/orange cutout puppets,
+three expressions each, independent head/arm/body joints, an authored 5.2-second
+AnimationPlayer clip, a two-leaf answer shutter and original synthesized sound.
+It reuses ShowtimeTheme/QuizShowTheme/ShowtimeJuice and the existing backdrop.
+
+No match DTO or authoritative rule changes. The preview does not map these two
+actors to actual winners/losers; that integration follows artistic review. Local
+preview motion/mute controls do not persist preferences. Source prompts and audio
+provenance are in `Art/LivingShow/PROVENANCE.md`. Native text uses localization keys.
+Reduced motion exposes the final answer/joke immediately and cancels choreography.
+Replaying cancels prior motion/audio; exiting frees scene-owned performance state.
+
 The first mobile candidate failed the user's visual QA: it looked like an app,
 not a game. The replacement follows Cartoon Showtime with illustrated portrait
 and landscape stages, expressive characters, bold type and framed answer panels.

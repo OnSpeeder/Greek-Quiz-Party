@@ -34,6 +34,18 @@ public partial class AppRoot : Control
         FitTitle();
         var join = new Button { Name = "JoinParty", Text = "UI_JOIN_PARTY", CustomMinimumSize = new(0, 72) };
         content.AddChild(join); join.Pressed += () => OpenLobby("join");
+        // Explicit preview entry while the character-performance benchmark awaits review.
+        if (OS.IsDebugBuild())
+        {
+            var show = new Button { Name = "LivingShowPreview", Text = "SHOW_OPEN", CustomMinimumSize = new(0, 64) };
+            content.AddChild(show);
+            show.Pressed += () => GetTree().ChangeSceneToFile("res://Scenes/LivingShowBenchmark.tscn");
+            if (MatchProcessProbe.LaunchArguments().Contains("--match-show-preview") && !GetTree().HasMeta("living_show_launch_consumed"))
+            {
+                GetTree().SetMeta("living_show_launch_consumed", true);
+                Callable.From(() => GetTree().ChangeSceneToFile("res://Scenes/LivingShowBenchmark.tscn")).CallDeferred();
+            }
+        }
         PresentationShell.For(this)?.Fade(GetNode<Label>("Center/Frame/Content/Title"));
         if (OS.IsDebugBuild() && MatchProcessProbe.LaunchArguments().Any(a =>
             a == "--match-flow-host" || a == "--match-flow-client" || a == "--match-ui-create" || a == "--match-ui-create-identity" || a.StartsWith("--match-ui-lobby-page=", StringComparison.Ordinal)))

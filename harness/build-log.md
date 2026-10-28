@@ -891,3 +891,94 @@ status. Windows release startup exited0 with clean runtime stderr. Final Windows
 debug/release and Android debug exports completed; final APK installed and the
 physical flow repeated on the exact final build. Export teardown warning remains
 the documented engine diagnostic, not a runtime failure. git diff --check passes.
+
+## 2026-10-26 — living-show benchmark
+
+Implemented the approved first quality benchmark and documented the full creative
+direction. No live scoring/network/content changes, no publish or commit.
+
+Observed verification:
+- Godot production build: zero warnings/errors.
+- Full Godot tests: 32 passed (artifacts/living-show-tests-final.log).
+- After final preview navigation/mute refinements: 5 focused presentation/navigation
+  tests passed (artifacts/living-show-focused-final.log), then production rebuilt.
+- Initial full run exposed ObjectDisposedException in existing delayed MatchPanel
+  reveal callback. Added IsInstanceValid guard; final full run has no such exception.
+- Actual viewport captures inspected at 1440x900, 1280x720, 420x900 larger text,
+  and 420x900 reduced motion. Wide footer overflow corrected; characters enlarged;
+  Greek accents and all controls readable in inspected captures. Puppet joins remain
+  concealed and expressions clearly differ. Human aesthetic approval not claimed.
+- Reduced-motion capture shows final answer/joke from first frame. Animated captures
+  show anticipation, reveal, joke and settled states in order; runtime stderr empty.
+- Both RGBA atlases inspected: 1536x1024; zero-alpha 44.2% blue/47.8% orange.
+- Windows and Android debug exports pass. Packaged Windows benchmark ran and captured
+  all four beats with empty runtime stderr: artifacts/living-show/packaged/.
+- Export staging validates 14,760 reviewed entries; existing content warnings retained.
+  No content or review flags changed. Known Godot EditorSettings shutdown diagnostic
+  remains in import/export logs.
+- Godot movie writer recorded 210 frames at 30fps with audio; Blender encoded MP4
+  using its existing video pipeline. artifacts/living-show/benchmark.mp4.
+- Audio generated as original stereo PCM, 5.2s, peak -3dBFS. Human listening/mix
+  approval remains open; no claim of recorded instruments or voice acting.
+- adb devices showed no attached hardware. Physical Android test not performed.
+- git diff --check passed. Export-induced lockfile target changes restored; pre-existing
+  untracked tools/generators remains untouched.
+
+Review entry: debug home button “Η παρέα ζωντανεύει!” or scripts/run-living-show.ps1.
+Stop at benchmark review before producing the full experience.
+
+## 2026-10-28 — match interaction and reconnect
+
+- Protocol v11; random per-device in-memory token, 60-second match reservation/retry,
+  original slot/identity and host-owned snapshot restoration, no extended deadlines,
+  guarded re-submission and explicit graceful host-close notification. See phase
+  context and NETWORK_PROTOCOL.md for limits and user-visible behavior.
+- Local .NET verification: 273 Core and 117 integration tests passed; three reconnect
+  protocol tests include token rejection, reserved slots, deadline/accepted-answer
+  preservation, stale connection rejection, expiry and stable final revision.
+- Godot full suite: 34 passed. Subsequent targeted scene run: six passed, including
+  actual ENet interruption/reclaim/host close, modal isolation, mouse/touch drag,
+  and preserving vote button instances in both match phases. A first run exposed a
+  lost host-close message; fixed by allowing a bounded ENet flush and reran green.
+  The Godot editor still reports its existing shutdown_adb_on_exit teardown error
+  and MCP socket-bind diagnostics; the GdUnit scene runtime reported no test failures.
+- Process checks: network-flow source and packaged; discovery; lobby; one-question
+  source/packaged match; 20-question source match passed. The earlier one-question
+  run exposed an obsolete production-question assumption in the bot and the 20-question
+  run exposed a final revision change on departure; fixed without weakening assertions
+  and reran. The one-question bot now uses its explicit synthetic fixture.
+- Exported Windows and Android debug builds; installed on attached physical Android.
+  Android two-slot client plus Windows client/host passed match flow and replay with
+  identical authoritative totals. Inspected Godot desktop 1280x720 and 420x900 fact
+  captures, plus physical portrait facts/scoreboard: Greek text and buttons were
+  visible without clipping in these sampled scenes. Captures are in
+  artifacts/match-flow-process/ and artifacts/match-flow-android/.
+- Not observed: a physical Wi-Fi interruption/rejoin, human touch usability, or
+  release/phase-wide visual and accessibility sign-off. Automated touch events and
+  local ENet interruption do not substitute for these. The game requires the host
+  and its LAN address to remain reachable; reconnect does not recreate a stopped host.
+
+## 2026-10-28 — disconnect pause and LAN updater foundation
+
+- MatchPauseTests and ReconnectTests exercise frozen host time and points, unanimous
+  and host resume, pause-ID validation, repeated disconnect, countdown, untimed wrong
+  outcomes and long-delayed identity reclaim. Local verification: 276 Core and 126
+  integration tests passed; 35 GdUnit tests passed, including real ENet disconnection,
+  pause UI host override, reclaim and the five-second countdown.
+- Real multi-process network-flow and discovery passed. The older discovery fixture
+  was updated to observe the new pause then explicitly use the host override; its
+  pre-existing scoring and re-entry assertions remain. First run exposed a lobby-only
+  shutdown regression; fixed by tracking whether the client actually saw a match.
+- Inspected wide host 1280x720 and portrait client 420x900 Godot captures at
+  artifacts/pause-review/. Initial captures showed a severely narrow vertical button;
+  fixed expansion and recaptured; the resulting Greek text and actions were visible.
+- Exported Windows and Android debug builds and verified a real Android/Windows match
+  flow on the attached phone. Real Wi-Fi interruption, physical touch usability and
+  human visual approval remain unobserved. Android auto-update is not claimed.
+- LAN updater groundwork verifies signed bounded manifests and SHA-256 downloads,
+  including rejection of changed data. It is not connected to application startup,
+  device settings, an update server, Windows replacement or Android installer. No
+  signing secrets were created. Further work and platform limits are recorded in
+  docs/LAN_UPDATES_DRAFT.md. The requested auto-update feature remains incomplete.
+- Existing Godot editor export teardown reports the known shutdown_adb_on_exit error;
+  no gameplay test was bypassed. Build/test notes preserve prior unrelated changes.

@@ -40,13 +40,28 @@ public sealed class FullMatch
     private readonly QuestionDeck _deck;
     private readonly MatchSettings _settings;
     private readonly Func<QuestionInstanceId> _nextInstance;
+    private readonly Func<Guid> _nextPause;
     private readonly Dictionary<PlayerId, PlayerStatistics> _stats;
     private readonly Dictionary<PlayerId, int> _streaks;
     private PlayerId[] _eligible;
     private PlayerId[] _winners = [];
     private readonly StrategySession? _strategy;
-    private readonly IGameClock _clock;
+    private readonly PausableGameClock _clock;
+    private readonly IGameClock _wallClock;
     private readonly HashSet<PlayerId> _connected;
+    private readonly HashSet<PlayerId> _missingAtClose = [];
+    private readonly HashSet<PlayerId> _resumeVotes = [];
+    private TimeSpan? _resumeAt;
+    public Guid PauseId { get; private set; }
+    public bool IsPaused => _clock.IsPaused;
+    public bool IsCountingDown => IsPaused && _resumeAt is not null;
+    public TimeSpan GameNow => _clock.Now;
+    public TimeSpan ResumeRemaining
+    {
+        get { var remaining = _resumeAt is { } at ? at - _wallClock.Now : TimeSpan.Zero; return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero; }
+    }
+    public IReadOnlyList<PlayerId> DisconnectedPlayers => _stats.Keys.Where(p => !_connected.Contains(p)).ToArray();
+    public IReadOnlyList<PlayerId> ResumeVotes => _resumeVotes.ToArray();
     private bool _selectionSwapped;
     private string[]? _swapCategories;
     private readonly TeamRoster? _teams;
@@ -70,20 +85,22 @@ public sealed class FullMatch
     public FullMatch(IEnumerable<Player> players, IGameClock clock, IRandomSource random,
         IEnumerable<QuestionDefinition> questions, MatchSettings settings,
         IReadOnlyCollection<string>? categories = null, Func<QuestionInstanceId>? nextInstance = null, Func<Guid>? nextCard = null,
-        TeamRoster? teams = null)
+        TeamRoster? teams = null, Func<Guid>? nextPause = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
         _deck = new(questions, random, categories, settings.Difficulties);
         if (_deck.Remaining < Math.Max(1, settings.QuestionCount)) throw new ArgumentException("Insufficient unique questions.", nameof(questions));
         _nextInstance = nextInstance ?? (() => new(Guid.NewGuid()));
-        _clock = clock;
+        _nextPause = nextPause ?? Guid.NewGuid;
+        _wallClock = clock;
+        _clock = new(clock);
         var roster = players.ToArray();
         _teams = teams;
         teams?.ValidateRoster(roster.Select(p => p.Id));
         _connected = roster.Select(p => p.Id).ToHashSet();
         _strategy = settings.Strategy is null ? null : new StrategySession(roster.Select(p => p.Id), random, _deck.Upcoming(settings.Unlimited ? _deck.Remaining : settings.QuestionCount), settings.Strategy, nextCard);
-        _game = new(GameAuthority.Host, roster, clock, random, strategy: _strategy, scaleDifficulty: true);
+        _game = new(GameAuthority.Host, roster, _clock, random, strategy: _strategy, scaleDifficulty: true);
         _eligible = Snapshot.Scores.Select(s => s.PlayerId).ToArray();
         _stats = _eligible.ToDictionary(id => id, id => new PlayerStatistics(id, 0, 0, 0, 0, 0, 0));
         _streaks = _eligible.ToDictionary(id => id, _ => 0);
@@ -94,7 +111,8 @@ public sealed class FullMatch
     public SubmissionError Submit(AnswerSubmission answer, TimeSpan hostReceivedAt)
     {
         if (!_connected.Contains(answer.PlayerId)) return SubmissionError.UnknownPlayer;
-        var error = _game.SubmitAnswer(answer, hostReceivedAt);
+        if (IsPaused) return SubmissionError.InvalidState;
+        var error = _game.SubmitAnswer(answer, _clock.At(hostReceivedAt));
         if (error == SubmissionError.None) Revision++;
         return error;
     }
@@ -102,10 +120,33 @@ public sealed class FullMatch
     public void Disconnect(PlayerId player)
     {
         if (!_connected.Remove(player)) return;
+        if (Snapshot.Phase == GamePhase.GameOver) return;
+        _clock.Pause(); _resumeAt = null; _resumeVotes.Clear(); PauseId = _nextPause();
         _game.Disconnect(player);
         _continueVotes.Remove(player); _endVotes.Remove(player);
         Revision++;
+    }
+    public void Reconnect(PlayerId player)
+    {
+        if (!_stats.ContainsKey(player) || !_connected.Add(player)) return;
+        if (Snapshot.Phase == GamePhase.GameOver) return;
+        _game.Reconnect(player);
+        if (IsPaused && _stats.Keys.All(_connected.Contains)) _resumeAt = _wallClock.Now + TimeSpan.FromSeconds(5);
+        Revision++;
+    }
+    public GameError ResumeVote(PlayerId player, Guid pauseId)
+    {
+        if (!IsPaused || pauseId == Guid.Empty || PauseId != pauseId || !_connected.Contains(player) || IsCountingDown) return GameError.InvalidTransition;
+        if (_resumeVotes.Add(player)) Revision++;
+        if (_connected.Count > 0 && _connected.All(_resumeVotes.Contains)) Resume();
+        return GameError.None;
+    }
+    public GameError Resume()
+    {
+        if (!IsPaused) return GameError.InvalidTransition;
+        _clock.Resume(); _resumeAt = null; _resumeVotes.Clear(); PauseId = Guid.Empty; Revision++;
         TryConsensus();
+        return GameError.None;
     }
     public IReadOnlyList<PlayerId> AnsweredPlayers => _game.AnsweredPlayers;
     public IReadOnlyList<PlayerId> ContinueVotes => _continueVotes.ToArray();
@@ -115,7 +156,7 @@ public sealed class FullMatch
     private int RemainingNormal => _settings.Unlimited ? _deck.Remaining : TotalQuestions - QuestionNumber;
     public GameError Vote(PlayerId player, QuestionInstanceId question, GamePhase phase, bool endGame)
     {
-        if (!_connected.Contains(player) || Snapshot.Question?.InstanceId != question || Snapshot.Phase != phase ||
+        if (IsPaused || !_connected.Contains(player) || Snapshot.Question?.InstanceId != question || Snapshot.Phase != phase ||
             (endGame ? !_settings.Unlimited || phase != GamePhase.Scoreboard : phase is not (GamePhase.AnswerReveal or GamePhase.Scoreboard or GamePhase.RoundEnd)))
             return GameError.InvalidTransition;
         if ((endGame ? _endVotes : _continueVotes).Add(player)) Revision++;
@@ -130,7 +171,7 @@ public sealed class FullMatch
     }
     public GameError EndUnlimited()
     {
-        if (!_settings.Unlimited || Snapshot.Phase != GamePhase.Scoreboard) return GameError.InvalidTransition;
+        if (IsPaused || !_settings.Unlimited || Snapshot.Phase != GamePhase.Scoreboard) return GameError.InvalidTransition;
         FinishNow(); Revision++; ClearVotes(); return GameError.None;
     }
     private void ClearVotes() { _continueVotes.Clear(); _endVotes.Clear(); }
@@ -153,6 +194,8 @@ public sealed class FullMatch
     {
         if (_strategy?.Rules.Cards != true || IsTieBreaker) return CardError.Disabled;
         if (!_connected.Contains(intent.Player) || !_eligible.Contains(intent.Player)) return CardError.UnknownPlayer;
+        if (IsPaused) return CardError.InvalidWindow;
+        receivedAt = _clock.At(receivedAt);
         if (Snapshot.Question?.InstanceId != intent.Question) return CardError.StaleQuestion;
         var card = _strategy.FindCard(intent.Player, intent.CardId);
         if (card is null) return CardError.UnknownCard;
@@ -219,8 +262,16 @@ public sealed class FullMatch
 
     public bool Poll()
     {
+        if (IsPaused)
+        {
+            if (_resumeAt is not { } at || _wallClock.Now < at) return false;
+            Resume(); return true;
+        }
         if (_game.Phase == GamePhase.QuestionActive)
-        { if (_game.CloseQuestion() != GameError.None) return false; }
+        {
+            if (_game.CloseQuestion() != GameError.None) return false;
+            _missingAtClose.UnionWith(_stats.Keys.Where(player => !_connected.Contains(player)));
+        }
         else if (_game.Phase == GamePhase.QuestionLocked)
         {
             Require(_game.RevealAnswer());
@@ -232,8 +283,8 @@ public sealed class FullMatch
                 _stats[result.PlayerId] = old with
                 {
                     Correct = old.Correct + (result.IsCorrect ? 1 : 0),
-                    Wrong = old.Wrong + (result.AnswerIndex is not null && !result.IsCorrect ? 1 : 0),
-                    Unanswered = old.Unanswered + (result.AnswerIndex is null ? 1 : 0),
+                    Wrong = old.Wrong + (!result.IsCorrect && (result.AnswerIndex is not null || _missingAtClose.Contains(result.PlayerId)) ? 1 : 0),
+                    Unanswered = old.Unanswered + (result.AnswerIndex is null && !_missingAtClose.Contains(result.PlayerId) ? 1 : 0),
                     BestStreak = Math.Max(old.BestStreak, streak),
                     ResponseTicks = checked(old.ResponseTicks + (result.ResponseTime?.Ticks ?? 0)),
                     Responses = old.Responses + (result.ResponseTime is null ? 0 : 1)
@@ -247,6 +298,7 @@ public sealed class FullMatch
 
     public GameError Advance()
     {
+        if (IsPaused) return GameError.InvalidTransition;
         if (_game.Phase == GamePhase.AnswerReveal) Require(_game.ShowScoreboard());
         else if (_game.Phase == GamePhase.RoundEnd) { Require(_game.BeginRound()); BeginQuestion(); }
         else if (_game.Phase == GamePhase.Scoreboard)
@@ -310,6 +362,8 @@ public sealed class FullMatch
     {
         var question = _deck.Draw() ?? throw new InvalidOperationException("Question deck exhausted.");
         Require(_game.StartQuestion(question, _nextInstance(), _settings.QuestionDuration, _eligible, !IsTieBreaker, _settings.QuestionDuration == TimeSpan.Zero));
+        _missingAtClose.Clear();
+        foreach (var player in _stats.Keys.Where(player => !_connected.Contains(player))) _game.Disconnect(player);
         QuestionNumber++;
         _selectionSwapped = false;
         _swapCategories = null;

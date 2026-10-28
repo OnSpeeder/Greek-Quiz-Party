@@ -172,6 +172,7 @@ public class DiscoveryAndAdmissionTests
         var replay = host.Handle(2, answer);
         Assert.Contains("HandshakeRequired", replay.Messages[0].Json);
         Assert.Equal("GameStarted", Reason(host.Handle(3, new LobbyClientState().BeginHello("Phone", "Android"))));
+        Assert.True(host.MatchSnapshot()!.IsPaused); host.ResumeMatch();
         clock.Now += TimeSpan.FromSeconds(20); host.PollMatch(); host.PollMatch(); host.AdvanceMatch(); host.AdvanceMatch();
         var final = host.MatchSnapshot()!;
         Assert.Equal("GameOver", final.Phase);

@@ -58,15 +58,19 @@ public class MatchFlowTests
         Assert.Equal(GameError.InvalidTransition, match.EndUnlimited());
     }
     [Fact]
-    public void DisconnectRemovesAnUntimedBlockerAndReevaluatesVotes()
+    public void DisconnectPausesUntilResumedAndThenRemovesUntimedBlocker()
     {
         var f = new SessionFixture(); var match = Match(f);
         var q = match.Snapshot.Question!;
         foreach (var p in f.Players.Take(2)) match.Submit(new(p.Id, q.InstanceId, 0), f.Clock.Now);
         match.Disconnect(f.Players[2].Id);
+        Assert.True(match.IsPaused); Assert.False(match.Poll());
+        Assert.Equal(GameError.None, match.Resume());
         Assert.True(match.Poll()); Assert.True(match.Poll());
         match.Vote(f.Players[0].Id, q.InstanceId, GamePhase.AnswerReveal, false);
         match.Disconnect(f.Players[1].Id);
+        Assert.True(match.IsPaused); Assert.Equal(GamePhase.AnswerReveal, match.Snapshot.Phase);
+        match.Resume();
         Assert.Equal(GamePhase.Scoreboard, match.Snapshot.Phase);
     }
     [Fact]

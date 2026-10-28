@@ -383,3 +383,20 @@ MATCH_REPLAY,Παίξε ξανά,Play again
 MATCH_END_GAME,Τέλος παιχνιδιού,End game
 MATCH_VOTES,Συνέχεια · {0}/{1},Continue · {0}/{1}
 MATCH_END_VOTES,Τέλος παιχνιδιού · {0}/{1},End game · {0}/{1}
+SHOW_OPEN,Η παρέα ζωντανεύει!,Meet the living show!
+SHOW_BENCHMARK,QUIZPARTY · ΜΙΚΡΗ ΣΚΗΝΗ ΜΕΓΑΛΕΣ ΑΝΤΙΔΡΑΣΕΙΣ,QUIZPARTY · SMALL STAGE BIG REACTIONS
+SHOW_TITLE,Για να δούμε…,Let's see…
+SHOW_ANTICIPATION,Μια απάντηση. Δύο μεγάλες προσωπικότητες.,One answer. Two big personalities.
+SHOW_HIDDEN,Κάτι ξέρει ο μπλε…,Blue knows something…
+SHOW_ANSWER,Β · Η Αθήνα,B · Athens
+SHOW_REVEALED,Και η σωστή απάντηση είναι…,And the correct answer is…
+SHOW_CHALLENGE,Ποιος θα κάνει τον έξυπνο τώρα;,Who's the clever one now?
+SHOW_JOKE,«Το είχα… στην άλλη απάντηση!»,“I had it… in the other answer!”
+SHOW_REPLAY,Πάμε άλλη μία!,Encore!
+SHOW_HOME,Αρχική,Home
+SHOW_REDUCE,Ήρεμη κίνηση,Reduced motion
+SHOW_MUTE,Χωρίς ήχο,Mute sound
+MATCH_RECONNECTING,Η σύνδεση χάθηκε. Προσπαθούμε να επανασυνδεθούμε…,Connection lost. Trying to reconnect…
+MATCH_PAUSED_DISCONNECTED,Το παιχνίδι σταμάτησε προσωρινά. Περιμένουμε: {0}. Μπορείτε να συνεχίσετε όλοι μαζί ή να συνεχίσει ο host.,The game is paused. Waiting for: {0}. Everyone can continue together or the host can resume.
+MATCH_RESUME_HOST,Συνέχεια παιχνιδιού,Resume game
+MATCH_RESUME_COUNTDOWN,Η παρέα είναι ξανά μαζί! Το παιχνίδι συνεχίζει σε {0}…,Everyone is back! The game resumes in {0}…

@@ -5,6 +5,7 @@ using QuizParty.Core.Time;
 using QuizParty.Core.Randomness;
 using QuizParty.Core.Questions;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace QuizParty.Infrastructure.Networking;
 
@@ -22,6 +23,9 @@ public sealed class LobbyHost
     public bool HasRoomAccess(long connection) => _peers.TryGetValue(connection, out var peer) && peer.AdmittedUntil > _clock.Now;
     private readonly Dictionary<long, PeerRequests> _peers = new();
     private readonly Dictionary<long, Guid> _controllers = new() { [1] = Guid.NewGuid() };
+    private readonly Dictionary<long, string> _tokens = new();
+    private readonly Dictionary<long, TimeSpan> _reservations = new();
+    private static string NewToken() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
     private FullMatch? _match;
     private readonly Dictionary<Guid, int> _matchCharacters = new();
     private readonly IReadOnlyList<QuestionDefinition> _questions;
@@ -100,7 +104,7 @@ public sealed class LobbyHost
         // The non-playing host gets the public projection only, never another seat's hand/mission.
         var own = player is null ? null : _match.Private(player.Id);
         var rules = _match.Strategy;
-        return new(SessionId, _match.Revision, game.Phase.ToString(), _clock.Now.Ticks,
+        return new(SessionId, _match.Revision, game.Phase.ToString(), _match.GameNow.Ticks,
             new(question.InstanceId.Value, question.Text, question.Answers.ToArray(), question.CategoryId,
                 question.Difficulty, question.StartedAt.Ticks, question.Deadline.Ticks), game.AcceptedAnswerCount,
             game.Scores.Select(score => new MatchScoreDto(score.PlayerId.Value, score.DisplayName, score.Total, _matchCharacters[score.PlayerId.Value])).ToArray(),
@@ -121,7 +125,9 @@ public sealed class LobbyHost
                 s.CardsUsed, s.ConfidentCorrect, s.ConfidentWrong, s.AllInCorrect, s.AllInWrong)).ToArray(),
             _match.TeamScores.Select(t => new TeamScoreDto((int)t.TeamId, t.Total, t.Members.Select(p => p.Value).ToArray())).ToArray(),
             _match.WinningTeams.Select(t => (int)t).ToArray(), player?.LocalSlot?.Value ?? 0, _match.AnsweredPlayers.Select(p => p.Value).ToArray(),
-            _match.ContinueVotes.Select(p => p.Value).ToArray(), _match.EndVotes.Select(p => p.Value).ToArray());
+            _match.ContinueVotes.Select(p => p.Value).ToArray(), _match.EndVotes.Select(p => p.Value).ToArray(),
+            _match.IsPaused, _match.IsPaused ? _match.PauseId : null, _match.IsCountingDown ? _match.ResumeRemaining.Ticks : 0,
+            _match.DisconnectedPlayers.Select(p => p.Value).ToArray(), _match.ResumeVotes.Select(p => p.Value).ToArray(), _match.IsCountingDown);
     }
     private static MissionDto? Mission(MissionView? mission) => mission is null ? null :
         new((int)mission.Kind, mission.Target, mission.Progress, mission.Complete);
@@ -131,6 +137,13 @@ public sealed class LobbyHost
             LobbyProtocol.Encode("MatchSnapshot", SessionId, MatchSnapshot(player.Player.Id)!))).ToArray();
 
     public bool PollMatch() => _match?.Poll() ?? false;
+    public GameError ResumeMatch() => _match?.Resume() ?? GameError.InvalidTransition;
+    public GameError ResumeVote(long connection, ResumeVoteDto request)
+    {
+        if (request.LocalSlot is < 0 or > 7 || _reservations.ContainsKey(connection) ||
+            _lobby.FindPlayer(new(connection), new(request.LocalSlot)) is not { } player || _match is null) return GameError.InvalidTransition;
+        return _match.ResumeVote(player, request.PauseId);
+    }
     public GameError Vote(long connection, MatchVoteDto request)
     {
         if (request.LocalSlot is < 0 or > 7 || request.Phase is not ("AnswerReveal" or "Scoreboard" or "RoundEnd") ||
@@ -179,7 +192,43 @@ public sealed class LobbyHost
         foreach (var player in GetPlayers().Where(p => p.ConnectionId?.Value == connection)) _match?.Disconnect(player.Id);
         _peers.Remove(connection);
         _controllers.Remove(connection);
+        _tokens.Remove(connection); _reservations.Remove(connection);
         return _lobby.Disconnect(new(connection));
+    }
+
+    public bool Suspend(long connection)
+    {
+        if (_reservations.ContainsKey(connection)) return false;
+        if (_match is null || !_tokens.ContainsKey(connection)) return Disconnect(connection);
+        foreach (var player in GetPlayers().Where(p => p.ConnectionId?.Value == connection)) _match.Disconnect(player.Id);
+        _peers.Remove(connection);
+        _reservations[connection] = TimeSpan.MaxValue;
+        return true;
+    }
+
+    public bool ExpireReservations()
+    {
+        var expired = _match?.Snapshot.Phase == GamePhase.GameOver ? _reservations.Keys.ToArray() : [];
+        foreach (var connection in expired) Disconnect(connection);
+        return expired.Length > 0;
+    }
+
+    private string Reconnect(long connection, LobbyEnvelope packet, out string? token)
+    {
+        token = null;
+        if (packet.SessionId != SessionId || !LobbyProtocol.TryPayload<ReconnectRequestDto>(packet, out var request) ||
+            request?.Token is not { Length: 64 } supplied || !supplied.All(Uri.IsHexDigit)) return "MalformedRequest";
+        if (_match?.Snapshot.Phase == GamePhase.GameOver) return "MatchEnded";
+        ExpireReservations();
+        var old = _reservations.Keys.FirstOrDefault(id => CryptographicOperations.FixedTimeEquals(
+            Encoding.ASCII.GetBytes(_tokens[id]), Encoding.ASCII.GetBytes(supplied)));
+        if (old == 0 || _lobby.FindPlayer(new(connection)) is not null) return "ReconnectUnavailable";
+        if (!_lobby.Rebind(new(old), new(connection))) return "ReconnectUnavailable";
+        _controllers[connection] = _controllers[old]; _controllers.Remove(old);
+        token = _tokens[old]; _tokens.Remove(old); _reservations.Remove(old);
+        _tokens[connection] = token;
+        foreach (var player in GetPlayers().Where(p => p.ConnectionId?.Value == connection)) _match?.Reconnect(player.Id);
+        return "None";
     }
 
     public LobbyDispatch Handle(long connection, string json, string sourceAddress = "local-adapter")
@@ -234,7 +283,14 @@ public sealed class LobbyHost
             reply = LobbyProtocol.Encode("ServerHello", SessionId,
                 new ServerHelloDto(reason == "None", reason, playerId, reason == "None" ? Snapshot() : null,
                     reason == "None" ? _controllers[connection] : null,
-                    peer.AdmittedUntil > _clock.Now ? TakenCharacters() : null), packet.MessageId);
+                    peer.AdmittedUntil > _clock.Now ? TakenCharacters() : null,
+                    reason == "None" ? _tokens[connection] : null), packet.MessageId);
+        }
+        else if (packet.MessageType == "Reconnect")
+        {
+            var reason = Reconnect(connection, packet, out var token);
+            reply = LobbyProtocol.Encode("ReconnectResult", SessionId,
+                new ReconnectResultDto(reason == "None", reason, token, reason == "None" ? Snapshot() : null), packet.MessageId);
         }
         else
         {
@@ -259,7 +315,7 @@ public sealed class LobbyHost
         peer.CachedBytes += Encoding.UTF8.GetByteCount(json) + Encoding.UTF8.GetByteCount(reply);
         var messages = new List<LobbyOutbound> { new(connection, reply) };
         if (before != Snapshot().Revision) messages.AddRange(Broadcast());
-        if (matchBefore != _match?.Revision) messages.AddRange(BroadcastMatch());
+        if (matchBefore != _match?.Revision || packet.MessageType == "Reconnect" && _lobby.FindPlayer(new(connection)) is not null) messages.AddRange(BroadcastMatch());
         return new(messages, false);
     }
 
@@ -294,17 +350,20 @@ public sealed class LobbyHost
         if (admission != "None") return admission;
         var player = new Player(new(Guid.NewGuid()), hello.DisplayName, new(connection), new(0), (CharacterId?)hello.CharacterId);
         var error = _lobby.Join(player);
-        if (error == LobbyError.None) { playerId = player.Id.Value; _controllers.Add(connection, Guid.NewGuid()); }
+        if (error == LobbyError.None) { playerId = player.Id.Value; _controllers.Add(connection, Guid.NewGuid()); _tokens[connection] = NewToken(); }
         return error.ToString();
     }
 
     private string ValidateRequest(long connection, LobbyEnvelope packet, TimeSpan receivedAt)
     {
+        if (_reservations.ContainsKey(connection)) return "HandshakeRequired";
         if (_lobby.FindPlayer(new(connection)) is null) return "HandshakeRequired";
         if (packet.SessionId != SessionId) return "WrongSession";
         if (packet.MessageType is "StartGame" or "AdvanceMatch" or "SetTeam") return "NotHost";
         if (packet.MessageType == "MatchVote")
             return LobbyProtocol.TryPayload<MatchVoteDto>(packet, out var vote) && vote is not null ? Vote(connection, vote).ToString() : "MalformedRequest";
+        if (packet.MessageType == "ResumeVote")
+            return LobbyProtocol.TryPayload<ResumeVoteDto>(packet, out var resume) && resume is not null ? ResumeVote(connection, resume).ToString() : "MalformedRequest";
         if (packet.MessageType == "AddLocalPlayer")
             return LobbyProtocol.TryPayload<AddLocalPlayerDto>(packet, out var add) && add is not null ? AddLocal(connection, add).ToString() : "MalformedRequest";
         if (packet.MessageType == "RemoveLocalPlayer")

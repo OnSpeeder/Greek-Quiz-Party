@@ -28,6 +28,7 @@ public sealed class GameSession
     private bool _awardPoints = true;
     private readonly StrategySession? _strategy;
     private readonly Dictionary<PlayerId, TimeSpan> _deadlines = new();
+    private readonly Dictionary<PlayerId, TimeSpan> _suspendedDeadlines = new();
 
     public GameSession(GameAuthority authority, IEnumerable<Player> players, IGameClock clock,
         IRandomSource random, ScoringRules? scoringRules = null, StrategySession? strategy = null, bool scaleDifficulty = false)
@@ -91,6 +92,7 @@ public sealed class GameSession
         _answers.Clear();
         _eligible = eligible?.ToHashSet();
         _awardPoints = awardPoints;
+        _suspendedDeadlines.Clear();
         foreach (var player in _players) _deadlines[player.Id] = question.Presentation.Deadline;
         _strategy?.BeginQuestion();
         _usedInstances.Add(instanceId);
@@ -161,7 +163,8 @@ public sealed class GameSession
     }
 
     public IReadOnlyList<PlayerId> AnsweredPlayers => _answers.Keys.ToArray();
-    internal void Disconnect(PlayerId player) { if (_deadlines.ContainsKey(player)) _deadlines[player] = TimeSpan.Zero; }
+    internal void Disconnect(PlayerId player) { if (_deadlines.TryGetValue(player, out var deadline)) { _suspendedDeadlines[player] = deadline; _deadlines[player] = TimeSpan.Zero; } }
+    internal void Reconnect(PlayerId player) { if (_suspendedDeadlines.Remove(player, out var deadline)) _deadlines[player] = deadline; }
     internal bool HasAnswered(PlayerId player) => _answers.ContainsKey(player);
     internal TimeSpan Deadline(PlayerId player) => _deadlines.GetValueOrDefault(player);
     internal int[] HideWrongAnswers()

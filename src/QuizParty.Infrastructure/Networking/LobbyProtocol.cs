@@ -17,14 +17,16 @@ public sealed record StartRequestDto;
 public sealed record LobbyPlayerDto(Guid PlayerId, string DisplayName, bool IsHost, bool Ready,
     Guid? ControllerId = null, int LocalSlot = 0, int? TeamId = null, int? CharacterId = null);
 public sealed record LobbySnapshotDto(Guid SessionId, long Revision, string RoomName, string Phase, LobbyPlayerDto[] Players, bool TeamMode = false, int MaxPlayers = 8, bool HostPlays = true);
-public sealed record ServerHelloDto(bool Accepted, string Reason, Guid? PlayerId, LobbySnapshotDto? Lobby, Guid? ControllerId = null, int[]? TakenCharacters = null);
+public sealed record ServerHelloDto(bool Accepted, string Reason, Guid? PlayerId, LobbySnapshotDto? Lobby, Guid? ControllerId = null, int[]? TakenCharacters = null, string? ReconnectToken = null);
+public sealed record ReconnectRequestDto(string Token);
+public sealed record ReconnectResultDto(bool Accepted, string Reason, string? Token, LobbySnapshotDto? Lobby);
 public sealed record RequestResultDto(bool Accepted, string Reason);
 public sealed record LobbyOutbound(long ConnectionId, string Json);
 public sealed record LobbyDispatch(IReadOnlyList<LobbyOutbound> Messages, bool DisconnectSender);
 
 public static class LobbyProtocol
 {
-    public const int Version = 10;
+    public const int Version = 12;
     public const int MaxPacketBytes = 16384;
     public const int MaxNameLength = 32;
     public const string AppVersion = "0.10.0";
@@ -48,7 +50,7 @@ public static class LobbyProtocol
             if (decoded is null || decoded.MessageId == Guid.Empty || decoded.MessageType is not
                 ("ClientHello" or "SetReady" or "StartGame" or "ServerHello" or "RequestResult" or "LobbySnapshot" or
                  "MatchVote" or "SubmitAnswer" or "AdvanceMatch" or "MatchSnapshot" or "AnswerAccepted" or "ActivateCard" or "CardResult" or
-                 "AddLocalPlayer" or "RemoveLocalPlayer" or "SetTeam" or "CheckRoom" or "RoomAvailability" or "RoomAccessResult") ||
+                 "AddLocalPlayer" or "RemoveLocalPlayer" or "SetTeam" or "CheckRoom" or "RoomAvailability" or "RoomAccessResult" or "Reconnect" or "ReconnectResult" or "ResumeVote") ||
                 decoded.Payload.ValueKind != JsonValueKind.Object) return false;
             packet = decoded;
             return true;

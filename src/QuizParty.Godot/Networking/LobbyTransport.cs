@@ -17,6 +17,11 @@ public partial class LobbyTransport : Node
     private int? _clientCharacter;
     private Guid _prepareSession;
     private bool _joiningPrepared;
+    private string _address = "";
+    private int _port;
+    private bool _reconnecting;
+    private bool _hasSeenMatch;
+    private int _retryAttempt;
     public RoomAccessResultDto? RoomAccess => _client.Access;
     public bool JoinPending => _joiningPrepared;
     public event Action<RoomAccessResultDto>? RoomAccessChanged;
@@ -109,7 +114,11 @@ public partial class LobbyTransport : Node
         Multiplayer.PeerConnected += OnPeerConnected;
         Multiplayer.PeerDisconnected += OnPeerDisconnected;
         var poll = new global::Godot.Timer { WaitTime = 0.05, Autostart = true };
-        poll.Timeout += () => { if (_host?.PollMatch() == true) BroadcastMatch(); };
+        poll.Timeout += () =>
+        {
+            if (_host?.ExpireReservations() == true) { Broadcast(); BroadcastMatch(); }
+            if (_host?.PollMatch() == true) BroadcastMatch();
+        };
         AddChild(poll);
     }
 
@@ -148,6 +157,7 @@ public partial class LobbyTransport : Node
         if (character is { } chosen && !Core.Players.Characters.IsValid(chosen) || !LobbyProtocol.ValidName(playerName) || string.IsNullOrWhiteSpace(address) || address.Length > 253 ||
             address.Any(char.IsWhiteSpace) || port is < 1024 or > 65535 || !RoomAdmission.ValidPin(pin)) return Error.InvalidParameter;
         Stop();
+        _address = address; _port = port;
         _clientName = playerName;
         _clientCharacter = character;
         _clientPin = pin;
@@ -295,6 +305,15 @@ public partial class LobbyTransport : Node
         if (_host is not null) { _host.Vote(1, vote); BroadcastMatch(); }
         else RpcId(1, MethodName.ClientMessage, LobbyProtocol.Encode("MatchVote", snapshot.SessionId, vote));
     }
+    public void ContinuePaused(int? localSlot = null)
+    {
+        if (_host is not null && localSlot is null) { _host.ResumeMatch(); BroadcastMatch(); return; }
+        var slot = localSlot ?? _activeSlot;
+        if (MatchForSlot(slot) is not { IsPaused: true, IsResuming: false, PauseId: { } pause } snapshot) return;
+        var vote = new ResumeVoteDto(pause, slot);
+        if (_host is not null) { _host.ResumeVote(1, vote); BroadcastMatch(); }
+        else RpcId(1, MethodName.ClientMessage, LobbyProtocol.Encode("ResumeVote", snapshot.SessionId, vote));
+    }
     public void Replay()
     {
         if (_host?.Replay() != true) return;
@@ -322,7 +341,14 @@ public partial class LobbyTransport : Node
 
     public void Stop()
     {
+        var announceClosure = _host is not null && _peer is not null && Multiplayer.GetPeers().Length > 0 && IsInsideTree();
+        if (announceClosure)
+        {
+            foreach (var connection in Multiplayer.GetPeers()) RpcId(connection, MethodName.RoomClosed);
+            _peer!.Host.Flush();
+        }
         _generation++;
+        _reconnecting = false; _hasSeenMatch = false; _retryAttempt++;
         _host = null;
         _clientPin = ""; _clientCharacter = null; _prepareSession = Guid.Empty; _joiningPrepared = false;
         if (GodotObject.IsInstanceValid(Discovery)) Discovery.Stop();
@@ -336,10 +362,23 @@ public partial class LobbyTransport : Node
         _presentedQuestion = Guid.Empty;
         if (_peer is not null)
         {
-            Multiplayer.MultiplayerPeer = new OfflineMultiplayerPeer();
-            _peer.Close();
-            _peer.Dispose();
+            var peer = _peer;
             _peer = null;
+            var api = Multiplayer;
+            if (announceClosure)
+            {
+                // Leave ENet alive briefly so the reliable room-closed message can be acknowledged.
+                GetTree().CreateTimer(.3).Timeout += () =>
+                {
+                    if (GodotObject.IsInstanceValid(api) && api.MultiplayerPeer == peer) api.MultiplayerPeer = new OfflineMultiplayerPeer();
+                    peer.Close(); peer.Dispose();
+                };
+            }
+            else
+            {
+                api.MultiplayerPeer = new OfflineMultiplayerPeer();
+                peer.Close(); peer.Dispose();
+            }
         }
     }
 
@@ -356,6 +395,11 @@ public partial class LobbyTransport : Node
 
     private void OnConnected()
     {
+        if (_reconnecting)
+        {
+            if (_client.BeginReconnect() is { } request) RpcId(1, MethodName.ClientMessage, request);
+            return;
+        }
         var json = _prepareSession == Guid.Empty ? _client.BeginHello(_clientName, OS.GetName(), _clientPin, _clientCharacter) :
             _client.BeginAccess(_prepareSession, _clientPin, OS.GetName());
         _clientPin = "";
@@ -383,11 +427,41 @@ public partial class LobbyTransport : Node
         if (_host is null) return;
         _handshaken.Remove(connection);
         _closing.Remove(connection);
-        if (_host.Disconnect(connection)) { Emit("PlayerLeft"); Broadcast(); }
+        if (_host.Suspend(connection)) { Emit("PlayerLeft"); Broadcast(); BroadcastMatch(); }
     }
 
-    private void OnConnectionFailed() => Fail("ConnectionFailed");
-    private void OnServerDisconnected() => Fail("ServerDisconnected");
+    private void OnConnectionFailed() { if (_reconnecting) ScheduleReconnect(); else Fail("ConnectionFailed"); }
+    private void OnServerDisconnected()
+    {
+        if (_reconnecting) { ScheduleReconnect(); return; }
+        if (_hasSeenMatch && _client.ReconnectToken is not null && _address.Length > 0)
+        {
+            _reconnecting = true;
+            Emit("Reconnecting"); ScheduleReconnect(); return;
+        }
+        Fail("ServerDisconnected");
+    }
+    private void ScheduleReconnect()
+    {
+        if (!_reconnecting) return;
+        var attempt = ++_retryAttempt;
+        if (_peer is not null)
+        {
+            Multiplayer.MultiplayerPeer = new OfflineMultiplayerPeer();
+            _peer.Close(); _peer.Dispose(); _peer = null;
+        }
+        GetTree().CreateTimer(1).Timeout += () =>
+        {
+            if (!GodotObject.IsInstanceValid(this) || !IsInsideTree() || !_reconnecting || attempt != _retryAttempt) return;
+            var peer = new ENetMultiplayerPeer();
+            if (peer.CreateClient(_address, _port) != Error.Ok) { peer.Dispose(); ScheduleReconnect(); return; }
+            _peer = peer; Multiplayer.MultiplayerPeer = peer;
+            GetTree().CreateTimer(5).Timeout += () =>
+            {
+                if (GodotObject.IsInstanceValid(this) && IsInsideTree() && _reconnecting && attempt == _retryAttempt) ScheduleReconnect();
+            };
+        };
+    }
     private void Fail(string reason) { Stop(); Emit(reason); }
     private void Emit(string reason) { GD.Print($"LOBBY STATUS {reason}"); StatusChanged?.Invoke(reason); }
 
@@ -481,6 +555,11 @@ public partial class LobbyTransport : Node
     {
         if (_host is not null || Multiplayer.GetRemoteSenderId() != 1) return;
         var update = _client.Apply(json);
+        if (update == LobbyClientUpdate.ReconnectRejected) { if (_client.LastReason == "MatchEnded") Fail("ReconnectExpired"); else ScheduleReconnect(); return; }
+        if (update == LobbyClientUpdate.Reconnected)
+        {
+            _reconnecting = false; _retryAttempt++; ResetMatchPresentation(); Publish(); Emit("Reconnected"); return;
+        }
         if (update == LobbyClientUpdate.RoomAccess)
         {
             if (_client.Access is not { Accepted: true } access) { Fail(_client.LastReason); return; }
@@ -494,10 +573,10 @@ public partial class LobbyTransport : Node
             Fail(_client.LastReason); return;
         }
         if (update is LobbyClientUpdate.Joined or LobbyClientUpdate.Snapshot)
-        { if (_client.Snapshot?.Phase == "Lobby") ResetMatchPresentation(); Publish(); }
+        { if (_client.Snapshot?.Phase == "Lobby") { _hasSeenMatch = false; ResetMatchPresentation(); } Publish(); }
         if (update == LobbyClientUpdate.Joined) { _joiningPrepared = false; Emit("Joined"); }
         if (update == LobbyClientUpdate.RequestResult) Emit(_client.LastReason);
-        if (update == LobbyClientUpdate.MatchSnapshot) { PublishMatch(); OwnedStateChanged?.Invoke(); }
+        if (update == LobbyClientUpdate.MatchSnapshot) { _hasSeenMatch = true; PublishMatch(); OwnedStateChanged?.Invoke(); }
         if (update == LobbyClientUpdate.AnswerReceipt)
         {
             var state = _client.MatchForSlot(_client.LastMatchSlot);
@@ -512,5 +591,11 @@ public partial class LobbyTransport : Node
             if (_client.LastMatchSlot == _activeSlot) CardInputChanged?.Invoke(state.CardReason);
             OwnedStateChanged?.Invoke();
         }
+    }
+
+    [Rpc(TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void RoomClosed()
+    {
+        if (_host is null && Multiplayer.GetRemoteSenderId() == 1) Fail("HostClosed");
     }
 }

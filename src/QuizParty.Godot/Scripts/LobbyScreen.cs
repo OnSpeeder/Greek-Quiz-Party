@@ -32,12 +32,18 @@ public partial class LobbyScreen : Control
     private bool _setupVisible = true;
     private bool _manualOpen;
     private bool _pinOpen;
+    private MatchDialog _reconnectDialog = null!;
 
     public override void _Ready()
     {
         AddChild(new ResponsiveCanvas());
         const string path = "Margin/Scroll/Content/";
         _transport = GetNode<LobbyTransport>("Transport");
+        var reconnectLayer = new CanvasLayer { Name = "ReconnectLayer", Layer = 30 }; AddChild(reconnectLayer);
+        _reconnectDialog = new MatchDialog { Name = "ReconnectDialog" }; reconnectLayer.AddChild(_reconnectDialog);
+        _reconnectDialog.Body.AddChild(new Label { Text = "MATCH_RECONNECTING", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        var cancelReconnect = new Button { Text = "UI_NEW_PARTY", CustomMinimumSize = new(0, 64) };
+        cancelReconnect.Pressed += ReturnHome; _reconnectDialog.Actions.AddChild(cancelReconnect);
         _name = GetNode<LineEdit>(path + "PlayerName");
         _room = GetNode<LineEdit>(path + "RoomName");
         _address = GetNode<LineEdit>(path + "Address");
@@ -128,6 +134,10 @@ public partial class LobbyScreen : Control
         _transport.SnapshotChanged += Render;
         _transport.StatusChanged += reason =>
         {
+            if (reason == "Reconnecting") { _reconnectDialog.Show(); return; }
+            if (reason == "Reconnected") { _reconnectDialog.Hide(); return; }
+            if (reason is "HostClosed" or "ReconnectExpired" or "ServerDisconnected")
+            { _reconnectDialog.Hide(); Callable.From(ReturnHome).CallDeferred(); return; }
             if (_transport.MatchSnapshot is not null) { _status.Hide(); return; }
             if (_page == "join" && _setupVisible) { _status.Hide(); return; }
             if (_transport.Snapshot is null && reason != "Connecting") Reset();

@@ -29,7 +29,9 @@ function Start-Match([string]$Name, [string]$Flags) {
     return $process
 }
 try {
-    $fixtureFlags = if ($QuestionCount -gt 1) { "--match-fixture=$QuestionCount --match-fast --match-delay=0.10" } else { '' }
+    # The bot recognizes the explicit synthetic answer, not arbitrary production questions.
+    $fixtureFlags = "--match-fixture=$QuestionCount"
+    if ($QuestionCount -gt 1) { $fixtureFlags += ' --match-fast --match-delay=0.10' }
     if ($Strategy) { $fixtureFlags = "--match-fixture=$QuestionCount --match-delay=0.10" }
     $hostProcess = Start-Match 'host' "--match-host --match-name=Host --match-players=3 $fixtureFlags"
     $deadline = [DateTime]::UtcNow.AddSeconds(15)

@@ -4,6 +4,13 @@
 
 Finalize responsive visual system, audio, transitions, reduced-motion/accessibility basics and scale reviewed Greek question content.
 
+## Living-show benchmark — 2026-10-26
+
+User delegated creative direction and approved the one-scene production benchmark
+workflow. Direction: `docs/design/LIVING_SHOW.md`; implementation plan:
+`harness/phase-10-living-show-plan.md`. Full welcome/lobby/victory rollout follows
+benchmark quality review. Existing human/content acceptance gates remain open.
+
 ## User-approved subset — 2026-10-18
 
 Implement presentation only: responsive TV/mobile layouts, audio, transitions,

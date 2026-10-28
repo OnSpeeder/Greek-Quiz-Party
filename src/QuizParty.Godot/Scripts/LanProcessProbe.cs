@@ -90,6 +90,16 @@ public partial class LanProcessProbe : Node
 
     private void OnMatch(MatchSnapshotDto match)
     {
+        if (!_transport.IsHost && match.IsPaused && Argument("--lan-pause-capture=") is { } clientCapture)
+            GetTree().CreateTimer(.3).Timeout += () => { if (Live) Capture(clientCapture); };
+        if (_transport.IsHost && match.IsPaused && _args.Contains("--lan-match"))
+        {
+            GD.Print("LAN MATCH_PAUSED");
+            var capture = Argument("--lan-pause-capture=");
+            if (capture is not null) GetTree().CreateTimer(.3).Timeout += () => { if (Live) Capture(capture); };
+            GetTree().CreateTimer(capture is null ? .1 : 1).Timeout += () => { if (Live) _transport.ContinuePaused(); };
+            return;
+        }
         if (!_transport.IsHost && match.Phase == "QuestionActive" && _args.Contains("--lan-leave-question"))
         {
             _transport.Stop(); GD.Print("LAN LEFT_QUESTION"); GetTree().Quit(); return;
@@ -99,7 +109,12 @@ public partial class LanProcessProbe : Node
             _answered = true;
             var correct = Array.IndexOf(match.Question.Answers, "Σωστό");
             if (correct < 0) { GD.PushError("LAN probe did not receive its synthetic fixture."); GetTree().Quit(4); return; }
-            GetTree().CreateTimer(0.1).Timeout += () => { if (Live) _transport.SubmitAnswer(correct); };
+            GetTree().CreateTimer(0.1).Timeout += () =>
+            {
+                if (!Live) return;
+                if (_transport.MatchSnapshot?.IsPaused == true) { _answered = false; return; }
+                _transport.SubmitAnswer(correct);
+            };
         }
         if (_transport.IsHost && match.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd")
             GetTree().CreateTimer(0.1).Timeout += () => { if (Live && _transport.MatchSnapshot?.Revision == match.Revision) _transport.AdvanceMatch(); };

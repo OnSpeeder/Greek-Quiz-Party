@@ -91,8 +91,46 @@ public class MatchSetupTests
             using var release = new InputEventMouseButton { Position = move.Position, GlobalPosition = move.GlobalPosition, ButtonIndex = MouseButton.Left };
             scroll.GetViewport().PushInput(release, true);
             AssertThat(scroll.ScrollVertical > 0).IsTrue(); AssertThat(clicked).IsEqual(0);
+            scroll.ScrollVertical = 0;
+            using var touch = new InputEventScreenTouch { Index = 0, Position = start, Pressed = true };
+            scroll.GetViewport().PushInput(touch, true);
+            using var drag = new InputEventScreenDrag { Index = 0, Position = start - new Vector2(0, 60), Relative = new(0, -60) };
+            scroll.GetViewport().PushInput(drag, true);
+            using var lift = new InputEventScreenTouch { Index = 0, Position = drag.Position, Pressed = false };
+            scroll.GetViewport().PushInput(lift, true);
+            AssertThat(scroll.ScrollVertical > 0).IsTrue(); AssertThat(clicked).IsEqual(0);
         }
         finally { scroll.Free(); await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame); }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task ModalDragDoesNotMoveThePageBehindIt()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var page = new ScrollContainer { Size = tree.Root.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        tree.Root.AddChild(page);
+        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; page.AddChild(column);
+        for (var i = 0; i < 16; i++) column.AddChild(new Button { Text = "Answer", CustomMinimumSize = new(200, 100) });
+        page.AddChild(new PageDragScroll());
+        using var dialog = new MatchDialog(); tree.Root.AddChild(dialog);
+        for (var i = 0; i < 25; i++) dialog.Body.AddChild(new Label { Text = "Fact", CustomMinimumSize = new(0, 60) });
+        dialog.Show();
+        try
+        {
+            for (var i = 0; i < 5; i++) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+            var inner = (ScrollContainer)dialog.Body.GetParent();
+            var start = inner.GetGlobalRect().GetCenter();
+            using var press = new InputEventMouseButton { Position = start, GlobalPosition = start, ButtonIndex = MouseButton.Left, Pressed = true };
+            tree.Root.PushInput(press, true);
+            using var move = new InputEventMouseMotion { Position = start - new Vector2(0, 70), GlobalPosition = start - new Vector2(0, 70), Relative = new(0, -70), ButtonMask = MouseButtonMask.Left };
+            tree.Root.PushInput(move, true);
+            using var release = new InputEventMouseButton { Position = move.Position, GlobalPosition = move.GlobalPosition, ButtonIndex = MouseButton.Left };
+            tree.Root.PushInput(release, true);
+            AssertThat(inner.ScrollVertical > 0).IsTrue();
+            AssertThat(page.ScrollVertical).IsEqual(0);
+        }
+        finally { dialog.Free(); page.Free(); await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame); }
     }
 
 }

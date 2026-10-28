@@ -27,6 +27,7 @@ public partial class MatchPanel : VBoxContainer
     private VBoxContainer _questionContent = null!;
     private VBoxContainer _hostRail = null!;
     private MatchDialog _revealDialog = null!;
+    private MatchDialog _pauseDialog = null!;
     private GridContainer _voteActions = null!;
     private Button _replay = null!;
     private Guid _revealQuestion;
@@ -39,6 +40,7 @@ public partial class MatchPanel : VBoxContainer
         _revealDialog = new MatchDialog { Name = "RevealDialog" };
         var dialogs = new CanvasLayer { Name = "MatchDialogs", Layer = 20 }; AddChild(dialogs);
         dialogs.AddChild(_revealDialog);
+        _pauseDialog = new MatchDialog { Name = "PauseDialog" }; dialogs.AddChild(_pauseDialog);
         _voteActions = new GridContainer { Name = "VoteActions" }; AddChild(_voteActions);
         _replay = new Button { Name = "Replay", Text = "MATCH_REPLAY", ThemeTypeVariation = "PrimaryAction" };
         _replay.Pressed += () => _transport?.Replay(); AddChild(_replay);
@@ -187,7 +189,8 @@ public partial class MatchPanel : VBoxContainer
         if (GetParent() is VBoxContainer content && content.GetParent() is ScrollContainer scroll)
         {
             scroll.VerticalScrollMode = _transport?.IsHost == true && snapshot.Phase is "QuestionActive" or "QuestionLocked" or "AnswerReveal" ? ScrollContainer.ScrollMode.Disabled : ScrollContainer.ScrollMode.ShowNever;
-            scroll.ScrollVertical = 0;
+            if (_snapshot?.Phase != snapshot.Phase || _snapshot.Question.InstanceId != snapshot.Question.InstanceId)
+                scroll.ScrollVertical = 0;
             content.SizeFlagsVertical = SizeFlags.ExpandFill;
             foreach (var sibling in content.GetChildren().OfType<Control>().Where(c => c != this)) sibling.Hide();
         }
@@ -247,6 +250,7 @@ public partial class MatchPanel : VBoxContainer
         Part<Label>("Question").Visible = snapshot.Phase is "QuestionActive" or "QuestionLocked" or "AnswerReveal";
         Part<Label>("Reveal").Visible = false;
         UpdateRevealDialog(phaseChanged);
+        UpdatePauseDialog();
         Part<Label>("Scores").Visible = false;
         _standings.Visible = snapshot.Phase is "Scoreboard" or "RoundEnd" or "GameOver";
         if (_standings.Visible) _standings.Render(snapshot.Scores, snapshot.SessionId);
@@ -278,13 +282,14 @@ public partial class MatchPanel : VBoxContainer
     {
         if (_snapshot is null || _transport is null) return;
         _controllers.Refresh();
-        var active = _snapshot.Phase == "QuestionActive";
+        var active = _snapshot.Phase == "QuestionActive" && !_snapshot.IsPaused;
         _strategy.Visible = _controllers.Open && _snapshot.Strategy is not null && _snapshot.Phase is not ("GameOver" or "AnswerReveal");
         for (var i = 0; i < 4; i++)
         {
             _answers[i].Visible = _snapshot.Phase == "AnswerReveal" || (_controllers.Open || _transport.IsHost && _transport.OwnedPlayers.Count == 0) && _snapshot.Phase is "QuestionActive" or "QuestionLocked";
             _answers[i].Disabled = !active || !_snapshot.EligiblePlayers.Contains(_transport.LocalPlayerId ?? Guid.Empty) ||
                 _transport.AnswerPending || _transport.CardPending || _transport.OwnAnswerIndex is not null ||
+                _snapshot.AnsweredPlayers?.Contains(_transport.LocalPlayerId ?? Guid.Empty) == true ||
                 _snapshot.Private?.HiddenAnswers.Contains(i) == true;
             _answers[i].Text = _snapshot.Private?.HiddenAnswers.Contains(i) == true && _snapshot.Reveal is null
                 ? Tr("STRATEGY_HIDDEN").ToString() : $"{Tr("UI_ANSWER_" + i)}   {_snapshot.Question.Answers[i]}";
@@ -305,18 +310,21 @@ public partial class MatchPanel : VBoxContainer
             "GameOver" => "MATCH_FINISHED", "Scoreboard" => "MATCH_SCORE_STATUS", "AnswerReveal" => "MATCH_REVEALED",
             "RoundEnd" => "MATCH_ROUND_END",
             "QuestionLocked" => "MATCH_LOCKED", _ => _transport.AnswerPending ? "MATCH_PENDING" :
-                _transport.OwnAnswerIndex is not null ? "MATCH_ACCEPTED" : _reason is "None" or "Pending" ? "MATCH_CHOOSE" : "MATCH_ERROR_" + _reason
+                _transport.OwnAnswerIndex is not null || _snapshot.AnsweredPlayers?.Contains(_transport.LocalPlayerId ?? Guid.Empty) == true ? "MATCH_ACCEPTED" : _reason is "None" or "Pending" ? "MATCH_CHOOSE" : "MATCH_ERROR_" + _reason
         };
         Part<Label>("Status").Text = Tr(key);
         Part<Label>("Status").Visible = _snapshot.Phase is not ("AnswerReveal" or "Scoreboard" or "RoundEnd") &&
-            (!active || _transport.AnswerPending || _transport.OwnAnswerIndex is not null || _reason is not ("None" or "Pending"));
+            (!active || _transport.AnswerPending || _transport.OwnAnswerIndex is not null || _snapshot.AnsweredPlayers?.Contains(_transport.LocalPlayerId ?? Guid.Empty) == true || _reason is not ("None" or "Pending"));
     }
 
     private void UpdateCountdown()
     {
         if (_snapshot is null || !Visible) return;
+        var elapsed = (global::Godot.Time.GetTicksMsec() - _receivedAtMs) / 1000.0;
         var seconds = Math.Max(0, TimeSpan.FromTicks((_controllers.Open ? _snapshot.Private?.DeadlineTicks ?? _snapshot.Question.DeadlineTicks : _snapshot.Question.DeadlineTicks) - _snapshot.HostNowTicks).TotalSeconds -
-            (global::Godot.Time.GetTicksMsec() - _receivedAtMs) / 1000.0);
+            (_snapshot.IsPaused ? 0 : elapsed));
+        if (_snapshot.IsPaused && _snapshot.IsResuming && _pauseDialog.Body.GetNodeOrNull<Label>("Message") is { } countdown)
+            countdown.Text = string.Format(Tr("MATCH_RESUME_COUNTDOWN"), Math.Max(1, (int)Math.Ceiling(TimeSpan.FromTicks(_snapshot.ResumeRemainingTicks).TotalSeconds - elapsed)));
         var active = _snapshot.Phase == "QuestionActive";
         var untimed = _snapshot.Question.DeadlineTicks == long.MaxValue;
         Part<Label>("Meta/Countdown").Text = active
@@ -362,37 +370,83 @@ public partial class MatchPanel : VBoxContainer
         if (_revealQuestion != snapshot.Question.InstanceId || phaseChanged)
         {
             _revealQuestion = snapshot.Question.InstanceId; _revealReady = false;
+            _revealDialog.ClearBody();
             var question = _revealQuestion;
             GetTree().CreateTimer(1.2).Timeout += () =>
             {
-                if (!IsInsideTree() || _snapshot?.Phase != "AnswerReveal" || _snapshot.Question.InstanceId != question) return;
+                if (!GodotObject.IsInstanceValid(this) || !IsInsideTree() || _snapshot?.Phase != "AnswerReveal" || _snapshot.Question.InstanceId != question) return;
                 _revealReady = true; ShowReveal();
             };
         }
         else if (_revealReady) ShowReveal();
     }
+    private void UpdatePauseDialog()
+    {
+        if (_snapshot is not { IsPaused: true } snapshot || _transport is null) { _pauseDialog.Hide(); return; }
+        _pauseDialog.Actions.Columns = _transport.IsHost || _transport.OwnedPlayers.Count <= 1 ? 1 : 2;
+        var context = $"{snapshot.PauseId}:{snapshot.IsResuming}";
+        if (!_pauseDialog.HasMeta("pause_context") || _pauseDialog.GetMeta("pause_context").AsString() != context)
+        {
+            _pauseDialog.Clear(); _pauseDialog.SetMeta("pause_context", context);
+            _pauseDialog.Body.AddChild(new Label { Name = "Message", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+            if (!snapshot.IsResuming)
+            {
+                if (_transport.IsHost)
+                {
+                    var button = new Button { Name = "HostResume", Text = "MATCH_RESUME_HOST", ThemeTypeVariation = "PrimaryAction", CustomMinimumSize = new(0, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                    button.Pressed += () => _transport.ContinuePaused(); _pauseDialog.Actions.AddChild(button);
+                }
+                else foreach (var player in _transport.OwnedPlayers)
+                {
+                    var slot = player.LocalSlot;
+                    var button = new Button { Name = "Resume" + slot, Text = _transport.OwnedPlayers.Count > 1 ? player.DisplayName + " · " + Tr("MATCH_CONTINUE") : Tr("MATCH_CONTINUE").ToString(),
+                        ThemeTypeVariation = "PrimaryAction", CustomMinimumSize = new(0, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                    button.Pressed += () => _transport.ContinuePaused(slot); _pauseDialog.Actions.AddChild(button);
+                }
+            }
+        }
+        var message = _pauseDialog.Body.GetNode<Label>("Message");
+        var names = snapshot.Scores.Where(p => snapshot.DisconnectedPlayers?.Contains(p.PlayerId) == true).Select(p => p.DisplayName);
+        message.Text = snapshot.IsResuming ? string.Format(Tr("MATCH_RESUME_COUNTDOWN"), 5) : string.Format(Tr("MATCH_PAUSED_DISCONNECTED"), string.Join(", ", names));
+        if (!snapshot.IsResuming && !_transport.IsHost)
+            foreach (var player in _transport.OwnedPlayers)
+                if (_pauseDialog.Actions.GetNodeOrNull<Button>("Resume" + player.LocalSlot) is { } button)
+                    button.Disabled = snapshot.ResumeVotes?.Contains(player.PlayerId) == true;
+        _pauseDialog.Show(); _pauseDialog.MoveToFront();
+    }
     private void ShowReveal()
     {
-        _revealDialog.Clear();
-        var text = new Label { Text = Part<Label>("Reveal").Text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        _revealDialog.Body.AddChild(text); QuizShowTheme.SetFontSize(text, 24);
+        if (_revealDialog.Body.GetChildCount() == 0)
+        {
+            var text = new Label { Text = Part<Label>("Reveal").Text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            _revealDialog.Body.AddChild(text); QuizShowTheme.SetFontSize(text, 24);
+        }
         RenderVotes(_revealDialog.Actions, true);
         _revealDialog.Show();
         _revealDialog.MoveToFront();
     }
     private void RenderVotes(GridContainer container, bool reveal)
     {
-        foreach (var child in container.GetChildren()) { container.RemoveChild(child); child.QueueFree(); }
         if (_snapshot is null || _transport is null) return;
         var visible = reveal ? _revealReady && _snapshot.Phase == "AnswerReveal" : _snapshot.Phase is "Scoreboard" or "RoundEnd";
         container.Visible = visible;
         container.Columns = _transport.IsHost || _transport.OwnedPlayers.Count <= 1 ? 1 : GetViewportRect().Size.X > 700 ? 4 : 2;
-        if (!visible) return;
+        if (!visible) { ClearActions(); return; }
+        var context = $"{_snapshot.Question.InstanceId}:{_snapshot.Phase}:{_transport.IsHost}:{string.Join(',', _transport.OwnedPlayers.Select(p => p.LocalSlot))}";
+        if (!container.HasMeta("vote_context") || container.GetMeta("vote_context").AsString() != context)
+        { ClearActions(); container.SetMeta("vote_context", context); }
+        var used = new HashSet<Node>();
         void ActionButton(string text, bool end, int? slot, bool disabled)
         {
-            var button = new Button { Text = text, Disabled = disabled, ThemeTypeVariation = end ? "" : "PrimaryAction",
-                CustomMinimumSize = new(64, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            button.Pressed += () => _transport.ContinueMatch(end, slot); container.AddChild(button);
+            var name = $"Vote_{slot?.ToString() ?? "host"}_{end}";
+            var button = container.GetNodeOrNull<Button>(name);
+            if (button is null)
+            {
+                button = new Button { Name = name, ThemeTypeVariation = end ? "" : "PrimaryAction",
+                    CustomMinimumSize = new(64, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                button.Pressed += () => _transport.ContinueMatch(end, slot); container.AddChild(button);
+            }
+            button.Text = text; button.Disabled = disabled; used.Add(button);
         }
         if (_transport.IsHost)
         {
@@ -409,11 +463,23 @@ public partial class MatchPanel : VBoxContainer
                     ActionButton(player.DisplayName + " · " + Tr("MATCH_END_GAME"), true, player.LocalSlot, _snapshot.EndVotes?.Contains(player.PlayerId) == true);
             }
         }
-        container.AddChild(new Label { Text = string.Format(Tr("MATCH_VOTES"), _snapshot.ContinueVotes?.Length ?? 0,
-            _transport.Snapshot?.Players.Length ?? _snapshot.Scores.Length), AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        UpdateLabel("ContinueCount", string.Format(Tr("MATCH_VOTES"), _snapshot.ContinueVotes?.Length ?? 0,
+            _transport.Snapshot?.Players.Length ?? _snapshot.Scores.Length));
         if (!reveal && _snapshot.TotalQuestions == 0 && _snapshot.Phase == "Scoreboard")
-            container.AddChild(new Label { Text = string.Format(Tr("MATCH_END_VOTES"), _snapshot.EndVotes?.Length ?? 0,
-                _transport.Snapshot?.Players.Length ?? _snapshot.Scores.Length), AutowrapMode = TextServer.AutowrapMode.WordSmart });
+            UpdateLabel("EndCount", string.Format(Tr("MATCH_END_VOTES"), _snapshot.EndVotes?.Length ?? 0,
+                _transport.Snapshot?.Players.Length ?? _snapshot.Scores.Length));
+        foreach (var child in container.GetChildren().Where(c => !used.Contains(c))) { container.RemoveChild(child); child.QueueFree(); }
+        void UpdateLabel(string name, string text)
+        {
+            var label = container.GetNodeOrNull<Label>(name);
+            if (label is null) { label = new Label { Name = name, AutowrapMode = TextServer.AutowrapMode.WordSmart }; container.AddChild(label); }
+            label.Text = text; used.Add(label);
+        }
+        void ClearActions()
+        {
+            foreach (var child in container.GetChildren()) { container.RemoveChild(child); child.QueueFree(); }
+            container.RemoveMeta("vote_context");
+        }
     }
 
     public override void _ExitTree()

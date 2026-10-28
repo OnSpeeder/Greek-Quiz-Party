@@ -121,6 +121,18 @@ public sealed class LobbySession
         if (ids.Length != 0) _revision++;
         return ids.Length != 0;
     }
+    public bool Rebind(ConnectionId oldConnection, ConnectionId newConnection)
+    {
+        if (oldConnection == HostConnection || newConnection.Value <= 1 || FindPlayer(newConnection) is not null) return false;
+        var entries = _players.Values.Where(p => p.Player.ConnectionId == oldConnection).ToArray();
+        if (entries.Length == 0) return false;
+        foreach (var entry in entries)
+        {
+            var p = entry.Player;
+            _players[p.Id] = entry with { Player = new Player(p.Id, p.DisplayName, newConnection, p.LocalSlot, p.Character) };
+        }
+        _revision++; return true;
+    }
     public PlayerId? FindPlayer(ConnectionId connection, LocalSlot? slot = null) => _players.Values.FirstOrDefault(p =>
         p.Player.ConnectionId == connection && (p.Player.LocalSlot?.Value ?? 0) == (slot?.Value ?? 0))?.Player.Id;
     public LobbySnapshot GetSnapshot() => new(_revision, _state.Phase,

@@ -11,6 +11,81 @@ namespace QuizParty.Godot.Tests;
 public class JoinFlowTests
 {
     [TestCase]
+    [RequireGodotRuntime]
+    public async Task HostSeesPauseAndCanResumeAfterPlayerDisconnects()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var hostRoot = GD.Load<PackedScene>("res://Scenes/Lobby.tscn").Instantiate<LobbyScreen>();
+        hostRoot.Name = "PauseTestHost";
+        var hostApi = new SceneMultiplayer(); tree.SetMultiplayer(hostApi, new("/root/PauseTestHost")); tree.Root.AddChild(hostRoot);
+        using var clientRoot = new Control { Name = "PauseTestClient" }; tree.Root.AddChild(clientRoot);
+        var clientApi = new SceneMultiplayer(); tree.SetMultiplayer(clientApi, clientRoot.GetPath());
+        var host = hostRoot.GetNode<LobbyTransport>("Transport"); host.DiscoveryPort = 19922;
+        var client = new LobbyTransport { Name = "Transport" }; clientRoot.AddChild(client);
+        try
+        {
+            host.UseSyntheticQuestions(1); host.StrategyEnabled = false;
+            AssertThat(host.Host("Room", "Host", 19921)).IsEqual(Error.Ok);
+            AssertThat(client.Join("127.0.0.1", "Phone", 19921)).IsEqual(Error.Ok);
+            await Wait(tree, () => client.LocalPlayerId is not null);
+            client.SetReady(true); host.SetReady(true);
+            await Wait(tree, () => host.Snapshot?.Players.All(p => p.Ready) == true);
+            host.StartGame(); await Wait(tree, () => client.MatchSnapshot is not null);
+            client.Stop(); await Wait(tree, () => host.MatchSnapshot?.IsPaused == true);
+            var modal = hostRoot.GetNode<MatchDialog>("Margin/Scroll/Content/MatchPanel/MatchDialogs/PauseDialog");
+            AssertThat(modal.Visible).IsTrue();
+            AssertThat(modal.Body.GetNode<Label>("Message").Text.Contains("Phone")).IsTrue();
+            modal.Actions.GetNode<Button>("HostResume").EmitSignal(Button.SignalName.Pressed);
+            AssertThat(host.MatchSnapshot!.IsPaused).IsFalse(); AssertThat(modal.Visible).IsFalse();
+        }
+        finally
+        {
+            clientRoot.Free(); hostRoot.Free(); tree.SetMultiplayer(null!, new("/root/PauseTestClient")); tree.SetMultiplayer(null!, new("/root/PauseTestHost"));
+            clientApi.Dispose(); hostApi.Dispose(); await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+    }
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task InterruptedMatchReclaimsPlayerOverEnetAndHostClosureIsAnnounced()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        using var hostRoot = new Control { Name = "ReconnectTestHost" }; tree.Root.AddChild(hostRoot);
+        using var clientRoot = new Control { Name = "ReconnectTestClient" }; tree.Root.AddChild(clientRoot);
+        var hostApi = new SceneMultiplayer(); var clientApi = new SceneMultiplayer();
+        tree.SetMultiplayer(hostApi, hostRoot.GetPath()); tree.SetMultiplayer(clientApi, clientRoot.GetPath());
+        var host = new LobbyTransport { Name = "Transport", DiscoveryPort = 19912 }; hostRoot.AddChild(host);
+        var client = new LobbyTransport { Name = "Transport" }; clientRoot.AddChild(client);
+        var reconnected = false; var closed = false;
+        client.StatusChanged += status => { if (status == "Reconnected") reconnected = true; if (status == "HostClosed") closed = true; };
+        try
+        {
+            host.UseSyntheticQuestions(1); host.StrategyEnabled = false;
+            AssertThat(host.Host("Room", "Host", 19911)).IsEqual(Error.Ok);
+            AssertThat(client.Join("127.0.0.1", "Phone", 19911)).IsEqual(Error.Ok);
+            await Wait(tree, () => client.LocalPlayerId is not null);
+            var original = client.LocalPlayerId;
+            client.SetReady(true); host.SetReady(true);
+            await Wait(tree, () => host.Snapshot?.Players.All(p => p.Ready) == true);
+            host.StartGame(); await Wait(tree, () => client.MatchSnapshot is not null);
+            var connection = hostApi.GetPeers().Single();
+            ((ENetMultiplayerPeer)hostApi.MultiplayerPeer).DisconnectPeer(connection);
+            await Wait(tree, () => reconnected && client.MatchSnapshot is not null);
+            AssertThat(client.LocalPlayerId).IsEqual(original);
+            AssertThat(host.Snapshot!.Players.Length).IsEqual(2);
+            AssertThat(client.MatchSnapshot!.IsPaused).IsTrue();
+            AssertThat(client.MatchSnapshot.IsResuming).IsTrue();
+            await Wait(tree, () => client.MatchSnapshot?.IsPaused == false, 8000);
+            host.Stop(); await Wait(tree, () => closed);
+        }
+        finally
+        {
+            clientRoot.Free(); hostRoot.Free();
+            tree.SetMultiplayer(null!, new("/root/ReconnectTestClient")); tree.SetMultiplayer(null!, new("/root/ReconnectTestHost"));
+            clientApi.Dispose(); hostApi.Dispose();
+            await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+    }
+    [TestCase]
     public void PresentationPreviewFlagsNeverStartAnUnrequestedMatchConnection()
     {
         AssertThat(MatchProcessProbe.ShouldRun(["--match-ui-preview", "--match-ui-join", "--match-ui-landscape"])).IsFalse();
@@ -21,9 +96,9 @@ public class JoinFlowTests
     private static DiscoveredRoom Room(int port, Guid session, bool pin = true) => new("127.0.0.1",
         new("quiz-host", LobbyProtocol.Version, Guid.NewGuid(), session, "Αίθουσα δοκιμής", port, 1, 8, pin, LobbyProtocol.AppVersion, "Lobby"), TimeSpan.Zero);
 
-    private static async Task Wait(SceneTree tree, Func<bool> predicate)
+    private static async Task Wait(SceneTree tree, Func<bool> predicate, int timeoutMs = 5000)
     {
-        var until = global::Godot.Time.GetTicksMsec() + 5000;
+        var until = global::Godot.Time.GetTicksMsec() + (ulong)timeoutMs;
         while (!predicate() && global::Godot.Time.GetTicksMsec() < until) await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
         AssertThat(predicate()).IsTrue();
     }

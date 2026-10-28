@@ -10,6 +10,7 @@ public partial class MatchDialog : Control
     public override void _Ready()
     {
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        AddToGroup("match_modal");
         MouseFilter = MouseFilterEnum.Stop;
         var shade = new ColorRect { Color = new(0.025f, 0.015f, 0.08f, .9f) };
         AddChild(shade); shade.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -36,5 +37,9 @@ public partial class MatchDialog : Control
     {
         foreach (var container in new Container[] { Body, Actions })
             foreach (var child in container.GetChildren()) { container.RemoveChild(child); child.QueueFree(); }
+    }
+    public void ClearBody()
+    {
+        foreach (var child in Body.GetChildren()) { Body.RemoveChild(child); child.QueueFree(); }
     }
 }

@@ -26,7 +26,8 @@ public partial class LocalControllerPanel : VBoxContainer
         if (snapshot is null) { Open = false; return; }
         if (_question != snapshot.Question.InstanceId) { _question = snapshot.Question.InstanceId; Open = false; }
         if (!multiple) Open = _transport.OwnedPlayers.Count == 1;
-        else if (snapshot.Phase is "QuestionActive" or "QuestionLocked" && (_transport.AnswerPending || _transport.OwnAnswerIndex is not null)) Open = false;
+        else if (snapshot.Phase is "QuestionActive" or "QuestionLocked" && (_transport.AnswerPending || _transport.OwnAnswerIndex is not null ||
+            snapshot.AnsweredPlayers?.Contains(_transport.LocalPlayerId ?? Guid.Empty) == true)) Open = false;
         foreach (var child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
         if (!Visible) return;
         AddChild(new Label { Text = "LOCAL_HANDOFF_HINT", AutowrapMode = TextServer.AutowrapMode.WordSmart });
@@ -34,7 +35,7 @@ public partial class LocalControllerPanel : VBoxContainer
         AddChild(players);
         foreach (var player in _transport.OwnedPlayers)
         {
-            var confirmed = _transport.AnswerForSlot(player.LocalSlot) is not null;
+            var confirmed = _transport.AnswerForSlot(player.LocalSlot) is not null || snapshot.AnsweredPlayers?.Contains(player.PlayerId) == true;
             var button = new Button { Text = string.Format(Tr(confirmed && snapshot.Phase == "QuestionActive" ? "LOCAL_SUBMITTED" : "LOCAL_PLAY_AS"), player.DisplayName),
                 CustomMinimumSize = new(0, 64), AutowrapMode = TextServer.AutowrapMode.WordSmart };
             button.Icon = GameArt.AvatarTexture(player.CharacterId ?? player.LocalSlot);

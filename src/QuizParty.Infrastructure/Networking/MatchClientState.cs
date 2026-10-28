@@ -19,8 +19,8 @@ public sealed class MatchClientState
 
     public string? CreateAnswer(int index, int confidence = 1)
     {
-        if (_snapshot?.Phase != "QuestionActive" || !_snapshot.EligiblePlayers.Contains(_localPlayerId) ||
-            Pending || CardPending || OwnAnswerIndex is not null || index is < 0 or > 3 || confidence is < 1 or > 3 ||
+        if (_snapshot?.Phase != "QuestionActive" || _snapshot.IsPaused || !_snapshot.EligiblePlayers.Contains(_localPlayerId) ||
+            Pending || CardPending || OwnAnswerIndex is not null || _snapshot.AnsweredPlayers?.Contains(_localPlayerId) == true || index is < 0 or > 3 || confidence is < 1 or > 3 ||
             ((_snapshot.Strategy?.Confidence != true || _snapshot.IsTieBreaker) && confidence != 1) ||
             _snapshot.Private?.HiddenAnswers.Contains(index) == true) return null;
         _pendingId = Guid.NewGuid();
@@ -31,9 +31,9 @@ public sealed class MatchClientState
 
     public string? CreateCard(Guid card, Guid? target = null, string? category = null)
     {
-        if (_snapshot?.Strategy?.Cards != true || _snapshot.IsTieBreaker || CardPending || Pending ||
+        if (_snapshot?.Strategy?.Cards != true || _snapshot.IsPaused || _snapshot.IsTieBreaker || CardPending || Pending ||
             _snapshot.Phase is not ("QuestionActive" or "Scoreboard" or "RoundEnd") ||
-            (_snapshot.Phase == "QuestionActive" && OwnAnswerIndex is not null) ||
+            (_snapshot.Phase == "QuestionActive" && (OwnAnswerIndex is not null || _snapshot.AnsweredPlayers?.Contains(_localPlayerId) == true)) ||
             _snapshot.Private?.Hand.Any(c => c.Id == card) != true || category?.Length > 128) return null;
         _pendingCardMessage = Guid.NewGuid(); _pendingCard = card; CardReason = "Pending";
         return LobbyProtocol.Encode("ActivateCard", _snapshot.SessionId,
@@ -121,7 +121,7 @@ public sealed class MatchClientState
         if (next.Phase == "GameOver" && (winners.Length == 0 || next.Statistics.Length != scores.Length ||
             next.Statistics.Any(s => s is null || s.Correct < 0 || s.Wrong < 0 || s.Unanswered < 0 || s.BestStreak < 0 ||
                 (long)s.Correct + s.Wrong + s.Unanswered > next.QuestionNumber || s.BestStreak > s.Correct ||
-                s.Responses != (long)s.Correct + s.Wrong || s.ResponseTicks < 0 || (question.DeadlineTicks != long.MaxValue && s.ResponseTicks > (long)s.Responses * TimeSpan.TicksPerSecond * (next.Strategy is null ? 120 : 125))) ||
+                (s.Responses < s.Correct || s.Responses > (long)s.Correct + s.Wrong) || s.ResponseTicks < 0 || (question.DeadlineTicks != long.MaxValue && s.ResponseTicks > (long)s.Responses * TimeSpan.TicksPerSecond * (next.Strategy is null ? 120 : 125))) ||
             !next.Statistics.Select(s => s.PlayerId).Order().SequenceEqual(scores.Select(s => s.PlayerId).Order()))) return false;
         if (Rank(next.Phase) < 2) return next.Reveal is null;
         var reveal = next.Reveal;
@@ -138,7 +138,10 @@ public sealed class MatchClientState
     {
         bool ValidIds(Guid[]? ids) => ids is null || ids.Length <= 8 && ids.Distinct().Count() == ids.Length &&
             ids.All(id => next.Scores.Any(s => s.PlayerId == id));
-        return ValidIds(next.AnsweredPlayers) && ValidIds(next.ContinueVotes) && ValidIds(next.EndVotes) &&
+        return ValidIds(next.AnsweredPlayers) && ValidIds(next.ContinueVotes) && ValidIds(next.EndVotes) && ValidIds(next.DisconnectedPlayers) && ValidIds(next.ResumeVotes) &&
+            (next.IsPaused ? next.PauseId is { } id && id != Guid.Empty : next.PauseId is null && !next.IsResuming && next.ResumeRemainingTicks == 0 && next.ResumeVotes is null or { Length: 0 }) &&
+            next.ResumeRemainingTicks is >= 0 and <= 5 * TimeSpan.TicksPerSecond && (next.IsResuming || next.ResumeRemainingTicks == 0) &&
+            (next.ResumeVotes is null || next.DisconnectedPlayers is null || !next.ResumeVotes.Intersect(next.DisconnectedPlayers).Any()) &&
             (next.AnsweredPlayers is null || next.AnsweredPlayers.Length == next.AcceptedAnswerCount) &&
             (next.ContinueVotes is null or { Length: 0 } || next.Phase is "AnswerReveal" or "Scoreboard" or "RoundEnd") &&
             (next.EndVotes is null or { Length: 0 } || next.TotalQuestions == 0 && next.Phase == "Scoreboard");
@@ -187,6 +190,7 @@ public sealed class MatchClientState
     private static MatchSnapshotDto Copy(MatchSnapshotDto value) => value with
     {
         AnsweredPlayers = value.AnsweredPlayers?.ToArray(), ContinueVotes = value.ContinueVotes?.ToArray(), EndVotes = value.EndVotes?.ToArray(),
+        DisconnectedPlayers = value.DisconnectedPlayers?.ToArray(), ResumeVotes = value.ResumeVotes?.ToArray(),
         Question = value.Question with { Answers = value.Question.Answers.ToArray() }, Scores = value.Scores.ToArray(),
         EligiblePlayers = value.EligiblePlayers.ToArray(), Winners = value.Winners.ToArray(), Statistics = value.Statistics.ToArray(),
         Reveal = value.Reveal is null ? null : value.Reveal with { Players = value.Reveal.Players.ToArray() },

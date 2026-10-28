@@ -47,8 +47,14 @@ public class MatchFlowSceneTests
             await tree.ToSignal(tree.CreateTimer(1.3), global::Godot.Timer.SignalName.Timeout);
             AssertThat(modal.Visible).IsTrue();
             AssertThat(modal.Body.GetChild<Label>(0).Text.Contains("fun fact")).IsTrue();
+            var heldButton = modal.Actions.GetChildren().OfType<Button>().First();
+            transport.ContinueMatch(localSlot: 1);
+            AssertThat(modal.Actions.GetChildren().OfType<Button>().First() == heldButton).IsTrue();
             modal.Actions.GetChildren().OfType<Button>().First().EmitSignal(Button.SignalName.Pressed);
             AssertThat(transport.MatchSnapshot!.Phase).IsEqual("Scoreboard"); AssertThat(modal.Visible).IsFalse();
+            var scoreboardButton = panel.GetNode<GridContainer>("VoteActions").GetChildren().OfType<Button>().First();
+            transport.ContinueMatch(localSlot: 1);
+            AssertThat(panel.GetNode<GridContainer>("VoteActions").GetChildren().OfType<Button>().First() == scoreboardButton).IsTrue();
             transport.AdvanceMatch(); AssertThat(transport.MatchSnapshot!.Phase).IsEqual("GameOver");
             panel.GetNode<Button>("Replay").EmitSignal(Button.SignalName.Pressed);
             AssertThat(transport.MatchSnapshot).IsNull(); AssertThat(transport.Snapshot!.Phase).IsEqual("Lobby");

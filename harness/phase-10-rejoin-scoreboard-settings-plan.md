@@ -18,4 +18,3 @@ User request: 2026-10-28. This work remains in Phase 10; the existing human visu
 ## Dependencies and open decisions
 
 The scoreboard investigation precedes visual choreography so defects are measurable. Reconnect and scoring require protocol compatibility review; neither may compromise the existing privacy and authority boundaries. User confirmed default-on speed scoring with the proposed formula and a pending offline departure. LAN alone cannot inform an unreachable host of a rejection in real time. No host migration is implied. Extra themes are local visual preferences, not a shared match setting.
-
